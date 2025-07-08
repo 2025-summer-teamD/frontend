@@ -6,7 +6,7 @@ on:
       - develop # 메인 브렌치에 브랜치 머지 시 자동으로 실행
   pull_request:
     branches:
-       # 모든 브랜치에 PR 올릴 때 실행
+    -'*'   # 모든 브랜치에 PR 올릴 때 실행
   
 jobs:
   build:
