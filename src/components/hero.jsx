@@ -1,4 +1,4 @@
-import mainImage from '/assets/mainImage1.png'; 
+import RobotVideo from '/assets/robotVideo.mp4'; 
 import { Link } from 'react-router-dom';
 
 // 메인화면 컴포넌트
@@ -6,7 +6,7 @@ export default function Hero() {
     return (
         <section id="home" className="pt-20">
             <div className="relative w-full">
-        <img src={mainImage} alt="Hero" className="w-full h-full object-cover" />
+        <video src={RobotVideo} autoPlay loop muted playsInline className="w-full h-full object-cover"/>
         <div className="absolute inset-x-0 top-[50vh] -translate-y-1/2 flex flex-col justify-center items-center text-white text-center px-8">
         <h1 className="text-[75px] font-extrabold mb-4 bg-clip-text text-transparent bg-[linear-gradient(to_right,_#555555_16%,_#FFFFFF_59%)]">    {/* 헤딩 텍스트 추가 */}          
           나만의 AI 인격체와<br/>자유롭게 대화하세요
