@@ -1,5 +1,7 @@
 import mainImage from '/assets/mainImage1.png'; 
 import { Link } from 'react-router-dom';
+
+// 메인화면 컴포넌트
 export default function Hero() {
     return (
         <section id="home" className="pt-20">

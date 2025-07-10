@@ -4,6 +4,7 @@ import Features from "../components/features";
 import ChatPreview from "../components/chatPreview";
 import { Link } from 'react-router-dom';
 
+// 메인 홈 페이지
 function Home() {
   return (
     <>

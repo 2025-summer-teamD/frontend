@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+// 상단 바 컴포넌트
 export default function Header() {
   return (
     <header className="fixed top-0 left-0 w-full h-[80px] bg-[#040438] shadow-md z-50 flex items-center px-8">  {/* 상단에 고정하고 배경색 #040438,콘텐츠 수평,좌유정렬,좌우패딩 8px */}
