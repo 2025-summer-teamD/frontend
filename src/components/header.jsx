@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 // 상단 바 컴포넌트
 export default function Header() {
   return (
@@ -12,11 +12,11 @@ export default function Header() {
       </Link>
       {/* 오른쪽 내비게이션 */}
       <nav className="ml-auto flex items-center space-x-6 text-[24px]"> {/* 로고와 멀리떨어트려 오른쪽으로 정렬,흰색글씨 */}
-        <Link to="/"className="hover:underline text-white">홈</Link>
-        <Link to="/characterList" className="hover:underline text-[#9CA3AF]" >내 캐릭터</Link>
-        <Link to="/community" className="hover:underline text-[#9CA3AF]">커뮤니티</Link>
-        <Link to="/CreateCharacter" className="hover:underline text-[#9CA3AF]">캐릭터 만들기</Link>
-        <button className="flex items-center space-x-1 hover:underline text-[#9CA3AF]">
+        <NavLink to="/" className={({isActive}) => isActive ? "text-white" : "text-[#9CA3AF]"} >홈</NavLink>
+        <NavLink to="/community" className={({isActive}) => isActive ? "text-white" : "text-[#9CA3AF]"} >커뮤니티</NavLink>
+        <NavLink to="/CreateCharacter" className={({isActive}) => isActive ? "text-white" : "text-[#9CA3AF]"} >만들기</NavLink>
+        <NavLink to="/characterList" className={({isActive}) => isActive ? "text-white" : "text-[#9CA3AF]"} >내 캐릭터</NavLink>
+        <button className="flex items-center space-x-1 text-[#9CA3AF]">
           <img src="/assets/Avatar.png" alt="User" className="h-[40px] w-[40px] rounded-full" />
         </button>
       </nav>
