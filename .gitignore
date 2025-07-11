@@ -140,3 +140,13 @@ vite.config.ts.timestamp-*
 
 #env
 .DS_Store
+
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+dist-ssr
+*.local
+.vscode/*
