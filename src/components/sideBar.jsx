@@ -13,14 +13,14 @@ const Sidebar = ({ children }) => {
   ];
 
   return (
-    <div className="h-screen flex  bg-[linear-gradient(156deg,_#040438_17.08%,_#3C3C56_73.2%)] relative">
+      <div className="h-screen flex  bg-[linear-gradient(40deg,_#040438_17.08%,_#3C3C56_73.2%)] relative">
       {/* Sidebar */}
       <div
         className={`fixed inset-y-0 left-0 bg-black/40 backdrop-blur-xl border-r border-white/10 transition-all duration-300 overflow-hidden z-30 ${sidebarOpen ? 'w-80' : 'w-0'}`}
       >
         <div className="w-80 h-full flex flex-col">
           <div className="flex items-center justify-between p-5 border-b border-white/10">
-             <img src={logo} alt="logo" className="w-10 h-10" />
+             <img src={logo} alt="logo" className="w-10.5 h-10.5" />
             <button
               onClick={() => setSidebarOpen(false)}
               className="text-white/70 hover:text-white text-2xl hover:bg-white/10 p-1 rounded"
