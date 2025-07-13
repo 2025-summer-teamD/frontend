@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import Sidebar from '../components/sideBar';
+import Sidebar from '../components/Sidebar';
 
 const ChatMate = () => {
   const [newMessage, setNewMessage] = useState('');
@@ -47,15 +47,20 @@ const ChatMate = () => {
     <Sidebar>
       <div className="flex flex-col justify-between h-full">
         {/* 채팅 영역 */}
+        {/* 채팅 헤더 */}
+        <div className="px-6 pt-4">
+        <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-full bg-[#a6c0c6]"></div>
+        <span className="text-white text-lg font-bold">이름</span>
+        </div>
+        <hr className="absolute right-0 left -0 mt-4 border-t border-white/20 w-full"/>
+        </div>
+
         <div className="flex flex-col items-center justify-start pt-10 pb-28 relative overflow-y-auto">
           {/* 프로필 섹션 */}
           <div className="text-center mb-12">
             <div className="relative inline-block">
               <div className="w-32 h-32 rounded-full bg-gradient-to-br from-green-300 to-teal-400 mx-auto mb-4"></div>
-              <div className="absolute -top-2 -right-2 bg-white/90 rounded-full px-3 py-1 flex items-center space-x-1">
-                <span className="text-xs text-gray-600">S</span>
-                <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-              </div>
             </div>
             <h3 className="text-2xl font-semibold text-white mb-2">이름</h3>
             <p className="text-white/70">캐릭터 설명</p>
@@ -64,20 +69,23 @@ const ChatMate = () => {
           {/* 메시지 영역 */}
           <div className="w-full max-w-4xl px-6 space-y-4">
             {messages.map((message) => (
-              <div key={message.id} className={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'} items-end space-x-2`}>
-                {message.sender === 'other' && (
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-300 to-teal-400 flex-shrink-0"></div>
-                )}
-                <div className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${
-                  message.sender === 'me'
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-br-sm'
-                    : 'bg-white/10 text-white rounded-bl-sm border border-blue-400'
-                }`}>
-                  <p>{message.text}</p>
+              <div key={message.id} className={`flex flex-col ${message.sender === 'me' ? 'items-end' : 'items-start'} w-full`}>
+                <div className={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'} items-end space-x-2`}>
+                  {message.sender === 'other' && (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-300 to-teal-400 flex-shrink-0"></div>
+                  )}
+                  <div className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${
+                    message.sender === 'me'
+                      ? 'bg-[#413ebc] text-white rounded-br-sm'
+                      : 'bg-white text-black rounded-bl-sm'
+                  }`}>
+                    <p>{message.text}</p>
+                  </div>
+                  {message.sender === 'me' && (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-300 to-teal-400 flex-shrink-0"></div>
+                  )}
                 </div>
-                {message.sender === 'me' && (
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-300 to-teal-400 flex-shrink-0"></div>
-                )}
+                <div className="text-xs mt-1 text-white px-4">{message.time}</div>
               </div>
             ))}
           </div>
@@ -86,7 +94,7 @@ const ChatMate = () => {
         {/* 입력 영역 */}
           <div className="p-5 backdrop-blur-xl border-t border-white/10 sticky bottom-0 w-full">
           <div className="flex items-center space-x-3 max-w-4xl mx-auto">
-            <button className="text-white/70 hover:text-white p-2">📎</button>
+            <button className="text-white/100 hover:text-white p-2">📎</button>
             <div className="flex-1 relative">
               <input
                 type="text"
