@@ -84,7 +84,7 @@ const ChatMate = () => {
         </div>
 
         {/* 입력 영역 */}
-        <div className="p-5 backdrop-blur-xl border-t border-white/10 sticky bottom-0 w-full">
+        <div className="p-5 bg-black/30 backdrop-blur-xl border-t border-white/10 sticky bottom-0 w-full">
           <div className="flex items-center space-x-3 max-w-4xl mx-auto">
             <button className="text-white/70 hover:text-white p-2">📎</button>
             <div className="flex-1 relative">
@@ -94,7 +94,7 @@ const ChatMate = () => {
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="메시지를 입력하세요..."
-                className="w-full bg-white border border-white/20 rounded-full px-4 py-3 text-black placeholder-white/60 focus:outline-none focus:border-blue-400 focus:bg-white/15"
+                className="w-full bg-white/10 border border-white/20 rounded-full px-4 py-3 text-white placeholder-white/60 focus:outline-none focus:border-blue-400 focus:bg-white/15"
               />
             </div>
             <button
