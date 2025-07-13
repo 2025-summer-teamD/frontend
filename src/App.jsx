@@ -15,7 +15,6 @@ function App() {
     <>
     { isHome && <Header />}
     <main>
-=======
 
 function App() {
   return (
