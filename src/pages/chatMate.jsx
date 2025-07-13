@@ -84,7 +84,7 @@ const ChatMate = () => {
         </div>
 
         {/* 입력 영역 */}
-        <div className="p-5 bg-black/30 backdrop-blur-xl border-t border-white/10 sticky bottom-0 w-full">
+          <div className="p-5 backdrop-blur-xl border-t border-white/10 sticky bottom-0 w-full">
           <div className="flex items-center space-x-3 max-w-4xl mx-auto">
             <button className="text-white/70 hover:text-white p-2">📎</button>
             <div className="flex-1 relative">
