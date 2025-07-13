@@ -1,16 +1,12 @@
-<<<<<<< HEAD
-// src/pages/CreateCharacter.jsx
+
 import React, { useState } from 'react'
 import Sidebar from '../components/sideBar'
 import AndrewImg from '/assets/andrew.png'
-import robotVideo from '/assets/robotVideo.mp4'
 
 export default function CreateCharacter() {
   const [activeTab, setActiveTab] = useState('existing')
 
   return (
-    <Sidebar>
-      {/* 페이지 본문: Header 높이 만큼 패딩 */}
       <div className="pt-[60px] px-8 flex-1 flex overflow-auto">
         {/* 왼쪽 컨텐츠 */}
         <div className="flex-1 pr-8 flex flex-col items-center">
@@ -89,6 +85,31 @@ export default function CreateCharacter() {
                   캐릭터 만들기
                 </button>
               </div>
+              <div className="flex gap-4">
+                <button className="flex-1 w-[552px] h-10 bg-[#413ebc] hover:bg-[#413ebc]/90 rounded-lg text-white font-bold">
+                  캐릭터 만들기
+                </button>
+              </div>
+              <div className="flex gap-4">
+                <button className="flex-1 w-[552px] h-10 bg-[#413ebc] hover:bg-[#413ebc]/90 rounded-lg text-white font-bold">
+                  캐릭터 만들기
+                </button>
+              </div>
+              <div className="flex gap-4">
+                <button className="flex-1 w-[552px] h-10 bg-[#413ebc] hover:bg-[#413ebc]/90 rounded-lg text-white font-bold">
+                  캐릭터 만들기
+                </button>
+              </div>
+              <div className="flex gap-4">
+                <button className="flex-1 w-[552px] h-10 bg-[#413ebc] hover:bg-[#413ebc]/90 rounded-lg text-white font-bold">
+                  캐릭터 만들기
+                </button>
+              </div>
+              <div className="flex gap-4">
+                <button className="flex-1 w-[552px] h-10 bg-[#413ebc] hover:bg-[#413ebc]/90 rounded-lg text-white font-bold">
+                  캐릭터 만들기
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -115,17 +136,5 @@ export default function CreateCharacter() {
           </div>
         </div>
       </div>
-    </Sidebar>
   )
 }
-=======
-
-// 캐릭터 생성 페이지
-export default function CreateCharacter() {
-    return (
-      <div className="min-h-screen pt-20 flex items-center justify-center bg-gray-900 text-white">
-        <h1 className="text-3xl font-bold">캐릭터 만들기</h1>
-      </div>
-    )
-  }
->>>>>>> d5356a3aa336112c67fd9fe06fae3e734853fdcd

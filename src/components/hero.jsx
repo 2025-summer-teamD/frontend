@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 // 메인화면 컴포넌트
 export default function Hero() {
     return (
-        <section id="home" className="pt-20">
+        <section id="home" className="">
             <div className="relative w-full">
         <video src={RobotVideo} autoPlay loop muted playsInline className="w-full h-full object-cover"/>
         <div className="absolute inset-x-0 top-[50vh] -translate-y-1/2 flex flex-col justify-center items-center text-white text-center px-8">

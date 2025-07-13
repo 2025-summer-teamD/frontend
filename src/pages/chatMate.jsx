@@ -44,7 +44,6 @@ const ChatMate = () => {
   };
 
   return (
-    <Sidebar>
       <div className="flex flex-col justify-between h-full">
         {/* 채팅 영역 */}
         <div className="flex flex-col items-center justify-start pt-10 pb-28 relative overflow-y-auto">
@@ -106,7 +105,6 @@ const ChatMate = () => {
           </div>
         </div>
       </div>
-    </Sidebar>
   );
 };
 
