@@ -22,16 +22,12 @@ function App() {
     <>
     <Header/>
     <main className="">
->>>>>>> d5356a3aa336112c67fd9fe06fae3e734853fdcd
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/community" element={<Community />} />
         <Route path="/characterList" element={<CharacterList />} />
         <Route path="/createCharacter" element={<CreateCharacter />} />
-<<<<<<< HEAD
         <Route path="/chatMate" element={<ChatMate />} />
-=======
->>>>>>> d5356a3aa336112c67fd9fe06fae3e734853fdcd
       </Routes>
     </main>
     </>
