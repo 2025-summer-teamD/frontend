@@ -14,7 +14,6 @@ function App() {
     <>
     { isHome && <Header />}
     <main>
-
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/community" element={<Community />} />
