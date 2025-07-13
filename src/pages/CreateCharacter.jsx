@@ -1,9 +1,7 @@
-<<<<<<< HEAD
-// src/pages/CreateCharacter.jsx
+
 import React, { useState } from 'react'
 import Sidebar from '../components/sideBar'
 import AndrewImg from '/assets/andrew.png'
-import robotVideo from '/assets/robotVideo.mp4'
 
 export default function CreateCharacter() {
   const [activeTab, setActiveTab] = useState('existing')
@@ -118,14 +116,3 @@ export default function CreateCharacter() {
     </Sidebar>
   )
 }
-=======
-
-// 캐릭터 생성 페이지
-export default function CreateCharacter() {
-    return (
-      <div className="min-h-screen pt-20 flex items-center justify-center bg-gray-900 text-white">
-        <h1 className="text-3xl font-bold">캐릭터 만들기</h1>
-      </div>
-    )
-  }
->>>>>>> d5356a3aa336112c67fd9fe06fae3e734853fdcd
