@@ -1,25 +1,56 @@
 import { Link, NavLink } from 'react-router-dom';
-// 상단 바 컴포넌트
+
 export default function Header() {
   return (
-    <header className="fixed top-0 left-0 w-full h-[80px] bg-[linear-gradient(156deg,_#040438_17.08%,_#3C3C56_73.2%)] shadow-md z-50 flex items-center px-8">  {/* 상단에 고정하고 배경색 #040438,콘텐츠 수평,좌유정렬,좌우패딩 8px */}
-        {/* 왼쪽 로고 & 웹 이름 */}
-        <Link to="/">
-        <div className="flex items-center"> {/* 로고,텍스트 사이에 0.5rem 간격 */}
-        <img src="/assets/logo.png" alt="Logo" className="h-[40px] w-[40px]" /> 
-        <span className="text-white font-bold text-[28px] ml-2">ChatMate</span> {/* 흰색,굵고 xl사이즈 글씨 */}
-      </div>
+    <div className="w-full h-[80px] z-50 bg-[linear-gradient(40deg,_#040438_17.08%,_#3C3C56_73.2%)] shadow-md flex items-center px-5">
+      {/* 왼쪽 로고 */}
+      <Link to="/">
+        <div className="flex items-center">
+          <img src="/assets/logo.png" alt="Logo" className="h-[40px] w-[40px]" />
+          <span className="text-white font-bold text-[28px] ml-3">ChatMate</span>
+        </div>
       </Link>
-      {/* 오른쪽 내비게이션 */}
-      <nav className="ml-auto flex items-center space-x-6 text-[24px]"> {/* 로고와 멀리떨어트려 오른쪽으로 정렬,흰색글씨 */}
-        <NavLink to="/" className={({isActive}) => isActive ? "text-white" : "text-[#9CA3AF]"} >홈</NavLink>
-        <NavLink to="/chatMate" className={({isActive}) => isActive ? "text-white" : "text-[#9CA3AF]"} >채팅</NavLink>
-        <NavLink to="/community" className={({isActive}) => isActive ? "text-white" : "text-[#9CA3AF]"} >커뮤니티</NavLink>
-        <NavLink to="/CreateCharacter" className={({isActive}) => isActive ? "text-white" : "text-[#9CA3AF]"} >만들기</NavLink>
-        <NavLink to="/characterList" className={({isActive}) => isActive ? "text-white" : "text-[#9CA3AF]"} >내 캐릭터</NavLink>
-        <button className="flex items-center space-x-1 text-[#9CA3AF]">
-          <img src="/assets/Avatar.png" alt="User" className="h-[40px] w-[40px] rounded-full" />
+
+      {/* 오른쪽 내비게이션 (Sidebar 스타일과 동일하게 적용) */}
+      <nav className="ml-auto flex items-center space-x-4">
+        <NavLink
+          to="/"
+          className={({ isActive }) =>
+            `text-white/70 hover:text-white px-3 py-2 text-[24px] rounded hover:bg-white/10 ${isActive ? 'font-bold' : ''}`
+          }
+        >
+          홈
+        </NavLink>
+        <NavLink
+          to="/community"
+          className={({ isActive }) =>
+            `text-white/70 hover:text-white px-3 py-2 text-[24px] rounded hover:bg-white/10 ${isActive ? 'font-bold' : ''}`
+          }
+        >
+          커뮤니티
+        </NavLink>
+        <NavLink
+          to="/createCharacter"
+          className={({ isActive }) =>
+            `text-white/70 hover:text-white px-3 py-2 text-[24px] rounded hover:bg-white/10 ${isActive ? 'font-bold' : ''}`
+          }
+        >
+          만들기
+        </NavLink>
+        <NavLink
+          to="/characterList"
+          className={({ isActive }) =>
+            `text-white/70 hover:text-white px-3 py-2 text-[24px] rounded hover:bg-white/10 ${isActive ? 'font-bold' : ''}`
+          }
+        >
+          내 캐릭터
+        </NavLink>
+
+        {/* 기존 아바타 버튼 유지 */}
+        <button className="flex items-center text-[#9CA3AF]">
+        <div className="w-9 h-9 rounded-full bg-white/90"></div>
         </button>
       </nav>
-    </header>)
+    </div>
+  );
 }
