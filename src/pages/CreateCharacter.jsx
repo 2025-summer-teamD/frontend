@@ -7,8 +7,6 @@ export default function CreateCharacter() {
   const [activeTab, setActiveTab] = useState('existing')
 
   return (
-    <Sidebar>
-      {/* 페이지 본문: Header 높이 만큼 패딩 */}
       <div className="pt-[60px] px-8 flex-1 flex overflow-auto">
         {/* 왼쪽 컨텐츠 */}
         <div className="flex-1 pr-8 flex flex-col items-center">
@@ -87,6 +85,31 @@ export default function CreateCharacter() {
                   캐릭터 만들기
                 </button>
               </div>
+              <div className="flex gap-4">
+                <button className="flex-1 w-[552px] h-10 bg-[#413ebc] hover:bg-[#413ebc]/90 rounded-lg text-white font-bold">
+                  캐릭터 만들기
+                </button>
+              </div>
+              <div className="flex gap-4">
+                <button className="flex-1 w-[552px] h-10 bg-[#413ebc] hover:bg-[#413ebc]/90 rounded-lg text-white font-bold">
+                  캐릭터 만들기
+                </button>
+              </div>
+              <div className="flex gap-4">
+                <button className="flex-1 w-[552px] h-10 bg-[#413ebc] hover:bg-[#413ebc]/90 rounded-lg text-white font-bold">
+                  캐릭터 만들기
+                </button>
+              </div>
+              <div className="flex gap-4">
+                <button className="flex-1 w-[552px] h-10 bg-[#413ebc] hover:bg-[#413ebc]/90 rounded-lg text-white font-bold">
+                  캐릭터 만들기
+                </button>
+              </div>
+              <div className="flex gap-4">
+                <button className="flex-1 w-[552px] h-10 bg-[#413ebc] hover:bg-[#413ebc]/90 rounded-lg text-white font-bold">
+                  캐릭터 만들기
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -113,6 +136,5 @@ export default function CreateCharacter() {
           </div>
         </div>
       </div>
-    </Sidebar>
   )
 }
