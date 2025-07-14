@@ -14,6 +14,7 @@ const CharacterProfile = ({ character, onClose }) => {
           </div>
         </div>
 
+
         {/* 통계 */}
         <div className="flex justify-between mb-10">
           <div className="text-center flex-1">
