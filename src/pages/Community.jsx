@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 export default function Community() {
   const [activeTab, setActiveTab] = useState('인기순');
@@ -8,29 +9,30 @@ export default function Community() {
     {
       id: 1,
       name: 'Iron Man',
+      image: '/assets/ironman.png',
       description: '천재 발명가이자 아이언맨 슈트를 착용한 토니 스타크',
       likes: '1.3k',
       chats: '27k',
       isOnline: true,
-      gradient: 'from-red-500 to-yellow-500'
     },
     {
       id: 2,
       name: 'Karina',
+      image: '/assets/karina.png',
       description: '에스파의 멤버이자 리더',
       likes: '4.5k',
       chats: '9.6k',
       isOnline: true,
-      gradient: 'from-pink-500 to-purple-500'
+      
     },
     {
       id: 3,
       name: 'Andrew Park',
       description: '천재 개발자 겸 창업가 온라인 비즈니스 분야 전문가',
+      image: '/assets/andrew.png',
       likes: '999k',
       chats: '5.2k',
       isOnline: true,
-      gradient: 'from-blue-500 to-indigo-500'
     },
     {
       id: 4,
@@ -39,7 +41,7 @@ export default function Community() {
       likes: '1.8k',
       chats: '3.2k',
       isOnline: true,
-      gradient: 'from-cyan-500 to-blue-500'
+      image: '/assets/moana.png',
     },
     {
       id: 5,
@@ -47,8 +49,8 @@ export default function Community() {
       description: '재욱이 복음',
       likes: '2.8k',
       chats: '1.2k',
-      isOnline: false,
-      gradient: 'from-orange-500 to-red-500'
+      isOnline: true,
+      image: '/assets/andrew.png',
     },
     {
       id: 6,
@@ -57,7 +59,7 @@ export default function Community() {
       likes: '1.2k',
       chats: '3.4k',
       isOnline: true,
-      gradient: 'from-gray-500 to-gray-700'
+      image: '/assets/andrew.png',
     },
     {
       id: 7,
@@ -66,7 +68,7 @@ export default function Community() {
       likes: '17k',
       chats: '3.4k',
       isOnline: true,
-      gradient: 'from-yellow-400 to-orange-400'
+      image: '/assets/andrew.png',
     },
     {
       id: 8,
@@ -75,7 +77,7 @@ export default function Community() {
       likes: '1.3k',
       chats: '3.4k',
       isOnline: true,
-      gradient: 'from-green-500 to-teal-500'
+      image: '/assets/andrew.png',
     },
     {
       id: 9,
@@ -84,7 +86,7 @@ export default function Community() {
       likes: '3.7k',
       chats: '3.4k',
       isOnline: true,
-      gradient: 'from-purple-500 to-pink-500'
+      image: '/assets/andrew.png',
     },
     {
       id: 10,
@@ -93,7 +95,7 @@ export default function Community() {
       likes: '5.1k',
       chats: '1.4k',
       isOnline: true,
-      gradient: 'from-pink-400 to-rose-400'
+      image: '/assets/andrew.png',
     }
   ];
 
@@ -105,22 +107,23 @@ export default function Community() {
 
   // 탭에 따른 정렬
   const sortedCharacters = [...filteredCharacters].sort((a, b) => {
-    if (activeTab === '최회수순') {
+    if (activeTab === '조회수순') {
       return parseInt(b.chats.replace('k', '')) - parseInt(a.chats.replace('k', ''));
     } else {
       return parseInt(b.likes.replace('k', '')) - parseInt(a.likes.replace('k', ''));
     }
   });
-
+  // 채팅 시작 여부 묻기
   const handleStartChat = (characterName) => {
-    alert(`${characterName}와의 채팅을 시작합니다!`);
+    alert(`${characterName}와의 채팅을 시작하시겠습니까?`);
   };
 
   const CharacterCard = ({ character }) => (
-    <div className="bg-gray-800 rounded-lg overflow-hidden hover:bg-gray-750 transition-all cursor-pointer transform hover:-translate-y-1 hover:shadow-2xl min-w-[16rem] max-w-full">
+    <div className="bg-gray-800 rounded-4xl overflow-hidden hover:bg-gray-750 transition-all cursor-pointer transform hover:-translate-y-1 hover:shadow-2xl min-w-[16rem] max-w-full">
       <div className="relative">
-        <div className={`aspect-[4/5] bg-gradient-to-br ${character.gradient} flex items-center justify-center`}>
-          <div className="text-white text-6xl font-bold opacity-20">{character.name[0]}</div>
+        <div className={`flex items-center justify-center w-full h-full`}>
+          <img src={character.image} alt={character.name} className="w-full h-full object-cover flex items-center justify-center" />
+          
         </div>
         <div className="absolute top-2 left-2 flex items-center gap-1">
           <svg className="w-3 h-3 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -141,12 +144,15 @@ export default function Community() {
       <div className="p-[1rem]">
         <h3 className="text-white font-medium text-sm mb-1">{character.name}</h3>
         <p className="text-gray-400 text-xs line-clamp-2 mb-3">{character.description}</p>
-        <button 
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm py-2 px-4 rounded-md transition-colors"
+        <div className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm py-2 px-4 rounded-md transition-colors flex items-center justify-center">
+        <Link
+          className=""
           onClick={() => handleStartChat(character.name)}
+          to="/chatMate"
         >
           대화하기
-        </button>
+        </Link>
+        </div>
       </div>
     </div>
   );
@@ -154,14 +160,14 @@ export default function Community() {
   return (
       <div className="flex flex-col h-screen">
         {/* 상단 툴바 제거, 내용만 남김 */}
-        <div className="relative flex items-center justify-between gap-[1.5rem] mt-[1.5rem] mb-[2rem] px-[1.5rem] max-w-[80rem] mx-auto w-full">
+        <div className="relative flex items-center justify-between gap-[1.5rem] mt-[1.5rem] mb-[2rem] px-[1.5rem] max-w-[100rem] mx-auto w-full">
           {/* 왼쪽: 탭 */}
-          <div className="flex gap-[0.5rem] min-w-[16rem] flex-shrink-0 flex-grow">
+          <div className="flex gap-[0.5rem] min-w-[16rem] flex-shrink-0 flex-grow ">
             <button 
               className={`px-[1.5rem] py-[0.5rem] text-sm rounded-l-lg transition-colors ${
                 activeTab === '인기순' 
-                  ? 'bg-gray-200 text-black' 
-                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                  ? 'bg-[#413ebc] text-white font-bold' 
+                  : 'bg-gray-100 text-black font-bold hover:bg-gray-200'
               }`}
               onClick={() => setActiveTab('인기순')}
             >
@@ -169,13 +175,13 @@ export default function Community() {
             </button>
             <button 
               className={`px-[1.5rem] py-[0.5rem] text-sm rounded-r-lg transition-colors ${
-                activeTab === '최회수순' 
-                  ? 'bg-gray-200 text-black' 
-                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                activeTab === '조회수순' 
+                  ? 'bg-[#413ebc] text-white font-bold' 
+                  : 'bg-gray-100 text-black font-bold hover:bg-gray-200'
               }`}
-              onClick={() => setActiveTab('최회수순')}
+              onClick={() => setActiveTab('조회수순')}
             >
-              최회수순
+              조회수순
             </button>
           </div>
           {/* 가운데: 타이틀 */}
@@ -204,12 +210,12 @@ export default function Community() {
         </div>
 
         {/* 캐릭터 그리드 */}
-        <div className="flex-1 p-[1.5rem] overflow-y-auto">
+        
           <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(16rem,1fr))]">
             {sortedCharacters.map((character) => (
               <CharacterCard key={character.id} character={character} />
             ))}
-          </div>
+          
           
           {/* 검색 결과 없음 메시지 */}
           {sortedCharacters.length === 0 && (
