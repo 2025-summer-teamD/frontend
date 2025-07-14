@@ -1,6 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
+/**
+ * Renders the character community interface with tab-based sorting and search filtering.
+ *
+ * Displays a list of character cards that can be sorted by popularity or chat count and filtered by a search query. Each card shows character details, online status, and provides a link to start a chat. If no characters match the search, a message is shown.
+ * 
+ * @returns {JSX.Element} The rendered community component.
+ */
 export default function Community() {
   const [activeTab, setActiveTab] = useState('인기순');
   const [searchQuery, setSearchQuery] = useState('');

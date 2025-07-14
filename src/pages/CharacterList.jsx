@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
+/**
+ * Renders a scrollable list of character cards, each displaying an avatar placeholder, name, introduction, and a visual intimacy progress bar.
+ *
+ * The component includes a header with a title and a button for creating a new character. Character data is statically defined within the component.
+ * No navigation or interactivity beyond visual hover effects is implemented.
+ * @returns {JSX.Element} The rendered character list UI.
+ */
 export default function CharacterList() {
 
   

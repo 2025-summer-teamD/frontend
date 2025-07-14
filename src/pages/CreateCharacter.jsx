@@ -1,8 +1,12 @@
-
 import React, { useState } from 'react'
 import Sidebar from '../components/sideBar'
 import AndrewImg from '/assets/andrew.png'
 
+/**
+ * Renders the UI for creating or importing an AI character profile, including tab navigation, input forms, and a live preview card.
+ *
+ * Users can choose to create a custom AI character by specifying personality traits and background, or import an existing character using RAG technology. The component provides a two-column layout with form inputs on the left and a preview card on the right.
+ */
 export default function CreateCharacter() {
   const [activeTab, setActiveTab] = useState('existing')
 
