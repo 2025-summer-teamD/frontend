@@ -31,12 +31,15 @@ const Sidebar = ({ children }) => {
 
           <div className="p-4 border-b border-white/10">
             <div className="relative">
+              <svg className="text-gray-400 w-5 h-5 absolute left-3 top-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+              </svg>
               <input
                 type="text"
                 placeholder="채팅 기록 검색..."
                 className="w-full bg-white/10 border-none rounded-full px-10 py-2.5 text-white placeholder-white/60 focus:outline-none focus:bg-white/15"
               />
-              <div className="absolute left-3 top-3 text-white/60">🔍</div>
             </div>
           </div>
 
