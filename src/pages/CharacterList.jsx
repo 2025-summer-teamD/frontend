@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const CharacterProfile = ({ character, onClose }) => {
   return (
@@ -18,15 +19,15 @@ const CharacterProfile = ({ character, onClose }) => {
         {/* 통계 */}
         <div className="flex justify-between mb-10">
           <div className="text-center flex-1">
-            <div className="text-3xl font-bold text-white mb-1">5</div>
+            <div className="text-3xl font-bold text-white mb-1">0</div>
             <div className="text-gray-400 text-sm">대화</div>
           </div>
           <div className="text-center flex-1">
-            <div className="text-3xl font-bold text-white mb-1">7</div>
+            <div className="text-3xl font-bold text-white mb-1">0</div>
             <div className="text-gray-400 text-sm">공유</div>
           </div>
           <div className="text-center flex-1">
-            <div className="text-3xl font-bold text-white mb-1">10</div>
+            <div className="text-3xl font-bold text-white mb-1">0</div>
             <div className="text-gray-400 text-sm">좋아요</div>
           </div>
         </div>
@@ -101,10 +102,13 @@ export default function CharacterList() {
         {/* Page Header */}
         <div className="flex justify-between items-center mb-12">
           <h2 className="text-3xl font-semibold text-white">내 캐릭터</h2>
-          <button className="bg-[#413ebc] text-white font-bold hover:from-indigo-600 hover:to-purple-700 px-6 py-3 rounded-lg transition-all transform hover:-translate-y-1 flex items-center gap-2">
+          <Link 
+            to="/createCharacter"
+            className="bg-[#413ebc] text-white font-bold hover:from-indigo-600 hover:to-purple-700 px-6 py-3 rounded-lg transition-all transform hover:-translate-y-1 flex items-center gap-2"
+          >
             <span className="text-xl">+</span>
             새 캐릭터 만들기
-          </button>
+          </Link>
         </div>
 
         {/* Character Cards */}
