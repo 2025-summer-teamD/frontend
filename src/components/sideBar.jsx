@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
 import logo from '/assets/logo.png'
-  
+import AnimatedAuthHeader from './AnimatedAuthHeader';
+
 const Sidebar = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { pathname } = useLocation();
@@ -85,7 +87,7 @@ const Sidebar = ({ children }) => {
             <Link to="/community" className={`text-white/70 hover:text-white px-3 py-2 text-[24px] rounded hover:bg-white/10 ${pathname === '/community' ? 'font-bold' : ''}`}>커뮤니티</Link>
             <Link to="/createCharacter" className={`text-white/70 hover:text-white px-3 py-2 text-[24px] rounded hover:bg-white/10 ${pathname === '/createCharacter' ? 'font-bold' : ''}`}>만들기</Link>
             <Link to="/characterList" className={`text-white/70 hover:text-white px-3 py-2 text-[24px] rounded hover:bg-white/10 ${pathname === '/characterList' ? 'font-bold' : ''}`}>내 캐릭터</Link>
-            <div className="w-9 h-9 rounded-full bg-white/90"></div>
+            <AnimatedAuthHeader />
           </nav>
         </div>
 
