@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const CharacterProfile = ({ character, onClose }) => {
   return (
@@ -101,10 +102,10 @@ export default function CharacterList() {
         {/* Page Header */}
         <div className="flex justify-between items-center mb-12">
           <h2 className="text-3xl font-semibold text-white">내 캐릭터</h2>
-          <button className="bg-[#413ebc] text-white font-bold hover:from-indigo-600 hover:to-purple-700 px-6 py-3 rounded-lg transition-all transform hover:-translate-y-1 flex items-center gap-2">
+          <Link to="/createCharacter" className="bg-gradient-to-r from-[#413ebc] to-[#413ebc] text-white font-bold hover:from-indigo-600 hover:to-purple-700 px-6 py-3 rounded-lg transition-all transform hover:-translate-y-1 flex items-center gap-2">
             <span className="text-xl">+</span>
             새 캐릭터 만들기
-          </button>
+          </Link>
         </div>
 
         {/* Character Cards */}
