@@ -85,31 +85,7 @@ export default function CreateCharacter() {
                   캐릭터 만들기
                 </button>
               </div>
-              <div className="flex gap-4">
-                <button className="flex-1 w-[552px] h-10 bg-[#413ebc] hover:bg-[#413ebc]/90 rounded-lg text-white font-bold">
-                  캐릭터 만들기
-                </button>
-              </div>
-              <div className="flex gap-4">
-                <button className="flex-1 w-[552px] h-10 bg-[#413ebc] hover:bg-[#413ebc]/90 rounded-lg text-white font-bold">
-                  캐릭터 만들기
-                </button>
-              </div>
-              <div className="flex gap-4">
-                <button className="flex-1 w-[552px] h-10 bg-[#413ebc] hover:bg-[#413ebc]/90 rounded-lg text-white font-bold">
-                  캐릭터 만들기
-                </button>
-              </div>
-              <div className="flex gap-4">
-                <button className="flex-1 w-[552px] h-10 bg-[#413ebc] hover:bg-[#413ebc]/90 rounded-lg text-white font-bold">
-                  캐릭터 만들기
-                </button>
-              </div>
-              <div className="flex gap-4">
-                <button className="flex-1 w-[552px] h-10 bg-[#413ebc] hover:bg-[#413ebc]/90 rounded-lg text-white font-bold">
-                  캐릭터 만들기
-                </button>
-              </div>
+              
             </div>
           )}
         </div>
