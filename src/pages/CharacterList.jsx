@@ -113,6 +113,16 @@ export default function CharacterList() {
             <div
               key={character.id}
               onClick={() => handleCharacterClick(character)}
+              /* 키보드 접근성 추가 */
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault(); // space 키는 기본 스크롤 방지
+                  handleCharacterClick(character);
+                }
+              }}
+              role="button"
+              tabIndex={0}
+
               className="flex items-center gap-6 p-8 rounded-2xl backdrop-blur-md transition-all duration-300 cursor-pointer bg-[#1E1E1E] bg-opacity-10 border border-white border-opacity-20 hover:bg-indigo-500 hover:bg-opacity-20 hover:border-indigo-400 hover:-translate-y-2"
             >
               {/* Avatar */}
