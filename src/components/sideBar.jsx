@@ -19,7 +19,7 @@ const Sidebar = ({ children }) => {
         className={`fixed inset-y-0 left-0 bg-black/40 backdrop-blur-xl border-r border-white/10 transition-all duration-300 overflow-hidden z-30 ${sidebarOpen ? 'w-80' : 'w-0'}`}
       >
         <div className="w-80 h-full flex flex-col">
-          <div className="flex items-center justify-between p-5 border-b border-white/10">
+          <div className="flex items-center justify-between p-4.5  border-b border-white/50">
              <img src={logo} alt="logo" className="w-10.5 h-10.5" />
             <button
               onClick={() => setSidebarOpen(false)}
