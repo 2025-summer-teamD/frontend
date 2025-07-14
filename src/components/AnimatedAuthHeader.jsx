@@ -2,29 +2,23 @@ import React from 'react';
 import { User } from 'lucide-react';
 import { SignedOut, SignedIn, SignInButton, UserButton } from '@clerk/clerk-react';
 
-const SimpleAuthHeader = () => {
+
+const AnimatedAuthHeader = () => {
   return (
-    <header style={{ padding: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+  <div className="flex items-center">
       <SignedOut>
         <SignInButton mode="modal">
-          <div style={{
-            cursor: 'pointer',
-            padding: '8px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
+        <button className="flex items-center justify-center w-9 h-9 rounded-full hover:bg-white/10 transition-colors cursor-pointer">
             <User size={24} color="#ffffff" />
-          </div>
+        </button>
         </SignInButton>
       </SignedOut>
 
       <SignedIn>
         <UserButton />
       </SignedIn>
-    </header>
+  </div>
   );
 };
 
-export default SimpleAuthHeader;
+export default AnimatedAuthHeader;
