@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 const CharacterProfile = ({ character, onClose }) => {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-5">
+    <div className="fixed inset-0 flex justify-center items-center z-50 p-5">
       <div className="bg-gray-800 rounded-3xl p-8 w-80 shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* 프로필 헤더 */}
         <div className="flex items-center mb-8">
