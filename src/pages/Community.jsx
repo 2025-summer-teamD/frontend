@@ -1,7 +1,228 @@
+import { useState } from 'react';
+
 export default function Community() {
-  return (
-    <div className="text-white text-2xl">
-      캐릭터 커뮤니티
+  const [activeTab, setActiveTab] = useState('인기순');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const characters = [
+    {
+      id: 1,
+      name: 'Iron Man',
+      description: '천재 발명가이자 아이언맨 슈트를 착용한 토니 스타크',
+      likes: '1.3k',
+      chats: '27k',
+      isOnline: true,
+      gradient: 'from-red-500 to-yellow-500'
+    },
+    {
+      id: 2,
+      name: 'Karina',
+      description: '에스파의 멤버이자 리더',
+      likes: '4.5k',
+      chats: '9.6k',
+      isOnline: true,
+      gradient: 'from-pink-500 to-purple-500'
+    },
+    {
+      id: 3,
+      name: 'Andrew Park',
+      description: '천재 개발자 겸 창업가 온라인 비즈니스 분야 전문가',
+      likes: '999k',
+      chats: '5.2k',
+      isOnline: true,
+      gradient: 'from-blue-500 to-indigo-500'
+    },
+    {
+      id: 4,
+      name: 'Moana',
+      description: '바다의 부름을 받은 모아나 와이알리키',
+      likes: '1.8k',
+      chats: '3.2k',
+      isOnline: true,
+      gradient: 'from-cyan-500 to-blue-500'
+    },
+    {
+      id: 5,
+      name: 'Jaeyook bokum',
+      description: '재욱이 복음',
+      likes: '2.8k',
+      chats: '1.2k',
+      isOnline: false,
+      gradient: 'from-orange-500 to-red-500'
+    },
+    {
+      id: 6,
+      name: 'Elon Musk',
+      description: '혁신 컴퓨터리',
+      likes: '1.2k',
+      chats: '3.4k',
+      isOnline: true,
+      gradient: 'from-gray-500 to-gray-700'
+    },
+    {
+      id: 7,
+      name: 'Baby',
+      description: '아기의 솔직미',
+      likes: '17k',
+      chats: '3.4k',
+      isOnline: true,
+      gradient: 'from-yellow-400 to-orange-400'
+    },
+    {
+      id: 8,
+      name: 'Session',
+      description: '쪼꼬미 맞춤 정리',
+      likes: '1.3k',
+      chats: '3.4k',
+      isOnline: true,
+      gradient: 'from-green-500 to-teal-500'
+    },
+    {
+      id: 9,
+      name: 'Woo Dohwan',
+      description: '배우정직',
+      likes: '3.7k',
+      chats: '3.4k',
+      isOnline: true,
+      gradient: 'from-purple-500 to-pink-500'
+    },
+    {
+      id: 10,
+      name: 'Sana',
+      description: '트와이스 멤버',
+      likes: '5.1k',
+      chats: '1.4k',
+      isOnline: true,
+      gradient: 'from-pink-400 to-rose-400'
+    }
+  ];
+
+  // 검색 필터링
+  const filteredCharacters = characters.filter(char => 
+    char.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    char.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // 탭에 따른 정렬
+  const sortedCharacters = [...filteredCharacters].sort((a, b) => {
+    if (activeTab === '최회수순') {
+      return parseInt(b.chats.replace('k', '')) - parseInt(a.chats.replace('k', ''));
+    } else {
+      return parseInt(b.likes.replace('k', '')) - parseInt(a.likes.replace('k', ''));
+    }
+  });
+
+  const handleStartChat = (characterName) => {
+    alert(`${characterName}와의 채팅을 시작합니다!`);
+  };
+
+  const CharacterCard = ({ character }) => (
+    <div className="bg-gray-800 rounded-lg overflow-hidden hover:bg-gray-750 transition-all cursor-pointer transform hover:-translate-y-1 hover:shadow-2xl min-w-[16rem] max-w-full">
+      <div className="relative">
+        <div className={`aspect-[4/5] bg-gradient-to-br ${character.gradient} flex items-center justify-center`}>
+          <div className="text-white text-6xl font-bold opacity-20">{character.name[0]}</div>
+        </div>
+        <div className="absolute top-2 left-2 flex items-center gap-1">
+          <svg className="w-3 h-3 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+          <span className="text-xs text-gray-300">{character.chats}</span>
+        </div>
+        <div className="absolute top-2 right-2 flex items-center gap-1">
+          <svg className="w-3 h-3 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+          <span className="text-xs text-gray-300">{character.likes}</span>
+        </div>
+        {character.isOnline && (
+          <div className="absolute bottom-2 left-2 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+        )}
+      </div>
+      <div className="p-[1rem]">
+        <h3 className="text-white font-medium text-sm mb-1">{character.name}</h3>
+        <p className="text-gray-400 text-xs line-clamp-2 mb-3">{character.description}</p>
+        <button 
+          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm py-2 px-4 rounded-md transition-colors"
+          onClick={() => handleStartChat(character.name)}
+        >
+          대화하기
+        </button>
+      </div>
     </div>
+  );
+
+  return (
+      <div className="flex flex-col h-screen">
+        {/* 상단 툴바 제거, 내용만 남김 */}
+        <div className="relative flex items-center justify-between gap-[1.5rem] mt-[1.5rem] mb-[2rem] px-[1.5rem] max-w-[80rem] mx-auto w-full">
+          {/* 왼쪽: 탭 */}
+          <div className="flex gap-[0.5rem] min-w-[16rem] flex-shrink-0 flex-grow">
+            <button 
+              className={`px-[1.5rem] py-[0.5rem] text-sm rounded-l-lg transition-colors ${
+                activeTab === '인기순' 
+                  ? 'bg-gray-200 text-black' 
+                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              }`}
+              onClick={() => setActiveTab('인기순')}
+            >
+              인기순
+            </button>
+            <button 
+              className={`px-[1.5rem] py-[0.5rem] text-sm rounded-r-lg transition-colors ${
+                activeTab === '최회수순' 
+                  ? 'bg-gray-200 text-black' 
+                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              }`}
+              onClick={() => setActiveTab('최회수순')}
+            >
+              최회수순
+            </button>
+          </div>
+          {/* 가운데: 타이틀 */}
+          <h1
+            className="absolute left-1/2 -translate-x-1/2 text-white font-bold text-[1.625rem] leading-normal font-['Inter']"
+            style={{ width: '13.375rem', height: '2.9375rem', flexShrink: 0 }}
+          >
+            캐릭터 커뮤니티
+          </h1>
+          {/* 오른쪽: 검색 */}
+          <div className="flex items-center justify-end min-w-[20rem] flex-shrink-0 flex-grow gap-0">
+            <span className="flex items-center h-[2.5rem] bg-gray-100 rounded-l-lg px-[0.75rem] border-r border-gray-200">
+              <svg className="text-gray-400 w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+              </svg>
+            </span>
+            <input
+              type="text"
+              placeholder="캐릭터 검색..."
+              className="bg-gray-100 text-black placeholder-gray-400 pr-[1rem] h-[2.5rem] rounded-r-lg text-[1rem] focus:outline-none focus:ring-2 focus:ring-indigo-500 w-[16rem] border-l-0"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* 캐릭터 그리드 */}
+        <div className="flex-1 p-[1.5rem] overflow-y-auto">
+          <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(16rem,1fr))]">
+            {sortedCharacters.map((character) => (
+              <CharacterCard key={character.id} character={character} />
+            ))}
+          </div>
+          
+          {/* 검색 결과 없음 메시지 */}
+          {sortedCharacters.length === 0 && (
+            <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+              <svg className="w-16 h-16 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+              </svg>
+              <p className="text-lg">검색 결과가 없습니다</p>
+              <p className="text-sm">다른 검색어로 시도해보세요</p>
+            </div>
+          )}
+        </div>
+      </div>
   );
 }
