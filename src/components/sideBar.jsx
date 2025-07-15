@@ -84,7 +84,7 @@ const Sidebar = ({ children }) => {
           </div>
           <nav className="flex items-center space-x-4">
             <Link to="/" className={`text-white/70 hover:text-white px-3 py-2 text-[24px] rounded hover:bg-white/10 ${pathname === '/' ? 'font-bold' : ''}`}>홈</Link>
-            <Link to="/community" className={`text-white/70 hover:text-white px-3 py-2 text-[24px] rounded hover:bg-white/10 ${pathname === '/community' ? 'font-bold' : ''}`}>커뮤니티</Link>
+            <Link to="/communities" className={`text-white/70 hover:text-white px-3 py-2 text-[24px] rounded hover:bg-white/10 ${pathname === '/communities' ? 'font-bold' : ''}`}>커뮤니티</Link>
             <Link to="/createCharacter" className={`text-white/70 hover:text-white px-3 py-2 text-[24px] rounded hover:bg-white/10 ${pathname === '/createCharacter' ? 'font-bold' : ''}`}>만들기</Link>
             <Link to="/characterList" className={`text-white/70 hover:text-white px-3 py-2 text-[24px] rounded hover:bg-white/10 ${pathname === '/characterList' ? 'font-bold' : ''}`}>내 캐릭터</Link>
             <AnimatedAuthHeader />
