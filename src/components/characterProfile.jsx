@@ -1,15 +1,27 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link,useNavigate } from 'react-router-dom';
 
 const CharacterProfile = ({ character, onClose, origin }) => {
   const isMyCharacter = origin === 'my';
+  const navigate = useNavigate();
+
+  const handleStartChat = () => {
+    // 대화창으로 이동 (라우트는 프로젝트에 맞게 수정)
+    navigate(`/chatMate`, {
+      state: {
+        characterName: character.name,
+        characterIntro: character.intro
+      }
+    });
+  };
+  
 
   return (
     <div className="fixed inset-0 flex justify-center items-center z-50 p-5">
       <div className="bg-gray-800 rounded-3xl p-8 w-160 shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* 프로필 헤더 */}
         <div className="flex items-center mb-8">
-        <div className="w-20 h-20 bg-gray-300 rounded-full border-4 border-blue-500  mr-5 overflow-hidden">
+        <div className="w-20 h-20 bg-gray-300 rounded-full border-4 border-white  mr-5 overflow-hidden">
             {character.image && (
               <img src={character.image} alt={character.name} className="w-full h-full object-cover" />
             )}
@@ -72,11 +84,7 @@ const CharacterProfile = ({ character, onClose, origin }) => {
             <div className="flex justify-between mb-10">
           <div className="text-center flex-1">
             <div className="text-3xl font-bold text-white mb-1">{character.chats || 0}</div>
-            <div className="text-gray-400 text-sm">대화</div>
-          </div>
-          <div className="text-center flex-1">
-            <div className="text-3xl font-bold text-white mb-1">{character.shares || 0}</div>
-            <div className="text-gray-400 text-sm">공유</div>
+            <div className="text-gray-400 text-sm">조회수</div>
           </div>
           <div className="text-center flex-1">
             <div className="text-3xl font-bold text-white mb-1">{character.likes || 0}</div>
@@ -109,22 +117,36 @@ const CharacterProfile = ({ character, onClose, origin }) => {
             </div>
           </>
         )}
-        <div className="flex gap-x-2">
-        <Link to="/chatMate" onClick={() => handleStartChat(character.name)} className="flex-1 flex justify-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-4 rounded-2xl transition-colors duration-200 text-lg">
-            <button
-            className=""
+        <div className="space-y-3">
+          {/* 대화하기 버튼 */}
+          <button
+            onClick={handleStartChat}
+            className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-                대화하기
-            </button>
-            </Link>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
+            </svg>
+            대화하기
+          </button>
 
-            <button
-             onClick={onClose}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-4 rounded-2xl transition-colors duration-200 text-lg"
-                >
-                닫기
-            </button>
-            </div>
+          {/* 닫기 버튼 */}
+          <button
+            onClick={onClose}
+            className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-6 rounded-2xl transition-colors duration-200"
+          >
+            닫기
+          </button>
+        </div>
       </div>
     </div>
   );
