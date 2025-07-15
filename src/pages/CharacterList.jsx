@@ -22,7 +22,9 @@ export default function CharacterList() {
   };
 
   const handleEditCharacter = (character) => {
+    // 편집 모달 열기 또는 편집 페이지로 이동
     console.log('Edit character:', character);
+    // 여기에 편집 로직 추가
   };
 
   const handleDeleteCharacter = (character) => {
