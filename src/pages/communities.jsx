@@ -140,16 +140,14 @@ import CharacterProfile from '../components/characterProfile';
 
   const CharacterCard = ({ character }) => (
     <div
-      className="bg-gray-800 rounded-4xl overflow-hidden hover:bg-gray-750 transition-all cursor-pointer transform hover:-translate-y-1 hover:shadow-2xl min-w-[16rem] max-w-full"
+      className="bg-gray-800 rounded-4xl overflow-hidden hover:bg-gray-750 transition-all cursor-pointer transform hover:-translate-y-1 hover:shadow-2xl min-w-[14rem] max-w-full"
       onClick={() => setSelectedCharacter(character)}
     >
       <div className="relative">
         <div className={`flex items-center justify-center w-full h-full`}>
           <img src={character.image} alt={character.name} className="w-full h-full object-cover flex items-center justify-center" />
         </div>
-        {character.isOnline && (
-          <div className="absolute top-4 left-4 w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-        )}  
+        
       </div>
       <div className="p-[1rem]">
   {/* 1. 이름 + 채팅 수 */}
