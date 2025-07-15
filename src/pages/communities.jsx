@@ -142,6 +142,13 @@ import CharacterProfile from '../components/characterProfile';
     <div
       className="bg-gray-800 rounded-4xl overflow-hidden hover:bg-gray-750 transition-all cursor-pointer transform hover:-translate-y-1 hover:shadow-2xl min-w-[14rem] max-w-full"
       onClick={() => setSelectedCharacter(character)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.stopPropagation(); // 클릭과 동일한 동작
+        }
+      }}
+      tabIndex={0} // 포커스 가능하게 만들어줌
+      role="group" // optional: 접근성 역할 지정 (또는 'button'으로 변경 가능)
     >
       <div className="relative">
         <div className={`flex items-center justify-center w-full h-full`}>
