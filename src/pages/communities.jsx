@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import CharacterProfile from '../components/characterProfile';
 
-export default function Community() {
+  export default function Communities() {
   const [activeTab, setActiveTab] = useState('인기순');
   const [searchQuery, setSearchQuery] = useState('');
-
+  const [selectedCharacter, setSelectedCharacter] = useState(null);
   const characters = [
     {
       id: 1,
@@ -14,6 +15,8 @@ export default function Community() {
       likes: '1.3k',
       chats: '27k',
       isOnline: true,
+      shares: '10',
+      creater: 'Toni Stark',
     },
     {
       id: 2,
@@ -23,7 +26,8 @@ export default function Community() {
       likes: '4.5k',
       chats: '9.6k',
       isOnline: true,
-      
+      shares: '10',
+      creater: 'Toni Stark',
     },
     {
       id: 3,
@@ -33,6 +37,8 @@ export default function Community() {
       likes: '999k',
       chats: '5.2k',
       isOnline: true,
+      shares: '10',
+      creater: 'Toni Stark',
     },
     {
       id: 4,
@@ -42,6 +48,8 @@ export default function Community() {
       chats: '3.2k',
       isOnline: true,
       image: '/assets/moana.png',
+      shares: '10',
+      creater: 'Toni Stark',
     },
     {
       id: 5,
@@ -51,6 +59,8 @@ export default function Community() {
       chats: '1.2k',
       isOnline: true,
       image: '/assets/andrew.png',
+      shares: '10',
+      creater: 'Toni Stark',
     },
     {
       id: 6,
@@ -60,6 +70,8 @@ export default function Community() {
       chats: '3.4k',
       isOnline: true,
       image: '/assets/andrew.png',
+      shares: '10',
+      creater: 'Toni Stark',
     },
     {
       id: 7,
@@ -69,6 +81,8 @@ export default function Community() {
       chats: '3.4k',
       isOnline: true,
       image: '/assets/andrew.png',
+      shares: '10',
+      creater: 'Toni Stark',
     },
     {
       id: 8,
@@ -78,6 +92,8 @@ export default function Community() {
       chats: '3.4k',
       isOnline: true,
       image: '/assets/andrew.png',
+      shares: '10',
+      creater: 'Toni Stark',
     },
     {
       id: 9,
@@ -87,6 +103,8 @@ export default function Community() {
       chats: '3.4k',
       isOnline: true,
       image: '/assets/andrew.png',
+      shares: '10',
+      creater: 'Toni Stark',
     },
     {
       id: 10,
@@ -96,6 +114,8 @@ export default function Community() {
       chats: '1.4k',
       isOnline: true,
       image: '/assets/andrew.png',
+      shares: '10',
+      creater: 'Toni Stark',
     }
   ];
 
@@ -119,41 +139,62 @@ export default function Community() {
   };
 
   const CharacterCard = ({ character }) => (
-    <div className="bg-gray-800 rounded-4xl overflow-hidden hover:bg-gray-750 transition-all cursor-pointer transform hover:-translate-y-1 hover:shadow-2xl min-w-[16rem] max-w-full">
+    <div
+      className="bg-gray-800 rounded-4xl overflow-hidden hover:bg-gray-750 transition-all cursor-pointer transform hover:-translate-y-1 hover:shadow-2xl min-w-[14rem] max-w-full"
+      onClick={() => setSelectedCharacter(character)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.stopPropagation(); // 클릭과 동일한 동작
+        }
+      }}
+      tabIndex={0} // 포커스 가능하게 만들어줌
+      role="group" // optional: 접근성 역할 지정 (또는 'button'으로 변경 가능)
+    >
       <div className="relative">
         <div className={`flex items-center justify-center w-full h-full`}>
           <img src={character.image} alt={character.name} className="w-full h-full object-cover flex items-center justify-center" />
-          
         </div>
-        <div className="absolute top-2 left-2 flex items-center gap-1">
-          <svg className="w-3 h-3 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-          </svg>
-          <span className="text-xs text-gray-300">{character.chats}</span>
-        </div>
-        <div className="absolute top-2 right-2 flex items-center gap-1">
-          <svg className="w-3 h-3 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-          </svg>
-          <span className="text-xs text-gray-300">{character.likes}</span>
-        </div>
-        {character.isOnline && (
-          <div className="absolute bottom-2 left-2 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-        )}
+        
       </div>
       <div className="p-[1rem]">
-        <h3 className="text-white font-medium text-sm mb-1">{character.name}</h3>
-        <p className="text-gray-400 text-xs line-clamp-2 mb-3">{character.description}</p>
-        <div className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm py-2 px-4 rounded-md transition-colors flex items-center justify-center">
-        <Link
-          className=""
-          onClick={() => handleStartChat(character.name)}
-          to="/chatMate"
-        >
-          대화하기
-        </Link>
-        </div>
-      </div>
+  {/* 1. 이름 + 채팅 수 */}
+  <div className="flex items-center justify-between mb-1">
+    <h3 className="text-white font-bold text-medium">
+      {character.name}
+    </h3>
+    <div className="flex items-center text-gray-300">
+      <svg
+        className="w-3 h-3"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+      <span className="text-xs font-bold ml-1">{character.chats}</span>
+    </div>
+  </div>
+
+  {/* 2. 설명 + 좋아요 수 */}
+  <div className="flex justify-between items-start mb-3">
+    <p className="text-gray-400 text-xs line-clamp-2 flex-1 mr-2">
+      {character.description}
+    </p>
+    <div className="flex items-center text-gray-300">
+      <svg
+        className="w-3 h-3 text-red-400"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+      </svg>
+      <span className="text-xs font-bold ml-1">{character.likes}</span>
+    </div>
+  </div>
+</div>
     </div>
   );
 
@@ -164,7 +205,7 @@ export default function Community() {
           {/* 왼쪽: 탭 */}
           <div className="flex gap-[0.5rem] min-w-[16rem] flex-shrink-0 flex-grow ">
             <button 
-              className={`px-[1.5rem] py-[0.5rem] text-sm rounded-l-lg transition-colors ${
+              className={`px-[2rem] py-[0.5rem] text-sm rounded-l-lg transition-colors ${
                 activeTab === '인기순' 
                   ? 'bg-[#413ebc] text-white font-bold' 
                   : 'bg-gray-100 text-black font-bold hover:bg-gray-200'
@@ -174,7 +215,7 @@ export default function Community() {
               인기순
             </button>
             <button 
-              className={`px-[1.5rem] py-[0.5rem] text-sm rounded-r-lg transition-colors ${
+              className={`px-[1.6rem] py-[0.5rem] text-sm rounded-r-lg transition-colors ${
                 activeTab === '조회수순' 
                   ? 'bg-[#413ebc] text-white font-bold' 
                   : 'bg-gray-100 text-black font-bold hover:bg-gray-200'
@@ -211,24 +252,31 @@ export default function Community() {
 
         {/* 캐릭터 그리드 */}
         
-          <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(16rem,1fr))]">
-            {sortedCharacters.map((character) => (
-              <CharacterCard key={character.id} character={character} />
-            ))}
-          
-          
-          {/* 검색 결과 없음 메시지 */}
-          {sortedCharacters.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+        <div className="w-full">
+          {sortedCharacters.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-[60vh] text-gray-400">
               <svg className="w-16 h-16 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8"></circle>
-                <path d="m21 21-4.35-4.35"></path>
-              </svg>
-              <p className="text-lg">검색 결과가 없습니다</p>
-              <p className="text-sm">다른 검색어로 시도해보세요</p>
-            </div>
-          )}
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.35-4.35"></path>
+            </svg>
+          <p className="text-lg">검색 결과가 없습니다</p>
+          <p className="text-sm">다른 검색어로 시도해보세요</p>
         </div>
-      </div>
+      ) : (
+        <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(16rem,1fr))]">
+          {sortedCharacters.map((character) => (
+            <CharacterCard key={character.id} character={character} />
+          ))}
+        </div>
+       )}
+    </div>
+    {selectedCharacter && (
+        <CharacterProfile
+          character={selectedCharacter}
+          onClose={() => setSelectedCharacter(null)}
+          origin="communities"
+        />
+      )}
+</div>
   );
 }

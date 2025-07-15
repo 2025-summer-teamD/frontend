@@ -24,7 +24,7 @@ export default function Header() {
           홈
         </NavLink>
         <NavLink
-          to="/community"
+          to="/communities"
           className={({ isActive }) =>
             `text-white/70 hover:text-white px-3 py-2 text-[24px] rounded hover:bg-white/10 ${isActive ? 'font-bold' : ''}`
           }
