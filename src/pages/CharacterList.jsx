@@ -82,15 +82,23 @@ export default function CharacterList() {
                       className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full transition-all duration-500"
                       style={{ width: `${character.intimacy}%` }}
                     ></div>
+                    <span>친밀도</span>
                   </div>
                 </div>
               </div>
 
               {/* Edit/Delete 버튼 (hover 시만 표시됨) */}
               <div
-                className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                onClick={(e) => e.stopPropagation()}
-              >
+  className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+  onClick={(e) => e.stopPropagation()}
+  onKeyDown={(e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.stopPropagation(); // 클릭과 동일한 동작
+    }
+  }}
+  tabIndex={0} // 포커스 가능하게 만들어줌
+  role="group" // optional: 접근성 역할 지정 (또는 'button'으로 변경 가능)
+>
                 <button
                   onClick={() => handleEditCharacter(character)}
                   className="p-2 rounded-lg bg-blue-500 bg-opacity-20 border border-blue-400 border-opacity-30 text-blue-300 hover:bg-blue-500 hover:bg-opacity-40 hover:text-white transition-all duration-200 backdrop-blur-sm"

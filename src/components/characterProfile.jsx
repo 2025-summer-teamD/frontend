@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link,useNavigate } from 'react-router-dom';
+import {useNavigate } from 'react-router-dom';
 
 const CharacterProfile = ({ character, onClose, origin }) => {
   const isMyCharacter = origin === 'my';
@@ -10,7 +10,7 @@ const CharacterProfile = ({ character, onClose, origin }) => {
     navigate(`/chatMate`, {
       state: {
         characterName: character.name,
-        characterIntro: character.intro
+        characterIntro: character.description
       }
     });
   };
