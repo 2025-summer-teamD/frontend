@@ -1,6 +1,6 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
 import Home from './pages/Home';
-import Community from './pages/community';
+import Communities from './pages/communities';
 import CharacterList from './pages/CharacterList';
 import CreateCharacter from './pages/CreateCharacter';
 import ChatMate from './pages/ChatMate';
@@ -22,7 +22,7 @@ function App() {
       ) : (
         <Sidebar>
           <Routes>
-            <Route path="/community" element={<Community />} />
+            <Route path="/communities" element={<Communities />} />
             <Route path="/characterList" element={<CharacterList />} />
             <Route path="/createCharacter" element={<CreateCharacter />} />
             <Route path="/chatMate" element={<ChatMate />} />
