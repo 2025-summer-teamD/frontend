@@ -6,7 +6,7 @@ const CharacterProfile = ({ character, onClose }) => {
 
   const handleStartChat = () => {
     // 대화창으로 이동 (라우트는 프로젝트에 맞게 수정)
-    navigate(`/chatmate`, {
+    navigate(`/chatMate`, {
       state: {
         characterName: character.name,
         characterIntro: character.intro
@@ -16,7 +16,7 @@ const CharacterProfile = ({ character, onClose }) => {
 
   return (
     <div className="fixed inset-0 flex justify-center items-center z-50 p-5">
-      <div className="bg-gray-800 rounded-3xl p-8 w-180 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-gray-800 rounded-3xl p-8 w-150 shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* 프로필 헤더 */}
         <div className="flex items-center mb-8">
           <div className="w-20 h-20 bg-gray-300 rounded-full border-4 border-blue-500 mr-5"></div>
