@@ -18,7 +18,7 @@ export default function Hero() {
           <Link to="/createCharacter" className="flex items-center justify-center w-[353px] h-[73px] font-extrabold text-[22px] bg-[#4F46E5] rounded-lg hover:bg-purple-700">
             새 인격체 만들기
           </Link>
-          <Link to="/community" className="flex items-center justify-center w-[353px] h-[73px] font-extrabold text-[22px] bg-[#1F2937] rounded-lg hover:bg-gray-800"> {/* 버튼 스타일 추가 */}
+          <Link to="/communities" className="flex items-center justify-center w-[353px] h-[73px] font-extrabold text-[22px] bg-[#1F2937] rounded-lg hover:bg-gray-800"> {/* 버튼 스타일 추가 */}
             커뮤니티 둘러보기
           </Link>
         </div>

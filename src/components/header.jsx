@@ -1,4 +1,6 @@
 import { Link, NavLink } from 'react-router-dom';
+import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
+import AnimatedAuthHeader from './AnimatedAuthHeader';
 
 export default function Header() {
   return (
@@ -22,7 +24,7 @@ export default function Header() {
           홈
         </NavLink>
         <NavLink
-          to="/community"
+          to="/communities"
           className={({ isActive }) =>
             `text-white/70 hover:text-white px-3 py-2 text-[24px] rounded hover:bg-white/10 ${isActive ? 'font-bold' : ''}`
           }
@@ -47,9 +49,9 @@ export default function Header() {
         </NavLink>
 
         {/* 기존 아바타 버튼 유지 */}
-        <button className="flex items-center text-[#9CA3AF]">
-        <div className="w-9 h-9 rounded-full bg-white/90"></div>
-        </button>
+        {/* <button className="flex items-center text-[#9CA3AF]"> */}
+        <AnimatedAuthHeader />
+        {/* </button> */}
       </nav>
     </div>
   );
