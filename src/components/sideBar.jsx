@@ -1,5 +1,5 @@
 // src/components/sideBar.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import charactersData from '../data/characters';
 import logo from '/assets/logo.png';
@@ -8,6 +8,18 @@ import AnimatedAuthHeader from './AnimatedAuthHeader';
 const Sidebar = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { pathname } = useLocation();
+
+  // Escape 키로 사이드바 닫기
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && sidebarOpen) {
+        setSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [sidebarOpen]);
 
   return (
     <div className="h-screen flex bg-[linear-gradient(40deg,_#040438_17.08%,_#3C3C56_73.2%)] relative">
@@ -71,7 +83,6 @@ const Sidebar = ({ children }) => {
                     <h3 className="text-white font-medium">{chat.name}</h3>
                     <span className="text-white/50 text-sm">방금</span>
                   </div>
-                  {/* 최근 대화(더미) + truncate */}
                   <p className="text-white/70 text-sm mt-1 truncate">
                     안녕하세요!
                   </p>
@@ -105,7 +116,9 @@ const Sidebar = ({ children }) => {
             <Link
               to="/"
               className={`hover:text-white px-3 py-2 rounded hover:bg-white/10 ${
-                pathname === '/' ? 'text-white text-bold text-[24px]' : 'text-white/70 text-[18px]'
+                pathname === '/'
+                  ? 'text-white text-bold text-[24px]'
+                  : 'text-white/70 text-[18px]'
               }`}
             >
               홈
@@ -145,11 +158,16 @@ const Sidebar = ({ children }) => {
         </div>
 
         {/* Children Content */}
-        <main className="flex-1 overflow-y-auto no-scrollbar px-8 py-6">{children}</main>
+        <main className="flex-1 overflow-y-auto no-scrollbar px-8 py-6">
+          {children}
+        </main>
       </div>
 
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/30 z-20" onClick={() => setSidebarOpen(false)} />
+        <div
+          className="fixed inset-0 bg-black/30 z-20"
+          onClick={() => setSidebarOpen(false)}
+        />
       )}
     </div>
   );
