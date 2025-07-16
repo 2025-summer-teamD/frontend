@@ -6,7 +6,7 @@ export default function AppLayout({ children }) {
       {/* 헤더 포함 (fixed 아님) */}
       <Header />
       {/* 헤더 아래 콘텐츠 스크롤 가능 */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto no-scrollbar">
         {children}
       </div>
     </div>

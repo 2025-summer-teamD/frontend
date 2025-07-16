@@ -50,7 +50,7 @@ const Sidebar = ({ children }) => {
           </div>
 
           {/* 캐릭터 목록 (더미 대신 연동) */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto no-scrollbar">
             {charactersData.map((chat) => (
               <Link
                 key={chat.id}
@@ -145,7 +145,7 @@ const Sidebar = ({ children }) => {
         </div>
 
         {/* Children Content */}
-        <main className="flex-1 overflow-y-auto px-8 py-6">{children}</main>
+        <main className="flex-1 overflow-y-auto no-scrollbar px-8 py-6">{children}</main>
       </div>
 
       {sidebarOpen && (

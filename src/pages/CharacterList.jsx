@@ -31,7 +31,7 @@ export default function CharacterList() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto scrollbar-hide">
       <main className="max-w-4xl mx-auto p-6 pt-8">
         <div className="flex justify-between items-center mb-12">
           <h2 className="text-3xl font-semibold text-white">내 캐릭터</h2>

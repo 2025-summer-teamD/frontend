@@ -40,13 +40,3 @@
 .read-the-docs {
   color: #888;
 }
-div {
-  /* 크롬, 엣지, 사파리 */
-  ::-webkit-scrollbar {
-    display: none;
-  }
-  /* 파이어폭스 */
-  scrollbar-width: none;
-  /* IE, Edge */
-  -ms-overflow-style: none;
-}
