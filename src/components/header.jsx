@@ -4,7 +4,7 @@ import AnimatedAuthHeader from './AnimatedAuthHeader';
 
 export default function Header() {
   return (
-    <div className="w-full h-[80px] z-50 bg-[linear-gradient(40deg,_#040438_17.08%,_#3C3C56_73.2%)] shadow-md flex items-center px-5">
+    <div className="w-full h-[80px] z-50 border-b border-white bg-[linear-gradient(40deg,_#040438_17.08%,_#3C3C56_73.2%)] flex items-center px-5">
       {/* 왼쪽 로고 */}
       <Link to="/">
         <div className="flex items-center">
