@@ -1,5 +1,5 @@
 // src/components/sideBar.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import charactersData from '../data/characters';
 import logo from '/assets/logo.png';
@@ -9,17 +9,29 @@ const Sidebar = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { pathname } = useLocation();
 
+  const sidebarListRef = useRef(null);
+  const contentRef     = useRef(null);
+
   // Escape 키로 사이드바 닫기
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = e => {
       if (e.key === 'Escape' && sidebarOpen) {
         setSidebarOpen(false);
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [sidebarOpen]);
+
+  // 첫 렌더 시 사이드바 목록과 메인 컨텐츠 스크롤을 맨 위로 고정
+  useEffect(() => {
+    if (sidebarListRef.current) {
+      sidebarListRef.current.scrollTop = 0;
+    }
+    if (contentRef.current) {
+      contentRef.current.scrollTop = 0;
+    }
+  }, []);
 
   return (
     <div className="h-screen flex bg-[linear-gradient(40deg,_#040438_17.08%,_#3C3C56_73.2%)] relative">
@@ -62,8 +74,11 @@ const Sidebar = ({ children }) => {
           </div>
 
           {/* 캐릭터 목록 (더미 대신 연동) */}
-          <div className="flex-1 overflow-y-auto no-scrollbar">
-            {charactersData.map((chat) => (
+          <div
+            ref={sidebarListRef}
+            className="flex-1 overflow-y-auto no-scrollbar"
+          >
+            {charactersData.map(chat => (
               <Link
                 key={chat.id}
                 to="/chatMate"
@@ -100,11 +115,11 @@ const Sidebar = ({ children }) => {
         }`}
       >
         {/* Topbar */}
-        <div className="flex items-center w-full space-x-4 h-[80px] justify-between p-5 border-b border-white/10 bg-black/20 backdrop-blur-xl">
+        <div className="flex items-center w-full space-x-4 h-[80px] justify-between p-5 border-b border-white bg-black/20 backdrop-blur-xl">
           <div className="flex items-center">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="text-white mr-4 text-xl hover:bg-white/10 p-2 rounded flex flex-col space-y-1"
+              className="text-white mr-4 text-xl hover:bg-white/10 border-white p-2 rounded flex flex-col space-y-1"
             >
               <div className="w-5 h-0.5 bg-white"></div>
               <div className="w-5 h-0.5 bg-white"></div>
@@ -158,7 +173,10 @@ const Sidebar = ({ children }) => {
         </div>
 
         {/* Children Content */}
-        <main className="flex-1 overflow-y-auto no-scrollbar px-8 py-6">
+        <main
+          ref={contentRef}
+          className="flex-1 overflow-y-auto no-scrollbar px-8 py-6"
+        >
           {children}
         </main>
       </div>
