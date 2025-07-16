@@ -18,7 +18,7 @@ export default function Header() {
         <NavLink
           to="/"
           className={({ isActive }) =>
-            `text-white hover:text-white px-3 py-2 text-[24px] rounded hover:bg-white/10 ${isActive ? '' : ''}`
+            `text-white hover:text-white px-3 py-2 text-[24px] rounded hover:bg-white/10`
           }
         >
           홈
@@ -26,7 +26,7 @@ export default function Header() {
         <NavLink
           to="/communities"
           className={({ isActive }) =>
-            `text-white/70 hover:text-white text-white text-[18px] px-3 py-2 rounded hover:bg-white/10 ${isActive ? '' : ''}`
+            `text-white/70 hover:text-white text-white text-[18px] px-3 py-2 rounded hover:bg-white/10`
           }
         >
           커뮤니티
@@ -34,7 +34,7 @@ export default function Header() {
         <NavLink
           to="/createCharacter"
           className={({ isActive }) =>
-            `text-white/70 hover:text-white px-3 py-2 text-[18px] rounded hover:bg-white/10 ${isActive ? '' : ''}`
+            `text-white/70 hover:text-white px-3 py-2 text-[18px] rounded hover:bg-white/10`
           }
         >
           만들기
@@ -42,7 +42,7 @@ export default function Header() {
         <NavLink
           to="/characterList"
           className={({ isActive }) =>
-            `text-white/70 hover:text-white px-3 py-2 text-[18px] rounded hover:bg-white/10 ${isActive ? '' : ''}`
+            `text-white/70 hover:text-white px-3 py-2 text-[18px] rounded hover:bg-white/10`
           }
         >
           내 캐릭터

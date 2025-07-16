@@ -100,13 +100,23 @@ export default function Communities() {
           <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(16rem,1fr))]">
             {sortedCharacters.map(character => {
               const isLiked = likedIds.includes(character.id);
+
+              const handleSelect = () => setSelectedCharacter(character);
+              const handleKeyDown = e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleSelect();
+                }
+              };
+
               return (
                 <div
                   key={character.id}
-                  onClick={() => setSelectedCharacter(character)}
-                  className="bg-gray-600 rounded-4xl overflow-hidden hover:bg-gray-750 transition-all cursor-pointer transform hover:-translate-y-1 hover:shadow-2xl min-w-[10rem] max-w-[14rem]"
+                  role="button"
                   tabIndex={0}
-                  role="group"
+                  onClick={handleSelect}
+                  onKeyDown={handleKeyDown}
+                  className="bg-gray-600 rounded-4xl overflow-hidden hover:bg-gray-750 transition-all cursor-pointer transform hover:-translate-y-1 hover:shadow-2xl min-w-[10rem] max-w-[14rem]"
                 >
                   <div className="relative w-full h-[17rem] overflow-hidden">
                     <img
@@ -130,7 +140,6 @@ export default function Communities() {
                         {character.description}
                       </p>
                       <div className="flex items-center text-gray-300">
-                        {/* 여기서 SVG만 있던 부분을 버튼으로 바꿔 클릭 가능하도록 수정 */}
                         <button
                           onClick={e => {
                             e.stopPropagation();
