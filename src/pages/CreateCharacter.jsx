@@ -13,10 +13,27 @@ export default function CreateCharacter() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // 파일 형식 검사: 이미지만 허용
+      if (!file.type.startsWith('image/')) {
+        alert('이미지 파일만 업로드할 수 있습니다.');
+        return;
+      }
+      // 파일 크기 검사: 5MB 제한
+      if (file.size > 5 * 1024 * 1024) {
+        alert('이미지 크기는 5MB 이하여야 합니다.');
+        return;
+      }
       const reader = new FileReader();
+  
+      // 성공 처리
       reader.onloadend = () => {
         setImagePreview(reader.result);
       };
+      // 오류 처리
+      reader.onerror = () => {
+        alert('이미지 읽기에 실패했습니다.');
+      };
+  
       reader.readAsDataURL(file);
     }
   };
