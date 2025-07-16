@@ -5,7 +5,7 @@ import ChatPreview from "../components/chatPreview";
 
 function Home() {
   return (
-    <div className="text-white">
+    <div className="text-white no-scrollbar">
       <Hero />
       <div className="bg-[linear-gradient(to_bottom,_#000034,_#6B7595)] px-8 py-16">
         <PopularCharacters />
