@@ -151,7 +151,7 @@ export default function CreateCharacter() {
               </p>
             </div>
           </div>
-          {/* 이미지 업로드 (미리보기 밑) */}
+          {/* 이미지 업로드 */}
           <div className="flex flex-col items-start w-full mt-4">
             <span className="text-gray-400 text-base font-semibold mb-2">캐릭터 이미지 업로드</span>
             <label className="inline-block cursor-pointer bg-[#413ebc] hover:bg-[#413ebc]/90 text-white text-sm font-bold py-2 px-4 rounded-lg">
