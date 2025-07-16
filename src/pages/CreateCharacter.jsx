@@ -53,17 +53,7 @@ export default function CreateCharacter() {
           {/* 탭 컨텐츠 */}
           {activeTab === 'existing' ? (
             <div className="space-y-6 mb-8 w-[552px]">
-              {/* 이미지 업로드 */}
-              <div className="flex flex-col items-start mb-2">
-                <label className="text-gray-400 text-sm font-medium mb-1">캐릭터 이미지 업로드</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="text-xs text-gray-500 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border file:border-gray-400 file:bg-white file:text-gray-700"
-                />
-              </div>
-              <p className="text-gray-400 text-sm">
+              <p className="text-gray-400 text-base font-semibold">
                 RAG 기술을 활용하여 실제 인물 정보를 자동으로 가져옵니다.
               </p>
               <input
@@ -82,7 +72,7 @@ export default function CreateCharacter() {
                   />
                   다른 사람에게 캐릭터를 공개
                 </label>
-                <span className="text-xs text-gray-500 ml-6 mt-0.5">체크 시, 이 캐릭터가 다른 사용자에게도 보여집니다.</span>
+                <span className="text-sm font-medium text-gray-500 ml-6 mt-0.5">체크 시, 이 캐릭터가 다른 사용자에게도 보여집니다.</span>
               </div>
               <div className="flex gap-4">
                 <button className="flex-1 h-10 bg-[#413ebc] hover:bg-[#413ebc]/90 rounded-lg text-white font-bold">
@@ -95,17 +85,7 @@ export default function CreateCharacter() {
             </div>
           ) : (
             <div className="space-y-6 mb-8 flex flex-col items-center">
-              {/* 이미지 업로드 */}
-              <div className="flex flex-col items-start w-[552px] mb-2">
-                <label className="text-gray-400 text-sm font-medium mb-1">캐릭터 이미지 업로드</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="text-xs text-gray-500 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border file:border-gray-400 file:bg-white file:text-gray-700"
-                />
-              </div>
-              <p className="text-gray-400 text-sm ">
+              <p className="text-gray-400 text-base font-semibold ">
                 직접 캐릭터의 성격, 말투, 배경 스토리를 설정하여 나만의 AI 인격체를 만들어보세요.
               </p>
               {/* 나만의 캐릭터 생성 폼 */}
@@ -139,7 +119,7 @@ export default function CreateCharacter() {
                   />
                   다른 사람에게 캐릭터를 공개
                 </label>
-                <span className="text-xs text-gray-500 ml-6 mt-0.5">체크 시, 이 캐릭터가 다른 사용자에게도 보여집니다.</span>
+                <span className="text-sm font-medium text-gray-500 ml-6 mt-0.5">체크 시, 이 캐릭터가 다른 사용자에게도 보여집니다.</span>
               </div>
               <div className="flex gap-4">
                 <button className="flex-1 w-[552px] h-10 bg-[#413ebc] hover:bg-[#413ebc]/90 rounded-lg text-white font-bold">
@@ -170,6 +150,19 @@ export default function CreateCharacter() {
                 입력을 시작하면 내용이 자동으로 업데이트됩니다.
               </p>
             </div>
+          </div>
+          {/* 이미지 업로드 (미리보기 밑) */}
+          <div className="flex flex-col items-start w-full mt-4">
+            <span className="text-gray-400 text-base font-semibold mb-2">캐릭터 이미지 업로드</span>
+            <label className="inline-block cursor-pointer bg-[#413ebc] hover:bg-[#413ebc]/90 text-white text-sm font-bold py-2 px-4 rounded-lg">
+              이미지 선택
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+            </label>
           </div>
         </div>
       </div>
