@@ -5,6 +5,21 @@ import AndrewImg from '/assets/andrew.png'
 
 export default function CreateCharacter() {
   const [activeTab, setActiveTab] = useState('existing')
+  const [isPublic, setIsPublic] = useState(true)
+  // const [imageFile, setImageFile] = useState(null) // (제거: 미사용)
+  const [imagePreview, setImagePreview] = useState(AndrewImg)
+
+  // 이미지 업로드 핸들러
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   return (
       <div className="pt-[60px] px-8 flex-1 flex overflow-auto">
@@ -38,6 +53,16 @@ export default function CreateCharacter() {
           {/* 탭 컨텐츠 */}
           {activeTab === 'existing' ? (
             <div className="space-y-6 mb-8 w-[552px]">
+              {/* 이미지 업로드 */}
+              <div className="flex flex-col items-start mb-2">
+                <label className="text-gray-400 text-sm font-medium mb-1">캐릭터 이미지 업로드</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="text-xs text-gray-500 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border file:border-gray-400 file:bg-white file:text-gray-700"
+                />
+              </div>
               <p className="text-gray-400 text-sm">
                 RAG 기술을 활용하여 실제 인물 정보를 자동으로 가져옵니다.
               </p>
@@ -46,6 +71,19 @@ export default function CreateCharacter() {
                 placeholder="실존 인물 또는 캐릭터의 이름을 입력하세요."
                 className="w-full px-3 py-2 bg-white rounded-lg border border-gray-600 text-gray-700 mb-73"
               />
+              {/* 공개 여부 체크박스 */}
+              <div className="flex flex-col items-start mb-2">
+                <label className="flex items-center gap-2 text-gray-400 text-sm mb-0">
+                  <input
+                    type="checkbox"
+                    checked={isPublic}
+                    onChange={e => setIsPublic(e.target.checked)}
+                    className="accent-[#413ebc]"
+                  />
+                  다른 사람에게 캐릭터를 공개
+                </label>
+                <span className="text-xs text-gray-500 ml-6 mt-0.5">체크 시, 이 캐릭터가 다른 사용자에게도 보여집니다.</span>
+              </div>
               <div className="flex gap-4">
                 <button className="flex-1 h-10 bg-[#413ebc] hover:bg-[#413ebc]/90 rounded-lg text-white font-bold">
                   캐릭터 검색하기
@@ -57,6 +95,16 @@ export default function CreateCharacter() {
             </div>
           ) : (
             <div className="space-y-6 mb-8 flex flex-col items-center">
+              {/* 이미지 업로드 */}
+              <div className="flex flex-col items-start w-[552px] mb-2">
+                <label className="text-gray-400 text-sm font-medium mb-1">캐릭터 이미지 업로드</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="text-xs text-gray-500 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border file:border-gray-400 file:bg-white file:text-gray-700"
+                />
+              </div>
               <p className="text-gray-400 text-sm ">
                 직접 캐릭터의 성격, 말투, 배경 스토리를 설정하여 나만의 AI 인격체를 만들어보세요.
               </p>
@@ -80,6 +128,19 @@ export default function CreateCharacter() {
                 placeholder="추가 설명을 입력하세요."
                 className="w-[552px] h-28 p-3 bg-white rounded-lg border border-gray-600 text-gray-700 resize-none"
               />
+              {/* 공개 여부 체크박스 */}
+              <div className="flex flex-col items-start w-[552px] mb-2">
+                <label className="flex items-center gap-2 text-gray-400 text-sm mb-0">
+                  <input
+                    type="checkbox"
+                    checked={isPublic}
+                    onChange={e => setIsPublic(e.target.checked)}
+                    className="accent-[#413ebc]"
+                  />
+                  다른 사람에게 캐릭터를 공개
+                </label>
+                <span className="text-xs text-gray-500 ml-6 mt-0.5">체크 시, 이 캐릭터가 다른 사용자에게도 보여집니다.</span>
+              </div>
               <div className="flex gap-4">
                 <button className="flex-1 w-[552px] h-10 bg-[#413ebc] hover:bg-[#413ebc]/90 rounded-lg text-white font-bold">
                   캐릭터 만들기
@@ -95,7 +156,7 @@ export default function CreateCharacter() {
           <h3 className="text-white font-bold text-lg mb-4">미리보기</h3>
           <div className="bg-black rounded-xl border border-gray-700 overflow-hidden">
             <img
-              src={AndrewImg}
+              src={imagePreview}
               alt="Preview"
               className="w-full h-[338px] object-cover"
             />
