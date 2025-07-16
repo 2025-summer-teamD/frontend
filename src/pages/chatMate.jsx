@@ -6,17 +6,15 @@ import chatMessages from '../data/chatMessages';
 const ChatMate = () => {
   const { state } = useLocation();
   const character = state?.character;
-  if (!character) return null;
 
-  // 훅은 무조건 최상단에서 호출
+  // Hooks must always be called at the top level
   const [newMessage, setNewMessage] = useState('');
-  const [messages, setMessages] = useState(chatMessages);
+  const [messages, setMessages]   = useState(chatMessages);
+  const scrollContainerRef        = useRef(null);
+  const messagesEndRef           = useRef(null);
+  const isInitialMount           = useRef(true);
 
-  const scrollContainerRef = useRef(null);
-  const messagesEndRef    = useRef(null);
-  const isInitialMount    = useRef(true);
-
-  // 첫 로드시(렌더링 끝난 뒤) 스크롤을 맨 위에 고정
+  // 첫 로드시 스크롤을 맨 위에 고정
   useEffect(() => {
     const timer = setTimeout(() => {
       if (scrollContainerRef.current) {
@@ -26,7 +24,7 @@ const ChatMate = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // 메시지 추가 시(첫 렌더 제외) 맨 아래로 스크롤
+  // 새 메시지 추가 시(첫 렌더 제외) 아래로 스크롤
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
@@ -34,6 +32,9 @@ const ChatMate = () => {
     }
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // character 정보가 없으면 아무것도 렌더하지 않음
+  if (!character) return null;
 
   const sendMessage = () => {
     if (!newMessage.trim()) return;
