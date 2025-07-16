@@ -1,37 +1,51 @@
 // src/pages/ChatMate.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import chatMessages from '../data/chatMessages';
 
 const ChatMate = () => {
   const { state } = useLocation();
   const character = state?.character;
 
-  // 훅은 무조건 최상단에서 호출
+  // Hooks must always be called at the top level
   const [newMessage, setNewMessage] = useState('');
-  const [messages, setMessages] = useState([
-    { id: 1, text: '안녕하세요!', sender: 'other', time: '오후 3:45' },
-    { id: 2, text: '반갑습니다!', sender: 'me',    time: '오후 3:46' },
-  ]);
-  const messagesEndRef = useRef(null);
+  const [messages, setMessages]   = useState(chatMessages);
+  const scrollContainerRef        = useRef(null);
+  const messagesEndRef           = useRef(null);
+  const isInitialMount           = useRef(true);
 
-  // 메시지 변경 시 스크롤 하단으로
+  // 첫 로드시 스크롤을 맨 위에 고정
   useEffect(() => {
+    const timer = setTimeout(() => {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = 0;
+      }
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // 새 메시지 추가 시(첫 렌더 제외) 아래로 스크롤
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // character 데이터 없으면 렌더링 중단
+  // character 정보가 없으면 아무것도 렌더하지 않음
   if (!character) return null;
 
   const sendMessage = () => {
     if (!newMessage.trim()) return;
     const now = new Date().toLocaleTimeString('ko-KR', {
-      hour: 'numeric',
+      hour:   'numeric',
       minute: '2-digit',
       hour12: true,
     });
-    setMessages(msgs => [
-      ...msgs,
-      { id: msgs.length + 1, text: newMessage, sender: 'me', time: now }
+    setMessages(prev => [
+      ...prev,
+      { id: prev.length + 1, text: newMessage, sender: 'me', time: now }
     ]);
     setNewMessage('');
   };
@@ -43,7 +57,7 @@ const ChatMate = () => {
   return (
     <div className="flex flex-col h-screen">
       {/* 헤더: sticky */}
-      <header className="sticky top-0 bg-black/20 backdrop-blur-xl py-4 px-6 z-10">
+      <header className="sticky top-0 py-4 px-6 z-10">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full overflow-hidden bg-[#a6c0c6]">
             <img
@@ -59,10 +73,13 @@ const ChatMate = () => {
       </header>
 
       {/* 스크롤 영역: 프로필 + 메시지 */}
-      <div className="flex-1 px-8 overflow-y-auto">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 px-50 overflow-y-auto no-scrollbar"
+      >
         {/* 프로필 */}
         <div className="flex flex-col items-center my-6">
-          <div className="w-32 h-32 rounded-full overflow-hidden mb-4">
+          <div className="w-32 h-32 rounded-full overflow-hidden">
             <img
               src={character.image}
               alt={character.name}
@@ -78,12 +95,12 @@ const ChatMate = () => {
         </div>
 
         {/* 메시지들 */}
-        <div className="space-y-4 pb-24">
+        <div className="space-y-4">
           {messages.map(msg => (
             <div
               key={msg.id}
               className={`flex flex-col w-full ${
-                msg.sender === 'me' ? 'items-end' : 'items-start'
+                msg.sender === 'me' ? 'items-end' : 'items-start ml-20'
               }`}
             >
               <div
@@ -124,13 +141,12 @@ const ChatMate = () => {
               </div>
             </div>
           ))}
-          {/* 스크롤 최하단 포커스 */}
           <div ref={messagesEndRef} />
         </div>
       </div>
 
       {/* 입력창: sticky bottom */}
-      <footer className="sticky bottom-0 backdrop-blur-xl bg-black/20 px-6 py-4 border-t border-white/10">
+      <footer className="sticky bottom-0 px-6 py-4 border-t border-white/10">
         <div className="flex items-center space-x-3 max-w-4xl mx-auto">
           <button className="text-white hover:text-white/90 p-2">📎</button>
           <div className="flex-1">

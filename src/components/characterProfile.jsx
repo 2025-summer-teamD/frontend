@@ -56,10 +56,6 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle }) =
                 <div className="text-gray-400 text-sm">대화</div>
               </div>
               <div className="text-center flex-1">
-                <div className="text-3xl font-bold text-white mb-1">7</div>
-                <div className="text-gray-400 text-sm">공유</div>
-              </div>
-              <div className="text-center flex-1">
                 <div className="text-3xl font-bold text-white mb-1">10</div>
                 <div className="text-gray-400 text-sm">좋아요</div>
               </div>
