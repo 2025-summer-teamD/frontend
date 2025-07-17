@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Header from '../components/Header';
 
 export default function AppLayout({ children }) {
-  const [setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="h-screen flex flex-col bg-[linear-gradient(to_bottom,_#000034,_#6B7595)]">
