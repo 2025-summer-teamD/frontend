@@ -1,8 +1,9 @@
 import { Link, NavLink } from 'react-router-dom';
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
 import AnimatedAuthHeader from './AnimatedAuthHeader';
+import { Menu } from 'lucide-react';
 
-export default function Header() {
+export default function Header({ onMenuClick }) {
   return (
     <div className="w-full h-[80px] z-50 border-b border-white bg-[linear-gradient(40deg,_#040438_17.08%,_#3C3C56_73.2%)] flex items-center px-5">
       {/* 왼쪽 로고 */}
@@ -13,8 +14,8 @@ export default function Header() {
         </div>
       </Link>
 
-      {/* 오른쪽 내비게이션 (Sidebar 스타일과 동일하게 적용) */}
-      <nav className="ml-auto flex items-center space-x-4">
+      {/* 오른쪽 내비게이션 (md 이상에서 보임) */}
+      <nav className="hidden md:flex items-center space-x-4 ml-auto">
         <NavLink
           to="/"
           className={({ isActive }) =>
@@ -47,12 +48,15 @@ export default function Header() {
         >
           내 캐릭터
         </NavLink>
-
-        {/* 기존 아바타 버튼 유지 */}
-        {/* <button className="flex items-center text-[#9CA3AF]"> */}
         <AnimatedAuthHeader />
-        {/* </button> */}
       </nav>
+
+      {/* 메뉴 버튼 (md 이하에서 보임) */}
+      <div className="md:hidden ml-auto">
+        <button onClick={onMenuClick} className="text-white">
+          <Menu size={24} />
+        </button>
+      </div>
     </div>
   );
 }

@@ -32,7 +32,7 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle }) =
           </div>
           <div>
             <h1 className="text-2xl font-semibold text-white mb-1">{character.name}</h1>
-            <p className="text-gray-400 text-sm mb-3">By. {character.creater}</p>
+            <p className="text-gray-400 text-sm mb-3">By. {character.author}</p>
             <p className="text-gray-300 text-sm">{character.description}</p>
           </div>
           <button
@@ -159,10 +159,10 @@ CharacterProfile.propTypes = {
     id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     name: PropTypes.string,
     description: PropTypes.string,
-    creater: PropTypes.string,
+    author: PropTypes.string,
     image: PropTypes.string,
     intimacy: PropTypes.number,
-    chats: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    messageCount: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     likes: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
   }).isRequired,
   liked: PropTypes.bool.isRequired,
