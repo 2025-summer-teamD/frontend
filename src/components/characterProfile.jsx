@@ -1,5 +1,6 @@
 // src/components/CharacterProfile.jsx
 import React from 'react';
+import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { Heart as OutlineHeart, Heart as SolidHeart } from 'lucide-react';
 
@@ -151,6 +152,23 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle }) =
       </div>
     </div>
   );
+};
+
+CharacterProfile.propTypes = {
+  character: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    name: PropTypes.string,
+    description: PropTypes.string,
+    creater: PropTypes.string,
+    image: PropTypes.string,
+    intimacy: PropTypes.number,
+    chats: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    likes: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+  }).isRequired,
+  liked: PropTypes.bool.isRequired,
+  origin: PropTypes.string.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onLikeToggle: PropTypes.func.isRequired
 };
 
 export default CharacterProfile;
