@@ -7,6 +7,8 @@ const ChatMate = () => {
   const { state } = useLocation();
   const character = state?.character;
 
+  const { user } = useUser();
+
   const [newMessage, setNewMessage] = useState('');
   const [messages, setMessages] = useState(chatMessages);
   const scrollContainerRef = useRef(null);
@@ -52,8 +54,6 @@ const ChatMate = () => {
   const handleKeyPress = e => {
     if (e.key === 'Enter') sendMessage();
   };
-
-  const { user } = useUser();
 
   return (
     <div className="flex flex-col h-screen">
