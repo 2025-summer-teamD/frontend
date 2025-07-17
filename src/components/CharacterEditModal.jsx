@@ -1,0 +1,216 @@
+// src/components/CharacterEditModal.jsx
+import React, { useState } from 'react';
+import { Heart as OutlineHeart, Heart as SolidHeart } from 'lucide-react';
+
+const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle }) => {
+  const [formData, setFormData] = useState({
+    name: character.name,
+    description: character.description,
+    creater: character.creater,
+    image: character.image,
+    personality: '',
+    characteristics: '',
+    tags: ''
+  });
+
+  const [previewImage, setPreviewImage] = useState(character.image);
+
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const imageUrl = e.target.result;
+        setPreviewImage(imageUrl);
+        setFormData(prev => ({
+          ...prev,
+          image: imageUrl
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const toggleLike = () => {
+    onLikeToggle(character.id, !liked);
+  };
+
+  const handleSave = () => {
+    onSave(character.id, formData);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 flex justify-center items-center z-50 p-5">
+      <div className="bg-gray-800 rounded-3xl p-8 w-160 shadow-2xl max-h-[90vh] overflow-y-auto">
+        {/* 프로필 헤더 */}
+        <div className="relative flex items-center mb-8">
+          <div className="w-20 h-20 bg-gray-300 rounded-full border-4 border-white mr-5 overflow-hidden relative group cursor-pointer">
+            {previewImage && (
+              <img
+                src={previewImage}
+                alt={formData.name}
+                className="w-full h-full object-cover"
+              />
+            )}
+            {/* 이미지 변경 오버레이 */}
+            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="absolute inset-0 opacity-0 cursor-pointer"
+            />
+          </div>
+          <div className="flex-1">
+            {/* 이름 입력 */}
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => handleInputChange('name', e.target.value)}
+              className="text-2xl font-semibold text-white mb-1 bg-transparent border-b border-gray-600 focus:border-indigo-500 outline-none w-full pb-1"
+              placeholder="캐릭터 이름"
+            />
+
+            {/* 작성자 입력 */}
+            <div className="flex items-center mb-3">
+              <span className="text-gray-400 text-sm mr-2">By.{formData.creater} </span>
+              {/* <input
+                type="text"
+                value={formData.creater}
+                onChange={(e) => handleInputChange('creater', e.target.value)}
+                className="text-gray-400 text-sm bg-transparent border-b border-gray-600 focus:border-indigo-500 outline-none flex-1"
+                placeholder="작성자"
+              /> */}
+            </div>
+
+            {/* 설명 입력 */}
+            <textarea
+              value={formData.description}
+              onChange={(e) => handleInputChange('description', e.target.value)}
+              className="text-gray-300 text-sm bg-transparent border border-gray-600 focus:border-indigo-500 outline-none w-full p-2 rounded resize-none"
+              placeholder="캐릭터 설명"
+              rows="2"
+            />
+          </div>
+          <button
+            onClick={toggleLike}
+            className="absolute top-0 right-0 focus:outline-none"
+            aria-label={liked ? '좋아요 취소' : '좋아요'}
+          >
+            {liked ? (
+              <SolidHeart className="w-6 h-6 text-red-500 transition-transform transform scale-110" />
+            ) : (
+              <OutlineHeart className="w-6 h-6 text-gray-400 hover:text-red-500 transition-colors" />
+            )}
+          </button>
+        </div>
+
+        {/* 통계 섹션 */}
+        <div className="flex justify-between mb-10">
+          <div className="text-center flex-1">
+            <div className="text-3xl font-bold text-white mb-1">5</div>
+            <div className="text-gray-400 text-sm">대화</div>
+          </div>
+          <div className="text-center flex-1">
+            <div className="text-3xl font-bold text-white mb-1">10</div>
+            <div className="text-gray-400 text-sm">좋아요</div>
+          </div>
+          <div className="text-center flex-1">
+            <div className="text-3xl font-bold text-white mb-1">{character.intimacy}</div>
+            <div className="text-gray-400 text-sm">친밀도</div>
+          </div>
+        </div>
+
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-white mb-6">캐릭터 정보</h2>
+          <div className="space-y-8">
+            {/* 성격 입력 */}
+            <div className="pb-6 border-b border-gray-700">
+              <div className="text-gray-400 text-sm mb-3">성격</div>
+              <textarea
+                value={formData.personality}
+                onChange={(e) => handleInputChange('personality', e.target.value)}
+                className="w-full bg-transparent border border-gray-600 focus:border-indigo-500 outline-none p-3 rounded text-white resize-none"
+                placeholder="캐릭터의 성격을 입력하세요"
+                rows="3"
+              />
+            </div>
+
+            {/* 특징 입력 */}
+            <div className="pb-6 border-b border-gray-700">
+              <div className="text-gray-400 text-sm mb-3">특징</div>
+              <textarea
+                value={formData.characteristics}
+                onChange={(e) => handleInputChange('characteristics', e.target.value)}
+                className="w-full bg-transparent border border-gray-600 focus:border-indigo-500 outline-none p-3 rounded text-white resize-none"
+                placeholder="캐릭터의 특징을 입력하세요"
+                rows="3"
+              />
+            </div>
+
+            {/* 태그 입력 */}
+            <div className="pb-6 border-b border-gray-700">
+              <div className="text-gray-400 text-sm mb-3">태그</div>
+              <input
+                type="text"
+                value={formData.tags}
+                onChange={(e) => handleInputChange('tags', e.target.value)}
+                className="w-full bg-transparent border border-gray-600 focus:border-indigo-500 outline-none p-3 rounded text-white"
+                placeholder="태그를 쉼표로 구분하여 입력하세요 (예: 친근한, 유머러스, 도움이 되는)"
+              />
+              <div className="flex flex-wrap gap-2 mt-3">
+                <span className="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-xs">
+                  #캐릭터 id
+                </span>
+                <span className="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-xs">
+                  #{formData.creater}
+                </span>
+                {formData.tags && formData.tags.split(',').map((tag, index) => (
+                  <span key={index} className="bg-indigo-600 text-white px-3 py-1 rounded-full text-xs">
+                    #{tag.trim()}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 버튼 섹션 */}
+        <div className="space-y-3">
+          <button
+            onClick={handleSave}
+            className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              />
+            </svg>
+            수정하기
+          </button>
+          <button
+            onClick={onClose}
+            className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-6 rounded-2xl transition-colors duration-200"
+          >
+            취소
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CharacterEditModal;
