@@ -1,10 +1,14 @@
 // src/pages/Communities.jsx
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import CharacterProfile from '../components/CharacterProfile';
+import CharacterEditModal from '../components/CharacterEditModal';
 import characters from '../data/characters';
 import { Heart as OutlineHeart, Heart as SolidHeart, Search, XCircle } from 'lucide-react';
 
 export default function Communities() {
+  const myId = 'me'; // 실제 로그인 정보로 대체
+
   const [likedIds, setLikedIds] = useState(() =>
     JSON.parse(localStorage.getItem('likedIds')) || []
   );
@@ -15,11 +19,27 @@ export default function Communities() {
   const [activeTab, setActiveTab] = useState('인기순');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCharacter, setSelectedCharacter] = useState(null);
+  const [editingCharacter, setEditingCharacter] = useState(null);
 
   const handleLikeToggle = (id, newLiked) => {
     setLikedIds(prev =>
       newLiked ? [...prev, id] : prev.filter(x => x !== id)
     );
+  };
+
+  const handleEditCharacter = character => {
+    setEditingCharacter(character);
+  };
+
+  const handleSaveCharacter = (id, formData) => {
+    console.log('Saving character:', id, formData);
+    // 실제 저장 로직 구현
+  };
+
+  const handleDeleteCharacter = character => {
+    if (window.confirm(`${character.name} 캐릭터를 삭제하시겠습니까?`)) {
+      // 삭제 로직 구현
+    }
   };
 
   const filteredCharacters = characters.filter(char =>
@@ -132,7 +152,9 @@ export default function Communities() {
                           aria-label="좋아요 토글"
                         >
                           {isLiked ? (
-                            <SolidHeart className="w-4 h-4 text-red-500" />
+                            <svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                          </svg>
                           ) : (
                             <OutlineHeart className="w-4 h-4 text-gray-300 group-hover:text-red-400" />
                           )}
@@ -154,6 +176,16 @@ export default function Communities() {
           liked={likedIds.includes(selectedCharacter.id)}
           origin="communities"
           onClose={() => setSelectedCharacter(null)}
+          onLikeToggle={handleLikeToggle}
+        />
+      )}
+
+      {editingCharacter && (
+        <CharacterEditModal
+          character={editingCharacter}
+          liked={likedIds.includes(editingCharacter.id)}
+          onClose={() => setEditingCharacter(null)}
+          onSave={handleSaveCharacter}
           onLikeToggle={handleLikeToggle}
         />
       )}
