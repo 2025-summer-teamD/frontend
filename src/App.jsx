@@ -1,11 +1,11 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
 import Home from './pages/Home';
-import Communities from './pages/communities';
+import Communities from './pages/Communities';
 import CharacterList from './pages/CharacterList';
 import CreateCharacter from './pages/CreateCharacter';
-import ChatMate from './pages/chatMate';
+import ChatMate from './pages/ChatMate';
 import AppLayout from './layouts/AppLayout';
-import Sidebar from './components/sideBar';
+import Sidebar from './components/SideBar';
 
 function App() {
   const location = useLocation();

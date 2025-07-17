@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react'
-import Sidebar from '../components/sideBar'
+import Sidebar from '../components/SideBar'
 import AndrewImg from '/assets/andrew.png'
 
 export default function CreateCharacter() {
@@ -24,7 +24,7 @@ export default function CreateCharacter() {
         return;
       }
       const reader = new FileReader();
-  
+
       // 성공 처리
       reader.onloadend = () => {
         setImagePreview(reader.result);
@@ -33,7 +33,7 @@ export default function CreateCharacter() {
       reader.onerror = () => {
         alert('이미지 읽기에 실패했습니다.');
       };
-  
+
       reader.readAsDataURL(file);
     }
   };
@@ -143,7 +143,7 @@ export default function CreateCharacter() {
                   캐릭터 만들기
                 </button>
               </div>
-              
+
             </div>
           )}
         </div>
