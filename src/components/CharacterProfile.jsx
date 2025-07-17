@@ -159,10 +159,10 @@ CharacterProfile.propTypes = {
     id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     name: PropTypes.string,
     description: PropTypes.string,
-    creater: PropTypes.string,
+    author: PropTypes.string,
     image: PropTypes.string,
     intimacy: PropTypes.number,
-    chats: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    messageCount: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     likes: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
   }).isRequired,
   liked: PropTypes.bool.isRequired,
