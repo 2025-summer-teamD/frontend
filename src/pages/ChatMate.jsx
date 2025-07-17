@@ -114,7 +114,7 @@ const ChatMate = () => {
                   />
                 </div>
                 <span className={`text-white font-medium text-sm ${msg.sender === 'me' ? 'mr-2' : 'ml-2'}`}>
-                  {msg.sender === 'me' ? 'PinkTurkey2584' : character.name} {/* Display user's name or character's name */}
+                  {msg.sender === 'me' ? user?.username || user?.firstName || 'You' : character.name}
                 </span>
               </div>
 
