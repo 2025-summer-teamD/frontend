@@ -1,19 +1,21 @@
 // src/components/CharacterEditModal.jsx
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import { Heart as OutlineHeart, Heart as SolidHeart } from 'lucide-react';
 
 const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle }) => {
   const [formData, setFormData] = useState({
-    name: character.name,
-    description: character.description,
-    creater: character.creater,
-    image: character.image,
-    personality: character.personality || '',
-    characteristics: character.characteristics || '',
-    tags: character.tags || ''
+    name: character?.name || '',
+    description: character?.description || '',
+    creater: character?.creater || '',
+    image: character?.image || '',
+    personality: character?.personality || '',
+    characteristics: character?.characteristics || '',
+    tags: character?.tags || ''
   });
 
-  const [previewImage, setPreviewImage] = useState(character.image);
+
+  const [previewImage, setPreviewImage] = useState(character?.image || '');
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -54,7 +56,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
   };
 
   const toggleLike = () => {
-    onLikeToggle(character.id, !liked);
+    onLikeToggle(character?.id, !liked);
   };
 
   const handleSave = () => {
@@ -68,7 +70,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
       alert('캐릭터 설명을 입력해주세요.');
       return;
     }
-    onSave(character.id, formData);
+    onSave(character?.id, formData);
     onClose();
   };
 
@@ -146,15 +148,15 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
         {/* 통계 섹션 */}
         <div className="flex justify-between mb-10">
           <div className="text-center flex-1">
-            <div className="text-3xl font-bold text-white mb-1">{character.conversations || 0}</div>
+            <div className="text-3xl font-bold text-white mb-1">{character?.conversations || 0}</div>
             <div className="text-gray-400 text-sm">대화</div>
           </div>
           <div className="text-center flex-1">
-            <div className="text-3xl font-bold text-white mb-1">{character.likes || 0}</div>
+            <div className="text-3xl font-bold text-white mb-1">{character?.likes || 0}</div>
             <div className="text-gray-400 text-sm">좋아요</div>
           </div>
           <div className="text-center flex-1">
-            <div className="text-3xl font-bold text-white mb-1">{character.intimacy}</div>
+            <div className="text-3xl font-bold text-white mb-1">{character?.intimacy || 0}</div>
             <div className="text-gray-400 text-sm">친밀도</div>
           </div>
         </div>
@@ -236,6 +238,24 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
       </div>
     </div>
   );
+};
+
+CharacterEditModal.propTypes = {
+  character: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    name: PropTypes.string,
+    description: PropTypes.string,
+    creater: PropTypes.string,
+    image: PropTypes.string,
+    intimacy: PropTypes.number,
+    personality: PropTypes.string,
+    characteristics: PropTypes.string,
+    tags: PropTypes.string
+  }).isRequired,
+  liked: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired,
+  onLikeToggle: PropTypes.func.isRequired
 };
 
 export default CharacterEditModal;
