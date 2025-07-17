@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import CharacterProfile from '../components/CharacterProfile';
+import CharacterEditModal from '../components/CharacterEditModal';
 import characters from '../data/characters';
 
 export default function CharacterList() {
@@ -13,6 +14,7 @@ export default function CharacterList() {
   }, [likedIds]);
 
   const [selectedCharacter, setSelectedCharacter] = useState(null);
+  const [editingCharacter, setEditingCharacter] = useState(null);
 
   const handleLikeToggle = (id, newLiked) => {
     setLikedIds(prev =>
@@ -21,7 +23,13 @@ export default function CharacterList() {
   };
 
   const handleEditCharacter = character => {
-    console.log('Edit character:', character);
+    setEditingCharacter(character);
+  };
+
+  const handleSaveCharacter = (id, formData) => {
+    // 여기에 실제 저장 로직을 구현하세요
+    console.log('Saving character:', id, formData);
+    // 예시: characters 배열 업데이트 또는 API 호출
   };
 
   const handleDeleteCharacter = character => {
@@ -191,6 +199,16 @@ export default function CharacterList() {
             liked={likedIds.includes(selectedCharacter.id)}
             origin="my"
             onClose={() => setSelectedCharacter(null)}
+            onLikeToggle={handleLikeToggle}
+          />
+        )}
+
+        {editingCharacter && (
+          <CharacterEditModal
+            character={editingCharacter}
+            liked={likedIds.includes(editingCharacter.id)}
+            onClose={() => setEditingCharacter(null)}
+            onSave={handleSaveCharacter}
             onLikeToggle={handleLikeToggle}
           />
         )}
