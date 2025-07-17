@@ -1,4 +1,3 @@
-// src/components/sideBar.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import charactersData from '../data/characters';
@@ -10,7 +9,7 @@ const Sidebar = ({ children }) => {
   const { pathname } = useLocation();
 
   const sidebarListRef = useRef(null);
-  const contentRef     = useRef(null);
+  const contentRef = useRef(null);
 
   // Escape 키로 사이드바 닫기
   useEffect(() => {
@@ -38,18 +37,89 @@ const Sidebar = ({ children }) => {
       {/* Sidebar */}
       <div
         className={`fixed inset-y-0 left-0 bg-black/40 backdrop-blur-xl border-r border-white/10
-                    transition-all duration-300 overflow-hidden z-30 ${sidebarOpen ? 'w-80' : 'w-0'}`}
+                    transition-all duration-300 overflow-hidden z-30 ${sidebarOpen ? 'w-60' : 'w-0'}`}
       >
-        <div className="w-80 h-full flex flex-col">
+        <div className="w-60 h-full flex flex-col">
           {/* logo + close */}
-          <div className="flex items-center justify-between p-4.5 border-b border-white/50">
-            <img src={logo} alt="logo" className="w-10.5 h-10.5" />
+          <div className="flex items-center justify-between p-4.5  ">
+            {/* <img src={logo} alt="logo" className="w-10.5 h-10.5" /> */}
+            <Link to="/" className="flex items-center">
+              <img src={logo} alt="Logo" className="w-10 h-10" />
+              <span className="text-white font-bold text-lg ml-2">ChatMate</span>
+            </Link>
             <button
               onClick={() => setSidebarOpen(false)}
               className="text-white/70 hover:text-white text-2xl hover:bg-white/10 p-1 rounded"
             >
               ×
             </button>
+          </div>
+
+          {/* Create and Discover buttons */}
+          <div className="p-4 flex flex-col space-y-3 border-b border-white/10">
+            <Link
+              to="/createCharacter" // Assuming this is the "Create" functionality
+              onClick={() => setSidebarOpen(false)}
+              className="flex items-center p-3 rounded-full bg-white/10 text-white justify-center hover:bg-white/20 transition-colors"
+            >
+              <svg
+                className="w-6 h-6 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                ></path>
+              </svg>
+              <span>Create</span>
+            </Link>
+            <Link
+              to="/communities" // Assuming this is the "Discover" functionality or similar
+              onClick={() => setSidebarOpen(false)}
+              className="flex items-center p-3 rounded-full bg-white/10 text-white justify-center hover:bg-white/20 transition-colors"
+            >
+              <svg
+                className="w-6 h-6 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.001 12.001 0 002.944 12c.036 1.157.26 2.27.653 3.332m0 0C4.305 17.587 7.02 19 12 19c4.98 0 7.695-1.413 8.403-3.668.393-1.062.617-2.175.653-3.332A12.001 12.001 0 0021.056 12C21.012 10.843 20.788 9.73 20.395 8.668z"
+                ></path>
+              </svg>
+              <span>Community</span>
+            </Link>
+            <Link
+              to='/characterList'
+              onClick={() => setSidebarOpen(false)}
+              className="flex items-center p-3 rounded-full bg-white/10 text-white justify-center hover:bg-white/20 transition-colors"
+            >
+              <svg
+                className="w-6 h-6 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                ></path>
+              </svg>
+              <span>내 캐릭터</span>
+            </Link>
           </div>
 
           {/* search */}
@@ -67,17 +137,17 @@ const Sidebar = ({ children }) => {
               </svg>
               <input
                 type="text"
-                placeholder="채팅 기록 검색..."
+                placeholder="채팅방 검색용 api 필요 부가기능"
                 className="w-full bg-white/10 border-none rounded-full px-10 py-2.5 text-white placeholder-white/60 focus:outline-none focus:bg-white/15"
               />
             </div>
           </div>
-
           {/* 캐릭터 목록 (더미 대신 연동) */}
           <div
             ref={sidebarListRef}
             className="flex-1 overflow-y-auto no-scrollbar"
           >
+            <h3 className="text-white/70 text-sm px-4 pt-4 pb-2">This Week</h3> {/* Added "This Week" heading */}
             {charactersData.map(chat => (
               <Link
                 key={chat.id}
@@ -86,24 +156,37 @@ const Sidebar = ({ children }) => {
                 onClick={() => setSidebarOpen(false)}
                 className="flex items-center p-4 hover:bg-white/5 cursor-pointer border-b border-white/5"
               >
-                <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+                <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
                   <img
                     src={chat.image}
                     alt={chat.name}
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="ml-3 flex-1">
+                <div className="ml-3 flex-1 truncate">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-white font-medium">{chat.name}</h3>
+                    <h3 className="text-white font-medium text-[0.9rem]">{chat.name}</h3>
                     <span className="text-white/50 text-sm">방금</span>
                   </div>
                   <p className="text-white/70 text-sm mt-1 truncate">
-                    안녕하세요!
+                    안녕하세요!qqqqqqqqqqqqwerqwerqwerqweq
                   </p>
                 </div>
               </Link>
             ))}
+          </div>
+
+          {/* Privacy Policy, Terms of Service, Upgrade and User at the bottom */}
+          <div className="p-4 border-t border-white/10 flex flex-col space-y-3">
+            <div className="flex justify-between text-white/50 text-sm">
+              <a href="#" className="hover:text-white">
+                Privacy Policy
+              </a>
+              <span>•</span>
+              <a href="#" className="hover:text-white">
+                Terms of Service
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -111,7 +194,7 @@ const Sidebar = ({ children }) => {
       {/* Main Content */}
       <div
         className={`flex-1 flex flex-col transition-all duration-300 w-full ${
-          sidebarOpen ? 'ml-80' : 'ml-0'
+          sidebarOpen ? 'ml-60' : 'ml-0'
         }`}
       >
         {/* Topbar */}
@@ -125,51 +208,9 @@ const Sidebar = ({ children }) => {
               <div className="w-5 h-0.5 bg-white"></div>
               <div className="w-5 h-0.5 bg-white"></div>
             </button>
-            <h2 className="text-[28px] font-semibold text-white">ChatMate</h2>
           </div>
-          <nav className="flex items-center space-x-4">
-            <Link
-              to="/"
-              className={`hover:text-white px-3 py-2 rounded hover:bg-white/10 ${
-                pathname === '/'
-                  ? 'text-white text-bold text-[24px]'
-                  : 'text-white/70 text-[18px]'
-              }`}
-            >
-              홈
-            </Link>
-            <Link
-              to="/communities"
-              className={`hover:text-white px-3 py-2 rounded hover:bg-white/10 ${
-                pathname === '/communities'
-                  ? 'text-white text-[24px] text-bold'
-                  : 'text-white/70 text-[18px]'
-              }`}
-            >
-              커뮤니티
-            </Link>
-            <Link
-              to="/createCharacter"
-              className={`hover:text-white px-3 py-2 rounded hover:bg-white/10 ${
-                pathname === '/createCharacter'
-                  ? 'text-white text-[24px] text-bold'
-                  : 'text-white/70 text-[18px]'
-              }`}
-            >
-              만들기
-            </Link>
-            <Link
-              to="/characterList"
-              className={`hover:text-white px-3 py-2 rounded hover:bg-white/10 ${
-                pathname === '/characterList'
-                  ? 'text-white text-[24px] text-bold'
-                  : 'text-white/70'
-              }`}
-            >
-              내 캐릭터
-            </Link>
-            <AnimatedAuthHeader />
-          </nav>
+          {/* Removed the <nav> element from here */}
+          <AnimatedAuthHeader /> {/* Keep the user avatar/auth header */}
         </div>
 
         {/* Children Content */}
@@ -186,8 +227,7 @@ const Sidebar = ({ children }) => {
           className="fixed inset-0 bg-black/30 z-20"
           onClick={() => setSidebarOpen(false)}
           aria-label="Close sidebar"
-        >
-        </button>
+        ></button>
       )}
     </div>
   );
