@@ -97,7 +97,7 @@ const Sidebar = ({ children }) => {
                   d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.001 12.001 0 002.944 12c.036 1.157.26 2.27.653 3.332m0 0C4.305 17.587 7.02 19 12 19c4.98 0 7.695-1.413 8.403-3.668.393-1.062.617-2.175.653-3.332A12.001 12.001 0 0021.056 12C21.012 10.843 20.788 9.73 20.395 8.668z"
                 ></path>
               </svg>
-              <span>Discover</span>
+              <span>Community</span>
             </Link>
             <Link
               to='/characterList'
@@ -115,7 +115,7 @@ const Sidebar = ({ children }) => {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth="2"
-                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.001 12.001 0 002.944 12c.036 1.157.26 2.27.653 3.332m0 0C4.305 17.587 7.02 19 12 19c4.98 0 7.695-1.413 8.403-3.668.393-1.062.617-2.175.653-3.332A12.001 12.001 0 0021.056 12C21.012 10.843 20.788 9.73 20.395 8.668z"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 ></path>
               </svg>
               <span>내 캐릭터</span>
@@ -142,65 +142,6 @@ const Sidebar = ({ children }) => {
               />
             </div>
           </div>
-
-          {/* Navigation Links in Sidebar */}
-          {/* <div className="p-4 border-b border-white/10">
-            <ul className="flex flex-col space-y-2">
-              <li>
-                <Link
-                  to="/"
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center p-2 rounded-lg text-lg ${
-                    pathname === '/'
-                      ? 'bg-white/15 text-white'
-                      : 'text-white/70 hover:bg-white/5 hover:text-white'
-                  }`}
-                >
-                  홈
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/communities"
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center p-2 rounded-lg text-lg ${
-                    pathname === '/communities'
-                      ? 'bg-white/15 text-white'
-                      : 'text-white/70 hover:bg-white/5 hover:text-white'
-                  }`}
-                >
-                  커뮤니티
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/createCharacter"
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center p-2 rounded-lg text-lg ${
-                    pathname === '/createCharacter'
-                      ? 'bg-white/15 text-white'
-                      : 'text-white/70 hover:bg-white/5 hover:text-white'
-                  }`}
-                >
-                  만들기
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/characterList"
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center p-2 rounded-lg text-lg ${
-                    pathname === '/characterList'
-                      ? 'bg-white/15 text-white'
-                      : 'text-white/70 hover:bg-white/5 hover:text-white'
-                  }`}
-                >
-                  내 캐릭터
-                </Link>
-              </li>
-            </ul>
-          </div> */}
-
           {/* 캐릭터 목록 (더미 대신 연동) */}
           <div
             ref={sidebarListRef}
