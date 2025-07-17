@@ -8,9 +8,9 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
     description: character.description,
     creater: character.creater,
     image: character.image,
-    personality: '',
-    characteristics: '',
-    tags: ''
+    personality: character.personality || '',
+    characteristics: character.characteristics || '',
+    tags: character.tags || ''
   });
 
   const [previewImage, setPreviewImage] = useState(character.image);
@@ -25,6 +25,18 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('이미지 파일만 업로드할 수 있습니다.');
+        return;
+      }
+
+      // Validate file size (e.g., 5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('파일 크기가 5MB를 초과합니다.');
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = (e) => {
         const imageUrl = e.target.result;
@@ -33,6 +45,9 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
           ...prev,
           image: imageUrl
         }));
+      };
+      reader.onerror = () => {
+        alert('파일을 읽는 중 오류가 발생했습니다.');
       };
       reader.readAsDataURL(file);
     }
@@ -43,12 +58,29 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
   };
 
   const handleSave = () => {
+    // Validate required fields
+    if (!formData.name.trim()) {
+      alert('캐릭터 이름을 입력해주세요.');
+      return;
+    }
+
+    if (!formData.description.trim()) {
+      alert('캐릭터 설명을 입력해주세요.');
+      return;
+    }
     onSave(character.id, formData);
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 flex justify-center items-center z-50 p-5">
+    <div
+      className="fixed inset-0 flex justify-center items-center z-50 p-5 bg-black bg-opacity-50"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
       <div className="bg-gray-800 rounded-3xl p-8 w-160 shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* 프로필 헤더 */}
         <div className="relative flex items-center mb-8">
@@ -75,14 +107,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
             />
           </div>
           <div className="flex-1">
-            {/* 이름 입력 */}
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-              className="text-2xl font-semibold text-white mb-1 bg-transparent border-b border-gray-600 focus:border-indigo-500 outline-none w-full pb-1"
-              placeholder="캐릭터 이름"
-            />
+            <span className="text-gray-400 text-sm">By. {formData.creater}</span>
 
             {/* 작성자 입력 */}
             <div className="flex items-center mb-3">
@@ -121,11 +146,11 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
         {/* 통계 섹션 */}
         <div className="flex justify-between mb-10">
           <div className="text-center flex-1">
-            <div className="text-3xl font-bold text-white mb-1">5</div>
+            <div className="text-3xl font-bold text-white mb-1">{character.conversations || 0}</div>
             <div className="text-gray-400 text-sm">대화</div>
           </div>
           <div className="text-center flex-1">
-            <div className="text-3xl font-bold text-white mb-1">10</div>
+            <div className="text-3xl font-bold text-white mb-1">{character.likes || 0}</div>
             <div className="text-gray-400 text-sm">좋아요</div>
           </div>
           <div className="text-center flex-1">
@@ -178,7 +203,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
                 <span className="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-xs">
                   #{formData.creater}
                 </span>
-                {formData.tags && formData.tags.split(',').map((tag, index) => (
+                {formData.tags?.split(',').map((tag, index) => (
                   <span key={index} className="bg-indigo-600 text-white px-3 py-1 rounded-full text-xs">
                     #{tag.trim()}
                   </span>
