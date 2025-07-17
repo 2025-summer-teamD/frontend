@@ -74,14 +74,27 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
     onClose();
   };
 
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  const handleBackdropKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      onClose();
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 flex justify-center items-center z-50 p-5 bg-black bg-opacity-50"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
+      onClick={handleBackdropClick}
+      onKeyDown={handleBackdropKeyDown}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="edit-character-title"
+      tabIndex={-1}
     >
       <div className="bg-gray-800 rounded-3xl p-8 w-160 shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* 프로필 헤더 */}
@@ -162,7 +175,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
         </div>
 
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-white mb-6">캐릭터 정보</h2>
+          <h2 id="edit-character-title" className="text-xl font-semibold text-white mb-6">캐릭터 정보</h2>
           <div className="space-y-8">
             {/* 성격 입력 */}
             <div className="pb-6 border-b border-gray-700">
