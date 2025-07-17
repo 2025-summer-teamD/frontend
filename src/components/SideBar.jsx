@@ -182,10 +182,12 @@ const Sidebar = ({ children }) => {
       </div>
 
       {sidebarOpen && (
-        <div
+        <button
           className="fixed inset-0 bg-black/30 z-20"
           onClick={() => setSidebarOpen(false)}
-        />
+          aria-label="Close sidebar"
+        >
+        </button>
       )}
     </div>
   );

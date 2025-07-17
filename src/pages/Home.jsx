@@ -1,7 +1,7 @@
-import Hero from "../components/hero";
-import PopularCharacters from "../components/popularCharacters";
-import Features from "../components/features";
-import ChatPreview from "../components/chatPreview";
+import Hero from "../components/Hero";
+import PopularCharacters from "../components/PopularCharacters";
+import Features from "../components/Features";
+import ChatPreview from "../components/ChatPreview";
 
 function Home() {
   return (
