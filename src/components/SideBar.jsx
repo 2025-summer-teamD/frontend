@@ -175,7 +175,7 @@ const Sidebar = ({ children }) => {
         {/* Children Content */}
         <main
           ref={contentRef}
-          className="flex-1 overflow-y-auto no-scrollbar px-8 py-6"
+          className="flex-1 overflow-y-auto no-scrollbar px-0 py-0"
         >
           {children}
         </main>
