@@ -3,7 +3,7 @@ import Home from './pages/Home';
 import Communities from './pages/communities';
 import CharacterList from './pages/CharacterList';
 import CreateCharacter from './pages/CreateCharacter';
-import ChatMate from './pages/ChatMate';
+import ChatMate from './pages/chatMate';
 import AppLayout from './layouts/AppLayout';
 import Sidebar from './components/sideBar';
 
