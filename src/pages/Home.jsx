@@ -7,7 +7,7 @@ function Home() {
   return (
     <div className="text-white no-scrollbar">
       <Hero />
-      <div className="bg-[linear-gradient(to_bottom,_#000034,_#6B7595)] px-8 py-16">
+      <div className="bg-[linear-gradient(to_bottom,_#000034,_#6B7595)] px-4 md:px-8 py-8 md:py-16">
         <PopularCharacters />
         <Features />
         <ChatPreview />
