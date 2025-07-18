@@ -5,7 +5,7 @@ import CharacterProfile from '../components/CharacterProfile';
 import CharacterEditModal from '../components/CharacterEditModal';
 import CharacterSearchBar from '../components/CharacterSearchBar';
 import CharacterGrid from '../components/CharacterGrid';
-import characters from '../data/characters';
+import { useCommunityCharacters } from '../data/characters';
 
 export default function CharacterList() {
   const myId = 'me'; // 실제 로그인 정보로 대체
@@ -21,6 +21,8 @@ export default function CharacterList() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [editingCharacter, setEditingCharacter] = useState(null);
+
+  const { characters, loading, error } = useCommunityCharacters();
 
   const myCharacters = characters.filter(
     c => c.creator === myId &&

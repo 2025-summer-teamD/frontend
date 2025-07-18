@@ -1,9 +1,8 @@
 // src/pages/Communities.jsx
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useCommunityCharacters } from '../data/characters';
 import CharacterProfile from '../components/CharacterProfile';
 import CharacterEditModal from '../components/CharacterEditModal';
-import characters from '../data/characters';
 import { Heart as OutlineHeart, Heart as SolidHeart, Search, XCircle } from 'lucide-react';
 
 export default function Communities() {
@@ -12,14 +11,16 @@ export default function Communities() {
   const [likedIds, setLikedIds] = useState(() =>
     JSON.parse(localStorage.getItem('likedIds')) || []
   );
-  useEffect(() => {
-    localStorage.setItem('likedIds', JSON.stringify(likedIds));
-  }, [likedIds]);
+  const { characters, loading, error } = useCommunityCharacters();
 
   const [activeTab, setActiveTab] = useState('인기순');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [editingCharacter, setEditingCharacter] = useState(null);
+
+  React.useEffect(() => {
+    localStorage.setItem('likedIds', JSON.stringify(likedIds));
+  }, [likedIds]);
 
   const handleLikeToggle = (id, newLiked) => {
     setLikedIds(prev =>
@@ -42,20 +43,48 @@ export default function Communities() {
     }
   };
 
+  // 검색 필터링 (API 데이터 구조에 맞게 수정)
   const filteredCharacters = characters.filter(char => {
     const keyword = searchQuery.toLowerCase();
     return (
       char.name.toLowerCase().includes(keyword) ||
-      char.description.toLowerCase().includes(keyword) ||
-      (char.aliases && char.aliases.some(alias => alias.toLowerCase().includes(keyword)))
+      char.introduction.toLowerCase().includes(keyword)
     );
   });  
 
+  // 정렬 (API 데이터 구조에 맞게 수정)
   const sortedCharacters = [...filteredCharacters].sort((a, b) => {
-    const valA = parseFloat(activeTab === '조회수순' ? a.chats : a.likes);
-    const valB = parseFloat(activeTab === '조회수순' ? b.chats : b.likes);
+    const valA = parseFloat(activeTab === '조회수순' ? a.uses_count : a.likes);
+    const valB = parseFloat(activeTab === '조회수순' ? b.uses_count : b.likes);
     return valB - valA;
   });
+
+  if (loading) {
+    return (
+      <div className="bg-gray-800 text-white min-h-screen font-sans flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto"></div>
+          <p className="mt-4 text-gray-400">캐릭터 목록을 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-gray-800 text-white min-h-screen font-sans flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-400">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-indigo-600 rounded-lg hover:bg-indigo-700"
+          >
+            다시 시도
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-800 text-white min-h-screen font-sans">
@@ -118,12 +147,12 @@ export default function Communities() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
             {sortedCharacters.map(character => {
-              const isLiked = likedIds.includes(character.id);
+              const isLiked = likedIds.includes(character.character_id);
               const handleSelect = () => setSelectedCharacter(character);
 
               return (
                 <div
-                  key={character.id}
+                  key={character.character_id}
                   role="button"
                   tabIndex={0}
                   onClick={handleSelect}
@@ -131,26 +160,26 @@ export default function Communities() {
                   className="group relative aspect-[3/4] bg-gray-700 rounded-2xl overflow-hidden cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-indigo-500/30"
                 >
                   <img
-                    src={character.image}
+                    src={character.image_url}
                     alt={character.name}
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
                     <h3 className="font-bold truncate">{character.name}</h3>
-                    <p className="text-xs text-gray-300 truncate">{character.description}</p>
+                    <p className="text-xs text-gray-300 truncate">{character.introduction}</p>
                     <div className="flex justify-between items-center mt-2 text-xs">
                       <div className="flex items-center gap-1">
                         <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                         </svg>
-                        <span>{character.messageCount}</span>
+                        <span>{character.uses_count}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <button
                           onClick={e => {
                             e.stopPropagation();
-                            handleLikeToggle(character.id, !isLiked);
+                            handleLikeToggle(character.character_id, !isLiked);
                           }}
                           className="flex items-center focus:outline-none"
                           aria-label="좋아요 토글"
@@ -177,7 +206,7 @@ export default function Communities() {
       {selectedCharacter && (
         <CharacterProfile
           character={selectedCharacter}
-          liked={likedIds.includes(selectedCharacter.id)}
+          liked={likedIds.includes(selectedCharacter.character_id)}
           origin="communities"
           onClose={() => setSelectedCharacter(null)}
           onLikeToggle={handleLikeToggle}
@@ -187,7 +216,7 @@ export default function Communities() {
       {editingCharacter && (
         <CharacterEditModal
           character={editingCharacter}
-          liked={likedIds.includes(editingCharacter.id)}
+          liked={likedIds.includes(editingCharacter.character_id)}
           onClose={() => setEditingCharacter(null)}
           onSave={handleSaveCharacter}
           onLikeToggle={handleLikeToggle}
