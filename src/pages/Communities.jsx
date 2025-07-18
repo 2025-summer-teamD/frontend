@@ -42,10 +42,14 @@ export default function Communities() {
     }
   };
 
-  const filteredCharacters = characters.filter(char =>
-    char.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    char.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredCharacters = characters.filter(char => {
+    const keyword = searchQuery.toLowerCase();
+    return (
+      char.name.toLowerCase().includes(keyword) ||
+      char.description.toLowerCase().includes(keyword) ||
+      (char.aliases && char.aliases.some(alias => alias.toLowerCase().includes(keyword)))
+    );
+  });  
 
   const sortedCharacters = [...filteredCharacters].sort((a, b) => {
     const valA = parseFloat(activeTab === '조회수순' ? a.chats : a.likes);
