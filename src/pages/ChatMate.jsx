@@ -98,37 +98,53 @@ const ChatMate = () => {
         {/* 메시지들 */}
 {/* 메시지들 */}
         <div className="space-y-4 pb-4 max-w-3xl mx-auto">
-          {messages.map(msg => (
-            <div
-              key={msg.id}
-              className={`flex flex-col w-full ${ // Changed to flex-col for vertical stacking
-                msg.sender === 'me' ? 'items-end' : 'items-start'
-              }`}
-            >
-              <div className={`flex items-center mb-1 ${msg.sender === 'me' ? 'flex-row-reverse' : 'flex-row'}`}> {/* Profile image and name */}
-                <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-gradient-to-br from-green-300 to-teal-400">
-                  <img
-                    src={msg.sender === 'me' ? user?.imageUrl || '/assets/icon-character.png' : character.image} // For 'me', you might want a user avatar. For now, using character.image
-                    alt=""
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <span className={`text-white font-medium text-sm ${msg.sender === 'me' ? 'mr-2' : 'ml-2'}`}>
-                  {msg.sender === 'me' ? user?.username || user?.firstName || 'You' : character.name}
-                </span>
-              </div>
+          {messages.map((msg, idx) => {
+            const isLast = idx === messages.length - 1;
+            const nextMsg = messages[idx + 1];
+            const prevMsg = messages[idx - 1];
+            const showTime = isLast || msg.time !== nextMsg?.time;
+            const showProfile = idx === 0 || msg.time !== prevMsg?.time;
 
+            return (
               <div
-                className={`max-w-[80%] sm:max-w-[70%] lg:max-w-[60%] px-4 py-3 rounded-2xl break-words ${
-                  msg.sender === 'me'
-                    ? 'bg-[#413ebc] text-white mr-10' // <-- 여기에 mr-10을 추가합니다.
-                    : 'bg-white text-black ml-10'
-                }`}
+                key={msg.id}
+                className={`flex flex-col w-full ${msg.sender === 'me' ? 'items-end' : 'items-start'}`}
               >
-                <p>{msg.text}</p>
+                {showProfile && (
+                  <div className={`flex items-center mb-1 ${msg.sender === 'me' ? 'flex-row-reverse' : 'flex-row'}`}> {/* Profile image and name */}
+                    <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-gradient-to-br from-green-300 to-teal-400">
+                      <img
+                        src={msg.sender === 'me' ? user?.imageUrl || '/assets/icon-character.png' : character.image}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <span className={`text-white font-medium text-sm ${msg.sender === 'me' ? 'mr-2' : 'ml-2'}`}>
+                      {msg.sender === 'me' ? user?.username || user?.firstName || 'You' : character.name}
+                    </span>
+                  </div>
+                )}
+                <div
+                  className={`max-w-[80%] sm:max-w-[70%] lg:max-w-[60%] px-4 py-3 rounded-2xl break-words ${
+                    msg.sender === 'me'
+                      ? 'bg-[#413ebc] text-white mr-10' // <-- 여기에 mr-10을 추가합니다.
+                      : 'bg-white text-black ml-10'
+                  }`}
+                >
+                  <p>{msg.text}</p>
+                </div>
+                {showTime && (
+                  <span
+                    className={`text-xs text-white/60 mt-1 block text-right ${
+                      msg.sender === 'me' ? 'mr-10' : 'ml-10'
+                    }`}
+                  >
+                    {msg.time}
+                  </span>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
           <div ref={messagesEndRef} />
         </div>
       </div>
