@@ -8,6 +8,13 @@ export default function CreateCharacter() {
   const [imagePreview, setImagePreview] = useState(AndrewImg)
   const [tags, setTags] = useState([])
   const [tagInput, setTagInput] = useState('')
+  const [isComposing, setIsComposing] = useState(false)
+
+  const [name, setName] = useState('')
+  const [tone, setTone] = useState('')
+  const [personality, setPersonality] = useState('')
+  const [description, setDescription] = useState('')
+  const [characterQuery, setCharacterQuery] = useState('')
 
   const handleImageChange = (e) => {
     const file = e.target.files[0]
@@ -20,7 +27,6 @@ export default function CreateCharacter() {
         alert('이미지 크기는 5MB 이하여야 합니다.')
         return
       }
-
       const reader = new FileReader()
       reader.onloadend = () => setImagePreview(reader.result)
       reader.onerror = () => alert('이미지 읽기에 실패했습니다.')
@@ -29,17 +35,14 @@ export default function CreateCharacter() {
   }
 
   const handleTagKeyDown = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !isComposing) {
       e.preventDefault()
       const rawTag = tagInput.trim().replace(/^#+/, '')
-
       if (!rawTag || tags.includes(rawTag)) return
-
       if (tags.length >= 5) {
         alert('태그는 최대 5개까지 입력할 수 있어요.')
         return
       }
-
       setTags([...tags, rawTag])
       setTagInput('')
     }
@@ -82,93 +85,91 @@ export default function CreateCharacter() {
           <div className="flex flex-col xl:flex-row gap-8 xl:gap-12 items-start no-scrollbar">
             <div className="flex-1 w-full">
               <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-gray-700">
-                <div className="mb-6">
-                  <h3 className="text-white text-xl font-bold mb-3">나만의 AI 인격체 만들기</h3>
-                  <p className="text-gray-400 text-base">
-                    캐릭터의 성격, 말투, 배경 스토리를 직접 설정하세요.
-                  </p>
-                </div>
-
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-white text-sm font-medium mb-2">캐릭터 이름</label>
-                    <input
-                      type="text"
-                      placeholder="이름"
-                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-[#413ebc] focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-white text-sm font-medium mb-2">말투</label>
-                    <input
-                      type="text"
-                      placeholder="예: 정중하고 따뜻한"
-                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-[#413ebc] focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-white text-sm font-medium mb-2">성격</label>
-                    <input
-                      type="text"
-                      placeholder="예: 활발하고 긍정적인"
-                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-[#413ebc] focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-white text-sm font-medium mb-2">추가 설명</label>
-                    <textarea
-                      placeholder="배경 스토리 등"
-                      className="w-full h-32 px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 resize-none focus:ring-2 focus:ring-[#413ebc] focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-white text-sm font-medium mb-2">태그 (Enter로 추가)</label>
-                    <input
-                      type="text"
-                      value={tagInput}
-                      onChange={(e) => setTagInput(e.target.value)}
-                      onKeyDown={handleTagKeyDown}
-                      placeholder="예: 상냥함, 귀여움 등"
-                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-[#413ebc] focus:outline-none"
-                    />
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {tags.map((tag, index) => (
-                        <span key={index} className="bg-[#413ebc] text-white px-3 py-1 rounded-full text-sm flex items-center">
-                          {tag}
-                          <button onClick={() => removeTag(index)} className="ml-2 text-gray-200 hover:text-white">×</button>
-                        </span>
-                      ))}
+                {activeTab === 'custom' ? (
+                  <>
+                    <div className="mb-6">
+                      <h3 className="text-white text-xl font-bold mb-3">나만의 AI 인격체 만들기</h3>
+                      <p className="text-gray-400 text-base">캐릭터의 성격, 말투, 배경 스토리를 직접 설정하세요.</p>
                     </div>
-                  </div>
 
-                  <div className="bg-gray-700/50 rounded-lg p-4">
-                    <label className="flex items-start gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={isPublic}
-                        onChange={e => setIsPublic(e.target.checked)}
-                        className="mt-1 accent-[#413ebc] w-4 h-4"
-                      />
+                    <div className="space-y-6">
                       <div>
-                        <span className="text-white text-sm font-medium">다른 사람에게 공개</span>
-                        <p className="text-gray-400 text-xs mt-1">체크 시 이 캐릭터는 공유됩니다.</p>
+                        <label className="block text-white text-sm font-medium mb-2">캐릭터 이름</label>
+                        <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white" placeholder="이름" />
                       </div>
-                    </label>
-                  </div>
 
-                  <div className="pt-4">
-                    <button className="w-full h-12 bg-[#413ebc] hover:bg-[#5b58d4] rounded-lg text-white font-bold transition-all">
-                      캐릭터 만들기
-                    </button>
-                  </div>
-                </div>
+                      <div>
+                        <label className="block text-white text-sm font-medium mb-2">말투</label>
+                        <input type="text" value={tone} onChange={(e) => setTone(e.target.value)} className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white" placeholder="예: 정중하고 따뜻한" />
+                      </div>
+
+                      <div>
+                        <label className="block text-white text-sm font-medium mb-2">성격</label>
+                        <input type="text" value={personality} onChange={(e) => setPersonality(e.target.value)} className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white" placeholder="예: 활발하고 긍정적인" />
+                      </div>
+
+                      <div>
+                        <label className="block text-white text-sm font-medium mb-2">추가 설명</label>
+                        <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="w-full h-32 px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white resize-none" placeholder="배경 스토리 등" />
+                      </div>
+
+                      <div>
+                        <label className="block text-white text-sm font-medium mb-2">태그 (Enter로 추가)</label>
+                        <input type="text" value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={handleTagKeyDown} onCompositionStart={() => setIsComposing(true)} onCompositionEnd={() => setIsComposing(false)} className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white" placeholder="예: 상냥함, 귀여움 등" />
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {tags.map((tag, index) => (
+                            <span key={index} className="bg-[#413ebc] text-white px-3 py-1 rounded-full text-sm flex items-center">
+                              {tag}
+                              <button onClick={() => removeTag(index)} className="ml-2 text-gray-200 hover:text-white">×</button>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="bg-gray-700/50 rounded-lg p-4">
+                        <label className="flex items-start gap-3 cursor-pointer">
+                          <input type="checkbox" checked={isPublic} onChange={e => setIsPublic(e.target.checked)} className="mt-1 accent-[#413ebc] w-4 h-4" />
+                          <div>
+                            <span className="text-white text-sm font-medium">다른 사람에게 공개</span>
+                            <p className="text-gray-400 text-xs mt-1">체크 시 이 캐릭터는 공유됩니다.</p>
+                          </div>
+                        </label>
+                      </div>
+
+                      <div className="pt-4">
+                        <button className="w-full h-12 bg-[#413ebc] hover:bg-[#5b58d4] rounded-lg text-white font-bold transition-all">
+                          캐릭터 만들기
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="text-white text-xl font-bold mb-3">실제 캐릭터 가져오기</h3>
+                    <p className="text-gray-400 text-base mb-6">존재하는 캐릭터의 이름을 입력해 검색하세요.</p>
+                    <input
+                      type="text"
+                      value={characterQuery}
+                      onChange={(e) => setCharacterQuery(e.target.value)}
+                      placeholder="예: 해리 포터"
+                      className="w-full px-4 py-3 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400"
+                    />
+                    <div className="text-gray-400 text-sm">* 검색 API는 추후 연동 예정입니다.</div>
+                    <div className="bg-gray-700/50 rounded-lg p-4 mt-6">
+                      <label className="flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" checked={isPublic} onChange={e => setIsPublic(e.target.checked)} className="mt-1 accent-[#413ebc] w-4 h-4" />
+                        <div>
+                          <span className="text-white text-sm font-medium">다른 사람에게 공개</span>
+                          <p className="text-gray-400 text-xs mt-1">체크 시 이 캐릭터는 공유됩니다.</p>
+                        </div>
+                      </label>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
+            {/* 미리보기 및 이미지 업로드는 공통 */}
             <div className="w-full xl:w-[25rem]">
               <div className="xl:sticky xl:top-4">
                 <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700">
@@ -180,16 +181,14 @@ export default function CreateCharacter() {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                     </div>
                     <div className="p-6">
-                      <h4 className="text-white font-bold text-xl mb-3">캐릭터 이름</h4>
-                      <p className="text-gray-400 text-sm leading-relaxed mb-2">
-                        여기에 성격, 말투, 설명 등이 표시됩니다.
-                      </p>
+                      <h4 className="text-white font-bold text-xl mb-2">{name || '캐릭터 이름'}</h4>
+                      <p className="text-gray-400 text-sm mb-1">{tone && `말투: ${tone}`}</p>
+                      <p className="text-gray-400 text-sm mb-1">{personality && `성격: ${personality}`}</p>
+                      <p className="text-gray-400 text-sm leading-relaxed mb-2">{description || '여기에 성격, 말투, 설명 등이 표시됩니다.'}</p>
                       {tags.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-3">
                           {tags.map((tag, index) => (
-                            <span key={index} className="bg-[#413ebc] text-white px-3 py-1 rounded-full text-xs">
-                              #{tag}
-                            </span>
+                            <span key={index} className="bg-[#413ebc] text-white px-3 py-1 rounded-full text-xs">#{tag}</span>
                           ))}
                         </div>
                       )}
