@@ -26,6 +26,13 @@ const Sidebar = ({ children }) => {
   const sidebarListRef = useRef(null);
   const contentRef = useRef(null);
 
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredCharacters = charactersData.filter(room =>
+    room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    room.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   // Escape 키로 사이드바 닫기
   useEffect(() => {
     const handleKeyDown = e => {
@@ -154,6 +161,8 @@ const Sidebar = ({ children }) => {
                 type="text"
                 placeholder="채팅방 검색용 api 필요 부가기능"
                 className="w-full bg-white/10 border-none rounded-full px-10 py-2.5 text-white placeholder-white/60 focus:outline-none focus:bg-white/15"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
               />
             </div>
           </div>
@@ -163,7 +172,7 @@ const Sidebar = ({ children }) => {
             className="flex-1 overflow-y-auto no-scrollbar"
           >
             <h3 className="text-white/70 text-sm px-4 pt-4 pb-2">This Week</h3> {/* Added "This Week" heading */}
-            {charactersData.map(chat => (
+            {filteredCharacters.map(chat => (
               <Link
                 key={chat.id}
                 to="/chatMate"
