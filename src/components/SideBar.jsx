@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import charactersData from '../data/characters';
+import { useMyChatCharacters } from '../data/characters';
 import { chatMessages } from '../data/chatMessages';
 import logo from '/assets/logo.png';
 import AnimatedAuthHeader from './AnimatedAuthHeader';
@@ -22,14 +22,29 @@ const Sidebar = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { pathname } = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
+  const { characters, loading, error } = useMyChatCharacters();
 
   const sidebarListRef = useRef(null);
   const contentRef = useRef(null);
 
-  const filteredCharacters = charactersData.filter(room =>
+  const filteredCharacters = characters.filter(room =>
     room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    room.description.toLowerCase().includes(searchQuery.toLowerCase())
+    (room.last_chat && room.last_chat.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  // 마지막 메시지 시간 포맷팅 함수
+  const formatLastMessageTime = (timeString) => {
+    if (!timeString) return '방금';
+    
+    const now = new Date();
+    const messageTime = new Date(timeString);
+    const diffInMinutes = Math.floor((now - messageTime) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return '방금';
+    if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}시간 전`;
+    return `${Math.floor(diffInMinutes / 1440)}일 전`;
+  };
 
   useEffect(() => {
     const handleKeyDown = e => {
@@ -110,26 +125,41 @@ const Sidebar = ({ children }) => {
           {/* Character List */}
           <div ref={sidebarListRef} className="flex-1 overflow-y-auto no-scrollbar">
             <h3 className="text-white/70 text-sm px-4 pt-4 pb-2">채팅 목록</h3>
-            {filteredCharacters.map(chat => (
-              <Link
-                key={chat.id}
-                to="/chatMate"
-                state={{ character: chat }}
-                onClick={() => setSidebarOpen(false)}
-                className="flex items-center p-4 hover:bg-white/5 cursor-pointer border-b border-white/5"
-              >
-                <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-                  <img src={chat.image} alt={chat.name} className="w-full h-full object-cover" />
-                </div>
-                <div className="ml-3 flex-1 truncate">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-white font-medium text-[0.9rem]">{chat.name}</h3>
-                    <span className="text-white/50 text-sm">{getLastMsgTime(chat) || '방금'}</span>
+            {loading ? (
+              <div className="p-4 text-center">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mx-auto"></div>
+                <p className="text-white/50 text-sm mt-2">로딩 중...</p>
+              </div>
+            ) : error ? (
+              <div className="p-4 text-center">
+                <p className="text-red-400 text-sm">{error}</p>
+              </div>
+            ) : filteredCharacters.length === 0 ? (
+              <div className="p-4 text-center">
+                <p className="text-white/50 text-sm">캐릭터가 없습니다</p>
+              </div>
+            ) : (
+              filteredCharacters.map(chat => (
+                <Link
+                  key={chat.character_id}
+                  to="/chatMate"
+                  state={{ character: chat }}
+                  onClick={() => setSidebarOpen(false)}
+                  className="flex items-center p-4 hover:bg-white/5 cursor-pointer border-b border-white/5"
+                >
+                  <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                    <img src={chat.image_url} alt={chat.name} className="w-full h-full object-cover" />
                   </div>
-                  <p className="text-white/70 text-sm mt-1 truncate">{getLastMsgText(chat)}</p>
-                </div>
-              </Link>
-            ))}
+                  <div className="ml-3 flex-1 truncate">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-white font-medium text-[0.9rem]">{chat.name}</h3>
+                      <span className="text-white/50 text-sm">{formatLastMessageTime(chat.time)}</span>
+                    </div>
+                    <p className="text-white/70 text-sm mt-1 truncate">{chat.last_chat || '채팅을 시작해보세요'}</p>
+                  </div>
+                </Link>
+              ))
+            )}
           </div>
 
           {/* Footer */}
