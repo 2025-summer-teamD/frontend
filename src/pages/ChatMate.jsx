@@ -10,7 +10,7 @@ const ChatMate = () => {
   const { user } = useUser();
 
   const [newMessage, setNewMessage] = useState('');
-  const [messages, setMessages] = useState(chatMessages);
+  const [messages, setMessages] = useState(() => chatMessages.filter(m => m.characterId === character?.id));
   const scrollContainerRef = useRef(null);
   const messagesEndRef = useRef(null);
   const isInitialMount = useRef(true);
@@ -37,6 +37,11 @@ const ChatMate = () => {
   // character 정보가 없으면 아무것도 렌더하지 않음
   if (!character) return null;
 
+  // character가 바뀌면 해당 캐릭터의 메시지로 상태 초기화
+  useEffect(() => {
+    setMessages(chatMessages.filter(m => m.characterId === character?.id));
+  }, [character]);
+
   const sendMessage = () => {
     if (!newMessage.trim()) return;
     const now = new Date().toLocaleTimeString('ko-KR', {
@@ -44,10 +49,15 @@ const ChatMate = () => {
       minute: '2-digit',
       hour12: true,
     });
-    setMessages(prev => [
-      ...prev,
-      { id: prev.length + 1, text: newMessage, sender: 'me', time: now }
-    ]);
+    const msg = {
+      id: chatMessages.length + 1,
+      text: newMessage,
+      sender: 'me',
+      time: now,
+      characterId: character.id,
+    };
+    chatMessages.push(msg);
+    setMessages(chatMessages.filter(m => m.characterId === character.id));
     setNewMessage('');
   };
 
