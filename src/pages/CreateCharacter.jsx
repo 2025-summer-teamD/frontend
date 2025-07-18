@@ -29,21 +29,22 @@ export default function CreateCharacter() {
   }
 
   const handleTagKeyDown = (e) => {
-    if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) {
+    if (e.key === 'Enter') {
       e.preventDefault()
 
-      if (tags.length >= 5) {
-        alert('태그는 최대 5개까지 입력할 수 있어요.')
-        return
-      }
+      setTimeout(() => {
+        const rawTag = tagInput.trim().replace(/^#+/, '')
 
-      const rawTag = tagInput.trim().replace(/^#+/, '').replace(/[,]+$/, '')
+        if (!rawTag || tags.includes(rawTag)) return
 
-      if (rawTag && !tags.includes(rawTag)) {
+        if (tags.length >= 5) {
+          alert('태그는 최대 5개까지 입력할 수 있어요.')
+          return
+        }
+
         setTags([...tags, rawTag])
-      }
-
-      setTagInput('')
+        setTagInput('')
+      }, 0)
     }
   }
 
@@ -70,9 +71,7 @@ export default function CreateCharacter() {
                 activeTab === tab.key
                   ? 'bg-[#413ebc] text-white shadow-lg'
                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
-              } ${
-                index === 0 ? 'rounded-l-lg' : 'rounded-r-lg'
-              }`}
+              } ${index === 0 ? 'rounded-l-lg' : 'rounded-r-lg'}`}
               onClick={() => setActiveTab(tab.key)}
             >
               {tab.label}
@@ -130,13 +129,13 @@ export default function CreateCharacter() {
                   </div>
 
                   <div>
-                    <label className="block text-white text-sm font-medium mb-2">태그 (Enter 또는 , 로 추가)</label>
+                    <label className="block text-white text-sm font-medium mb-2">태그 (Enter로 추가)</label>
                     <input
                       type="text"
                       value={tagInput}
                       onChange={(e) => setTagInput(e.target.value)}
                       onKeyDown={handleTagKeyDown}
-                      placeholder="예: #상냥함, #귀여움"
+                      placeholder="예: 상냥함, 귀여움 등"
                       className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-[#413ebc] focus:outline-none"
                     />
                     <div className="flex flex-wrap gap-2 mt-2">
