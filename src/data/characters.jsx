@@ -1,131 +1,63 @@
 // src/data/characters.jsx
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useAuth } from "@clerk/clerk-react";
 
-const characters = [
-  {
-    id: 1,
-    name: 'Iron Man',
-    image: '/assets/ironman.png',
-    description: '천재 발명가이자 아이언맨 슈트를 착용한 토니 스타크',
-    aliases: ['아이언맨', '어벤져스', '토니 스타크'],
-    creator: 'me',
-    author: 'tonistark',
-    messageCount: '27k',
-    likes: '1.3k',
-    shared: 10,
-    intimacy: 60,
-  },
-  {
-    id: 2,
-    name: 'Karina',
-    image: '/assets/karina.png',
-    description: '에스파의 멤버이자 리더',
-    aliases: ['카리나', '에스파', '유지민'],
-    creator: 'smtown',
-    author: 'me',
-    messageCount: '9.6k',
-    likes: '4.5k',
-    shared: 10,
-    intimacy: 45,
-  },
-  {
-    id: 3,
-    name: 'Andrew Park',
-    image: '/assets/andrew.png',
-    description: '천재 개발자 겸 창업가 겸 온라인 비즈니스 분야 전문가',
-    aliases: ['부트캠프', '앤드류', '천재'],
-    creator: 'whoireneee',
-    author: 'whoireneee',
-    messageCount: '5.2k',
-    likes: '999k',
-    shared: 10,
-    intimacy: 75,
-  },
-  {
-    id: 4,
-    name: 'Moana',
-    image: '/assets/moana.png',
-    description: '바다의 부름을 받은 모아나 와이알리키',
-    aliases: ['모아나', '와이알리키', '디즈니'],
-    creator: 'disney',
-    author: 'disney',
-    messageCount: '3.2k',
-    likes: '1.8k',
-    shared: 10,
-    intimacy: 30,
-  },
-  {
-    id: 5,
-    name: 'Jaeyook bokum',
-    image: '/assets/jayook.png',
-    description: '제육볶음의 달인',
-    aliases: ['제육볶음', '조영욱', '음식'],
-    creator: 'cookmom',
-    author: 'cookmom',
-    messageCount: '1.2k',
-    likes: '2.8k',
-    shared: 10,
-    intimacy: 85,
-  },
-  {
-    id: 6,
-    name: 'Elon Musk',
-    image: '/assets/elonmusk.png',
-    description: '화성 개척자, Tesla와 SpaceX의 CEO',
-    aliases: ['테슬라', '스페이스X', '일론 머스크'],
-    creator: 'elonmusk',
-    author: 'elonmusk',
-    messageCount: '3.4k',
-    likes: '1.2k',
-    shared: 10,
-  },
-  {
-    id: 7,
-    name: 'Baby',
-    image: '/assets/baby.png',
-    description: '아기의 옹알이',
-    aliases: ['아기', '옹알이', '아기 옹알이'],
-    creator: 'babymom',
-    author: 'babymom',
-    messageCount: '3.4k',
-    likes: '17k',
-    shared: 10,
-  },
-  {
-    id: 8,
-    name: 'Session',
-    image: '/assets/session.png',
-    description: '삶의 지식을 나누는 멘토',
-    aliases: ['멘토', '삶의 지식'],
-    creator: 'techeer',
-    author: 'techeer',
-    messageCount: '3.4k',
-    likes: '1.3k',
-    shared: 10,
-  },
-  {
-    id: 9,
-    name: 'Woo Dohwan',
-    image: '/assets/WooDoHwan.png',
-    description: '한국의 인기 배우',
-    aliases: ['우도환', '배우'],
-    creator: 'actor_woo',
-    author: 'actor_woo',
-    messageCount: '3.4k',
-    likes: '3.7k',
-    shared: 10,
-  },
-  {
-    id: 10,
-    name: 'Sana',
-    image: '/assets/sana.png',
-    description: '트와이스 멤버',
-    aliases: ['트와이스', '사나'],
-    creator: 'jypnation',
-    author: 'jypnation',
-    messageCount: '1.4k',
-    likes: '5.1k',
-    shared: 10,
-  },
-];
+// 커뮤니티 캐릭터 목록을 가져오는 커스텀 훅
+export function useCommunityCharacters() {
+  const [characters, setCharacters] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-export default characters;
+  useEffect(() => {
+    const fetchCharacters = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get('http://localhost:3001/api/communities/characters');
+        setCharacters(response.data.data);
+      } catch (err) {
+        setError('캐릭터 목록을 불러오는데 실패했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCharacters();
+  }, []);
+
+  return { characters, loading, error };
+}
+
+// 내가 채팅한 캐릭터 목록을 가져오는 커스텀 훅
+export function useMyChatCharacters() {
+  const [characters, setCharacters] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { getToken } = useAuth();
+
+  useEffect(() => {
+    const fetchMyChatCharacters = async () => {
+      try {
+        setLoading(true);
+        const token = await getToken();
+        const response = await fetch("http://localhost:3001/api/my/chat-characters", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!response.ok) {
+          throw new Error('채팅 목록을 불러오는데 실패했습니다.');
+        }
+        const data = await response.json();
+        setCharacters(data.data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMyChatCharacters();
+  }, [getToken]);
+
+  return { characters, loading, error };
+}  

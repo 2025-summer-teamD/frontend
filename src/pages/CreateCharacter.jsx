@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import Sidebar from '../components/SideBar'
 import AndrewImg from '/assets/andrew.png'
+import { useAuth } from "@clerk/clerk-react";
 
 export default function CreateCharacter() {
   const [activeTab, setActiveTab] = useState('custom')
@@ -15,6 +16,9 @@ export default function CreateCharacter() {
   const [personality, setPersonality] = useState('')
   const [description, setDescription] = useState('')
   const [characterQuery, setCharacterQuery] = useState('')
+  const [isCreating, setIsCreating] = useState(false)
+
+  const { getToken } = useAuth();
 
   const handleImageChange = (e) => {
     const file = e.target.files[0]
@@ -51,6 +55,60 @@ export default function CreateCharacter() {
   const removeTag = (indexToRemove) => {
     setTags(tags.filter((_, index) => index !== indexToRemove))
   }
+
+  // 캐릭터 생성 API 연동 함수
+  const handleCreateCharacter = async (e) => {
+    e.preventDefault();
+    if (!name || !tone || !personality || !description) {
+      alert("모든 필드를 입력해주세요.");
+      return;
+    }
+    try {
+      setIsCreating(true);
+      const token = await getToken();
+      const response = await fetch("http://localhost:3001/api/characters/custom", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name,
+          image_url: "https://upload.wikimedia.org/wikipedia/commons/6/6a/JavaScript-logo.png", // base64 또는 url
+          is_public: isPublic,
+          prompt: {
+            tone,
+            personality,
+            tag: tags.join(","),
+          },
+          description,
+        }),
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        console.error('서버 응답:', err); // 서버 응답 전체 로그
+        throw new Error(err.message || "캐릭터 생성 실패");
+      }
+      alert("캐릭터가 성공적으로 생성되었습니다!");
+      
+      // 폼 초기화
+      setName('');
+      setTone('');
+      setPersonality('');
+      setDescription('');
+      setTags([]);
+      setImagePreview(AndrewImg);
+      setIsPublic(true);
+      
+      // 성공 후 캐릭터 목록 페이지로 이동 (선택사항)
+      // window.location.href = '/characterList';
+      
+    } catch (err) {
+      alert(err.message || "에러가 발생했습니다.");
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   return (
     <div className="flex flex-col h-screen">
@@ -137,8 +195,16 @@ export default function CreateCharacter() {
                       </div>
 
                       <div className="pt-4">
-                        <button className="w-full h-12 bg-[#413ebc] hover:bg-[#5b58d4] rounded-lg text-white font-bold transition-all">
-                          캐릭터 만들기
+                        <button 
+                          className={`w-full h-12 rounded-lg text-white font-bold transition-all ${
+                            isCreating 
+                              ? 'bg-gray-500 cursor-not-allowed' 
+                              : 'bg-[#413ebc] hover:bg-[#5b58d4]'
+                          }`} 
+                          onClick={handleCreateCharacter}
+                          disabled={isCreating}
+                        >
+                          {isCreating ? '생성 중...' : '캐릭터 만들기'}
                         </button>
                       </div>
                     </div>
