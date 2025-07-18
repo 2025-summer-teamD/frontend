@@ -31,20 +31,17 @@ export default function CreateCharacter() {
   const handleTagKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault()
+      const rawTag = tagInput.trim().replace(/^#+/, '')
 
-      setTimeout(() => {
-        const rawTag = tagInput.trim().replace(/^#+/, '')
+      if (!rawTag || tags.includes(rawTag)) return
 
-        if (!rawTag || tags.includes(rawTag)) return
+      if (tags.length >= 5) {
+        alert('태그는 최대 5개까지 입력할 수 있어요.')
+        return
+      }
 
-        if (tags.length >= 5) {
-          alert('태그는 최대 5개까지 입력할 수 있어요.')
-          return
-        }
-
-        setTags([...tags, rawTag])
-        setTagInput('')
-      }, 0)
+      setTags([...tags, rawTag])
+      setTagInput('')
     }
   }
 
