@@ -109,7 +109,7 @@ const Sidebar = ({ children }) => {
 
           {/* Character List */}
           <div ref={sidebarListRef} className="flex-1 overflow-y-auto no-scrollbar">
-            <h3 className="text-white/70 text-sm px-4 pt-4 pb-2">This Week</h3>
+            <h3 className="text-white/70 text-sm px-4 pt-4 pb-2">채팅 목록</h3>
             {filteredCharacters.map(chat => (
               <Link
                 key={chat.id}
