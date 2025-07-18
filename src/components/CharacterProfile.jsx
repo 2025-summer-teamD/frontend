@@ -1,8 +1,7 @@
-// src/components/CharacterProfile.jsx
 import React from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
-import { Heart as OutlineHeart, Heart as SolidHeart } from 'lucide-react';
+import { Heart as OutlineHeart } from 'lucide-react';
 
 const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle }) => {
   const isMyCharacter = origin === 'my';
@@ -23,11 +22,7 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle }) =
         <div className="relative flex items-center mb-8">
           <div className="w-20 h-20 bg-gray-300 rounded-full border-4 border-white mr-5 overflow-hidden">
             {character.image && (
-              <img
-                src={character.image}
-                alt={character.name}
-                className="w-full h-full object-cover"
-              />
+              <img src={character.image} alt={character.name} className="w-full h-full object-cover" />
             )}
           </div>
           <div>
@@ -42,8 +37,12 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle }) =
           >
             {liked ? (
               <svg className="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-            </svg>
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 
+                  5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 
+                  4.5 2.09C13.09 3.81 14.76 3 16.5 
+                  3 19.58 3 22 5.42 22 8.5c0 
+                  3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
             ) : (
               <OutlineHeart className="w-6 h-6 text-gray-400 hover:text-red-500 transition-colors" />
             )}
@@ -77,17 +76,6 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle }) =
                 <div className="pb-6 border-b border-gray-700">
                   <div className="text-gray-400 text-sm">특징</div>
                 </div>
-                <div className="pb-6 border-b border-gray-700">
-                  <div className="text-gray-400 text-sm mb-3">태그</div>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-xs">
-                      #캐릭터 id
-                    </span>
-                    <span className="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-xs">
-                      #만든 이
-                    </span>
-                  </div>
-                </div>
               </div>
             </div>
           </>
@@ -114,17 +102,19 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle }) =
                 <div className="pb-6 border-b border-gray-700">
                   <div className="text-gray-400 text-sm">특징</div>
                 </div>
-                <div className="pb-6 border-b border-gray-700">
-                  <div className="text-gray-400 text-sm mb-3">태그</div>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-xs">
-                      #{character.id}번째로 생성된 캐릭터
-                    </span>
-                    <span className="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-xs">
-                      #{character.creater}
-                    </span>
+
+                {character.aliases && character.aliases.length > 0 && (
+                  <div className="pb-6 border-b border-gray-700">
+                    <div className="text-gray-400 text-sm mb-3">태그</div>
+                    <div className="flex flex-wrap gap-2">
+                      {character.aliases.map((alias, idx) => (
+                        <span key={idx} className="bg-purple-700 text-white px-3 py-1 rounded-full text-xs">
+                          #{alias}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </>
@@ -137,8 +127,8 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle }) =
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03
-                8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 
+                8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 
                 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
               />
             </svg>
@@ -165,7 +155,10 @@ CharacterProfile.propTypes = {
     image: PropTypes.string,
     intimacy: PropTypes.number,
     messageCount: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    likes: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+    likes: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    chats: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    creater: PropTypes.string,
+    aliases: PropTypes.arrayOf(PropTypes.string),
   }).isRequired,
   liked: PropTypes.bool.isRequired,
   origin: PropTypes.string.isRequired,
