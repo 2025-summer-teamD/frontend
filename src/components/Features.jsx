@@ -23,26 +23,27 @@ const features = [
 
 export default function Features() {
   return (
-    <section id="features" className="py-8 md:py-16 px-4 md:px-8">
-      <h2 className="text-3xl md:text-4xl lg:text-5xl xl:text-[48px] font-bold text-center text-white mb-8 md:mb-18">
+    <section id="features" className="py-6 md:py-12 px-4 md:px-6">
+      <h2 className="text-2xl md:text-3xl lg:text-4xl xl:text-[48px] font-bold text-center text-white mb-4 md:mb-6">
         주요 기능
       </h2>
-      <p className="text-center text-lg md:text-xl lg:text-2xl xl:text-[24px] font-extrabold mb-8 md:mb-10 leading-relaxed">
+      <p className="text-center text-lg md:text-xl lg:text-2xl xl:text-[24px] font-extrabold mb-20 md:mb-24 leading-relaxed">
         AI 캐릭터 생성, 대화, 공유까지. 상상한 모든 기능을 하나의 공간에서 경험해보세요.
       </p>
       
       <div className="max-w-[100rem] mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 justify-items-center">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-0 justify-items-center">
           {features.map(({ title, desc, icon }) => (
             <div
-              key={title}
-              className="w-full max-w-[400px] min-h-[280px] md:min-h-[320px] bg-[linear-gradient(to_top,_#0C0F2B_40%,_#040438_59%)] p-6 flex flex-col items-center text-center hover:bg-[#1F2937] transition-all rounded-lg"
+              key={title} //보라색 상자 3개 사이즈 조절
+              className="w-full max-w-[320px] min-h-[100px] md:min-h-[100px] bg-[linear-gradient(to_top,_#0C0F2B_40%,_#040438_59%)] p-6 flex flex-col items-center text-center hover:bg-[#1F2937] transition-all rounded-lg"
             >
-              <img src={icon} alt={title} className="h-[70px] md:h-[90px] w-[70px] md:w-[90px] mb-4 flex-shrink-0" />
-              <h3 className="text-xl md:text-2xl xl:text-[24px] font-semibold text-white mb-4 flex-shrink-0">
+        
+              <img src={icon} alt={title} className="h-[50px] md:h-[70px] w-[50px] md:w-[70px] mb-4 flex-shrink-0" /> 
+              <h3 className="text-xl md:text-2xl xl:text-[20px] font-semibold text-white mb-4 flex-shrink-0">
                 {title}
               </h3>
-              <p className="text-sm md:text-base xl:text-[16px] text-white/60 leading-relaxed flex-1 flex items-center">
+              <p className="text-sm md:text-base xl:text-[14px] text-white/60 leading-relaxed flex-1 flex items-center">
                 {desc}
               </p>
             </div>
