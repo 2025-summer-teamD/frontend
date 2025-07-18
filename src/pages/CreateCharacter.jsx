@@ -3,7 +3,7 @@ import Sidebar from '../components/SideBar'
 import AndrewImg from '/assets/andrew.png'
 
 export default function CreateCharacter() {
-  const [activeTab, setActiveTab] = useState('existing')
+  const [activeTab, setActiveTab] = useState('custom')
   const [isPublic, setIsPublic] = useState(true)
   const [imagePreview, setImagePreview] = useState(AndrewImg)
   const [tags, setTags] = useState([])
