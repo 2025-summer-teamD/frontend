@@ -1,8 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import charactersData from '../data/characters';
+import { chatMessages } from '../data/chatMessages';
 import logo from '/assets/logo.png';
 import AnimatedAuthHeader from './AnimatedAuthHeader';
+
+// 캐릭터별 마지막 메시지 시간 구하기
+function getLastMsgTime(character) {
+  // character.id와 chatMessages의 characterId가 매칭된다고 가정
+  const msgs = chatMessages.filter(msg => msg.characterId === character.id);
+  if (msgs.length === 0) return null;
+  return msgs[msgs.length - 1].time;
+}
+
+function getLastMsgText(character) {
+  const msgs = chatMessages.filter(msg => msg.characterId === character.id);
+  if (msgs.length === 0) return character.description;
+  return msgs[msgs.length - 1].text;
+}
 
 const Sidebar = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -175,11 +190,9 @@ const Sidebar = ({ children }) => {
                 <div className="ml-3 flex-1 truncate">
                   <div className="flex items-center justify-between">
                     <h3 className="text-white font-medium text-[0.9rem]">{chat.name}</h3>
-                    <span className="text-white/50 text-sm">방금</span>
+                    <span className="text-white/50 text-sm">{getLastMsgTime(chat) || '방금'}</span>
                   </div>
-                  <p className="text-white/70 text-sm mt-1 truncate">
-                    {chat.description}
-                  </p>
+                  <p className="text-white/70 text-sm mt-1 truncate">{getLastMsgText(chat)}</p>
                 </div>
               </Link>
             ))}

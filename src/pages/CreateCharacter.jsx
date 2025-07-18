@@ -3,7 +3,7 @@ import Sidebar from '../components/SideBar'
 import AndrewImg from '/assets/andrew.png'
 
 export default function CreateCharacter() {
-  const [activeTab, setActiveTab] = useState('existing')
+  const [activeTab, setActiveTab] = useState('custom')
   const [isPublic, setIsPublic] = useState(true)
   const [imagePreview, setImagePreview] = useState(AndrewImg)
 
@@ -68,9 +68,8 @@ export default function CreateCharacter() {
           ))}
         </div>
       </div>
-
       {/* 메인 컨텐츠 */}
-      <div className="flex-1 px-[1.5rem] overflow-auto">
+      <div className="flex-1 px-[1.5rem] overflow-auto no-scrollbar">
         <main className="max-w-[100rem] mx-auto no-scrollbar">
           <div className="flex flex-col xl:flex-row gap-8 xl:gap-12 items-start no-scrollbar">
             {/* 왼쪽 폼 영역 */}
@@ -123,9 +122,9 @@ export default function CreateCharacter() {
               ) : (
                 <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-gray-700">
                   <div className="mb-6">
-                    <h3 className="text-white text-xl font-bold mb-3">나만의 AI 인격체 만들기</h3>
+                    <h3 className="text-white text-xl font-bold mb-3">나만의 AI 캐릭터 만들기</h3>
                     <p className="text-gray-400 text-base">
-                      직접 캐릭터의 성격, 말투, 배경 스토리를 설정하여 나만의 AI 인격체를 만들어보세요.
+                      직접 캐릭터의 성격, 말투, 배경 스토리를 설정하여 나만의 AI 캐릭터터를 만들어보세요.
                     </p>
                   </div>
 
