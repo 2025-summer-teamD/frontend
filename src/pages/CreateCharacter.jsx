@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import Sidebar from '../components/SideBar'
 import AndrewImg from '/assets/andrew.png'
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth, useUser } from "@clerk/clerk-react";
 import { getSafeImageUrl } from '../utils/imageUtils';
 
 export default function CreateCharacter() {
@@ -20,7 +20,20 @@ export default function CreateCharacter() {
   const [isCreating, setIsCreating] = useState(false)
 
   const { getToken } = useAuth();
+  const { user } = useUser(); // username을 가져오기 위해 useUser 추가
 
+  // username 정보 출력 (디버깅용)
+  React.useEffect(() => {
+    if (user) {
+      console.log('CreateCharacter - User info:', {
+        id: user.id,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        fullName: user.fullName
+      });
+    }
+  }, [user]);
 
 
   const handleTagKeyDown = (e) => {
@@ -51,23 +64,29 @@ export default function CreateCharacter() {
     try {
       setIsCreating(true);
       const token = await getToken();
+      
+      const requestData = {
+        name,
+        image_url: "http://localhost:3001/api/uploads/default-character.svg", // 기본 이미지 사용
+        is_public: isPublic,
+        prompt: {
+          tone,
+          personality,
+          tag: tags.join(","),
+        },
+        description,
+        creator_name: user?.username || user?.firstName || user?.fullName || '사용자',
+      };
+      
+      console.log('CreateCharacter - 전송할 데이터:', requestData);
+      
       const response = await fetch("http://localhost:3001/api/characters/custom", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-                  body: JSON.stringify({
-            name,
-            image_url: "http://localhost:3001/api/uploads/default-character.svg", // 기본 이미지 사용
-            is_public: isPublic,
-            prompt: {
-              tone,
-              personality,
-              tag: tags.join(","),
-            },
-            description,
-          }),
+        body: JSON.stringify(requestData),
       });
       if (!response.ok) {
         const err = await response.json();
