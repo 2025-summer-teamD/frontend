@@ -1,31 +1,64 @@
 // src/pages/Communities.jsx
 import React, { useState } from 'react';
-import { useCommunityCharacters } from '../data/characters';
+import { useCommunityCharacters, toggleLike, incrementViewCount } from '../data/characters';
 import CharacterProfile from '../components/CharacterProfile';
 import CharacterEditModal from '../components/CharacterEditModal';
 import { Heart as OutlineHeart, Heart as SolidHeart, Search, XCircle } from 'lucide-react';
+import { useAuth } from "@clerk/clerk-react";
 
 export default function Communities() {
   const myId = 'me'; // 실제 로그인 정보로 대체
+  const { getToken } = useAuth();
 
   const [likedIds, setLikedIds] = useState(() =>
     JSON.parse(localStorage.getItem('likedIds')) || []
   );
-  const { characters, loading, error } = useCommunityCharacters();
-
   const [activeTab, setActiveTab] = useState('인기순');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [editingCharacter, setEditingCharacter] = useState(null);
+  const [sortBy, setSortBy] = useState('likes'); // 정렬 기준 추가
+
+  const { characters, loading, error, setCharacters } = useCommunityCharacters(sortBy);
 
   React.useEffect(() => {
     localStorage.setItem('likedIds', JSON.stringify(likedIds));
   }, [likedIds]);
 
-  const handleLikeToggle = (id, newLiked) => {
-    setLikedIds(prev =>
-      newLiked ? [...prev, id] : prev.filter(x => x !== id)
-    );
+  // 정렬 버튼 클릭 핸들러
+  const handleSortChange = (newSort) => {
+    setActiveTab(newSort);
+    setSortBy(newSort === '인기순' ? 'likes' : 'uses_count');
+  };
+
+  const handleLikeToggle = async (id, newLiked) => {
+    try {
+      if (!id) {
+        console.error('캐릭터 ID가 없습니다.');
+        return;
+      }
+      
+      const token = await getToken();
+      const result = await toggleLike(id, token);
+      
+      // API 응답에 따라 로컬 상태 업데이트
+      if (result.data.isLiked) {
+        setLikedIds(prev => [...prev, id]);
+      } else {
+        setLikedIds(prev => prev.filter(x => x !== id));
+      }
+      
+      // 해당 캐릭터의 좋아요 수 업데이트
+      const character = characters.find(c => c.character_id === id);
+      if (character) {
+        character.likes = result.data.likesCount;
+        // 상태 강제 업데이트를 위해 배열을 새로 생성
+        setCharacters(prev => [...prev]);
+      }
+    } catch (error) {
+      console.error('좋아요 토글 실패:', error);
+      alert('좋아요 토글에 실패했습니다.');
+    }
   };
 
   const handleEditCharacter = character => {
@@ -128,7 +161,7 @@ export default function Communities() {
                       ? 'bg-indigo-600 text-white shadow-lg'
                       : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                   }`}
-                  onClick={() => setActiveTab(tab)}
+                  onClick={() => handleSortChange(tab)}
                 >
                   {tab}
                 </button>
@@ -147,8 +180,24 @@ export default function Communities() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
             {sortedCharacters.map(character => {
-              const isLiked = likedIds.includes(character.character_id);
-              const handleSelect = () => setSelectedCharacter(character);
+              const isLiked = character.liked || likedIds.includes(character.character_id);
+              const handleSelect = async () => {
+                try {
+                  // 조회수 증가 - character_id가 있을 때만
+                  if (character.character_id) {
+                    await incrementViewCount(character.character_id);
+                    // 조회수 증가 성공 시 해당 캐릭터의 조회수만 업데이트
+                    character.uses_count = (character.uses_count || 0) + 1;
+                    // 상태 강제 업데이트를 위해 배열을 새로 생성
+                    setCharacters(prev => [...prev]);
+                  }
+                } catch (error) {
+                  console.error('조회수 증가 실패:', error);
+                  // 조회수 증가 실패해도 상세보기는 열기
+                }
+                // 상세보기 모달 열기
+                setSelectedCharacter(character);
+              };
 
               return (
                 <div
@@ -170,10 +219,7 @@ export default function Communities() {
                     <p className="text-xs text-gray-300 truncate">{character.introduction}</p>
                     <div className="flex justify-between items-center mt-2 text-xs">
                       <div className="flex items-center gap-1">
-                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                        </svg>
-                        <span>{character.uses_count}</span>
+                        <span>👁️ {character.uses_count || 0}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <button
@@ -185,14 +231,12 @@ export default function Communities() {
                           aria-label="좋아요 토글"
                         >
                           {isLiked ? (
-                            <svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                          </svg>
+                            <span className="text-red-500">❤️</span>
                           ) : (
-                            <OutlineHeart className="w-4 h-4 text-gray-300 group-hover:text-red-400" />
+                            <OutlineHeart className="w-4 h-4 text-gray-400 hover:text-red-500 transition-colors" />
                           )}
                         </button>
-                        <span>{character.likes}</span>
+                        <span className="text-xs text-gray-300">{character.likes || 0}</span>
                       </div>
                     </div>
                   </div>

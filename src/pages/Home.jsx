@@ -2,8 +2,8 @@ import { useAuth } from '@clerk/clerk-react';
 import { useEffect } from 'react'; // useEffect를 사용하려면 import 해야 합니다.
 import Hero from "../components/Hero";
 import PopularCharacters from "../components/PopularCharacters";
-import Features from "../components/Features";
-import ChatPreview from "../components/ChatPreview";
+import Features from "../components/features";
+import ChatPreview from "../components/chatPreview";
 
 function Home() {
   // useAuth 훅은 반드시 함수 컴포넌트 내부의 최상위에서 호출되어야 합니다.
