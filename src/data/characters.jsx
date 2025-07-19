@@ -77,7 +77,8 @@ export function useMyChatCharacters() {
   return { characters, loading, error };
 }
 
-export function useMyCharacters() { // tab is now a parameter
+// 내가 만든 캐릭터 목록을 가져오는 커스텀 훅
+export function useMyCharacters() {
   const [characters, setCharacters] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -86,16 +87,15 @@ export function useMyCharacters() { // tab is now a parameter
   const fetchMyCharacters = useCallback(async () => {
     try {
       setLoading(true);
-      setError(null); // Clear previous errors
+      setError(null);
       const token = await getToken();
-      // 'type' is already 'tab' from the hook's parameter
       const response = await fetch(`http://localhost:3001/api/my/characters?type=created`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
       if (!response.ok) {
-        throw new Error('채팅 목록을 불러오는데 실패했습니다.');
+        throw new Error('캐릭터 목록을 불러오는데 실패했습니다.');
       }
       const data = await response.json();
       setCharacters(data.data);
@@ -104,11 +104,11 @@ export function useMyCharacters() { // tab is now a parameter
     } finally {
       setLoading(false);
     }
-  }, [getToken]); // Add tab and getToken to the useCallback dependencies
+  }, [getToken]);
 
   useEffect(() => {
     fetchMyCharacters();
-  }, [fetchMyCharacters]); // Now fetchMyCharacters is the dependency
+  }, [fetchMyCharacters]);
 
   return { characters, loading, error };
 }
@@ -180,7 +180,7 @@ export function useUpdateCharacter() {
         tag: updateData.tag || updateData.tags
       };
       
-      console.log('Updating character with data:', requestData); // 디버깅용
+      console.log('Updating character with data:', requestData);
       
       const response = await fetch(`http://localhost:3001/api/my/characters/${characterId}`, {
         method: 'PATCH',
@@ -225,7 +225,7 @@ export function useDeleteCharacter() {
       setError(null);
       const token = await getToken();
       
-      console.log('Deleting character with ID:', characterId); // 디버깅용
+      console.log('Deleting character with ID:', characterId);
       
       const response = await fetch(`http://localhost:3001/api/my/characters/${characterId}`, {
         method: 'DELETE',
@@ -251,8 +251,6 @@ export function useDeleteCharacter() {
 
   return { deleteCharacter, loading, error };
 }
-
-
 
 // 좋아요 토글 API 호출 함수
 export const toggleLike = async (characterId, token) => {
