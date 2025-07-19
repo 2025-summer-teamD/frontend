@@ -3,6 +3,59 @@ import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from "@clerk/clerk-react";
 
+// 공통 API 호출 함수
+const apiCall = async (url, options = {}) => {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      ...options,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('API 에러 응답:', errorText);
+      throw new Error(`API 호출 실패: ${response.status} ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    console.log('API 성공:', result);
+    return result;
+  } catch (error) {
+    console.error('API 에러:', error);
+    throw error;
+  }
+};
+
+// 인증 토큰을 포함한 API 호출 함수
+const authenticatedApiCall = async (url, options = {}, getToken) => {
+  const token = await getToken();
+  return apiCall(url, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...options.headers,
+    },
+  });
+};
+
+// 에러 메시지 처리 함수
+const handleApiError = (error, defaultMessage) => {
+  console.error('API 에러:', error);
+  
+  if (error.code === 'ERR_NETWORK' || error.code === 'ERR_CONNECTION_REFUSED' || error.code === 'ERR_EMPTY_RESPONSE') {
+    return '서버에 연결할 수 없습니다. 백엔드 서버가 실행 중인지 확인해주세요.';
+  }
+  
+  if (error.name === 'TypeError' && error.message.includes('fetch')) {
+    return '서버에 연결할 수 없습니다. 백엔드 서버가 실행 중인지 확인해주세요.';
+  }
+  
+  return error.message || defaultMessage;
+};
+
 // 커뮤니티 캐릭터 목록을 가져오는 커스텀 훅
 export function useCommunityCharacters(sortBy = 'likes') {
   const [characters, setCharacters] = useState([]);
@@ -16,16 +69,10 @@ export function useCommunityCharacters(sortBy = 'likes') {
         const response = await axios.get(`http://localhost:3001/api/communities/characters?sort=${sortBy}`);
         setCharacters(response.data.data || []);
       } catch (err) {
-        console.error('캐릭터 목록 조회 실패:', err);
-        // 서버 연결 실패 시 빈 배열로 설정
+        const errorMessage = handleApiError(err, '캐릭터 목록을 불러오는데 실패했습니다.');
+        setError(errorMessage);
         if (err.code === 'ERR_NETWORK' || err.code === 'ERR_CONNECTION_REFUSED' || err.code === 'ERR_EMPTY_RESPONSE') {
           setCharacters([]);
-          setError('서버에 연결할 수 없습니다. 백엔드 서버가 실행 중인지 확인해주세요.');
-        } else if (err.response && err.response.status === 400) {
-          setCharacters([]);
-          setError('정렬 옵션을 변경해주세요.');
-        } else {
-          setError('캐릭터 목록을 불러오는데 실패했습니다.');
         }
       } finally {
         setLoading(false);
@@ -48,24 +95,15 @@ export function useMyChatCharacters() {
     const fetchMyChatCharacters = async () => {
       try {
         setLoading(true);
-        const token = await getToken();
-        const response = await fetch("http://localhost:3001/api/my/chat-characters", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        if (!response.ok) {
-          throw new Error('채팅 목록을 불러오는데 실패했습니다.');
-        }
-        const data = await response.json();
+        const data = await authenticatedApiCall(
+          "http://localhost:3001/api/my/chat-characters",
+          {},
+          getToken
+        );
         setCharacters(data.data);
       } catch (err) {
-        console.error('채팅 목록 조회 실패:', err);
-        if (err.name === 'TypeError' && err.message.includes('fetch')) {
-          setError('서버에 연결할 수 없습니다. 백엔드 서버가 실행 중인지 확인해주세요.');
-        } else {
-          setError(err.message);
-        }
+        const errorMessage = handleApiError(err, '채팅 목록을 불러오는데 실패했습니다.');
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -88,19 +126,15 @@ export function useMyCharacters() {
     try {
       setLoading(true);
       setError(null);
-      const token = await getToken();
-      const response = await fetch(`http://localhost:3001/api/my/characters?type=created`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) {
-        throw new Error('캐릭터 목록을 불러오는데 실패했습니다.');
-      }
-      const data = await response.json();
+      const data = await authenticatedApiCall(
+        `http://localhost:3001/api/my/characters?type=created`,
+        {},
+        getToken
+      );
       setCharacters(data.data);
     } catch (err) {
-      setError(err.message);
+      const errorMessage = handleApiError(err, '캐릭터 목록을 불러오는데 실패했습니다.');
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -126,22 +160,16 @@ export function useCharacterDetail() {
     try {
       setLoading(true);
       setError(null);
-      const token = await getToken();
-      const response = await fetch(`http://localhost:3001/api/my/characters/${characterId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error('캐릭터 정보를 불러오는데 실패했습니다.');
-      }
-      
-      const data = await response.json();
+      const data = await authenticatedApiCall(
+        `http://localhost:3001/api/my/characters/${characterId}`,
+        {},
+        getToken
+      );
       setCharacter(data.data);
       return data.data;
     } catch (err) {
-      setError(err.message);
+      const errorMessage = handleApiError(err, '캐릭터 정보를 불러오는데 실패했습니다.');
+      setError(errorMessage);
       throw err;
     } finally {
       setLoading(false);
@@ -170,7 +198,6 @@ export function useUpdateCharacter() {
     try {
       setLoading(true);
       setError(null);
-      const token = await getToken();
       
       // API 요청에 맞는 형태로 데이터 구성
       const requestData = {
@@ -182,24 +209,19 @@ export function useUpdateCharacter() {
       
       console.log('Updating character with data:', requestData);
       
-      const response = await fetch(`http://localhost:3001/api/my/characters/${characterId}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+      const data = await authenticatedApiCall(
+        `http://localhost:3001/api/my/characters/${characterId}`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify(requestData),
         },
-        body: JSON.stringify(requestData),
-      });
+        getToken
+      );
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || '캐릭터 수정에 실패했습니다.');
-      }
-      
-      const data = await response.json();
       return data.data;
     } catch (err) {
-      setError(err.message);
+      const errorMessage = handleApiError(err, '캐릭터 수정에 실패했습니다.');
+      setError(errorMessage);
       throw err;
     } finally {
       setLoading(false);
@@ -223,26 +245,21 @@ export function useDeleteCharacter() {
     try {
       setLoading(true);
       setError(null);
-      const token = await getToken();
       
       console.log('Deleting character with ID:', characterId);
       
-      const response = await fetch(`http://localhost:3001/api/my/characters/${characterId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
+      const data = await authenticatedApiCall(
+        `http://localhost:3001/api/my/characters/${characterId}`,
+        {
+          method: 'DELETE',
         },
-      });
+        getToken
+      );
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || '캐릭터 삭제에 실패했습니다.');
-      }
-      
-      const data = await response.json();
       return data.data;
     } catch (err) {
-      setError(err.message);
+      const errorMessage = handleApiError(err, '캐릭터 삭제에 실패했습니다.');
+      setError(errorMessage);
       throw err;
     } finally {
       setLoading(false);
@@ -254,59 +271,23 @@ export function useDeleteCharacter() {
 
 // 좋아요 토글 API 호출 함수
 export const toggleLike = async (characterId, token) => {
-  try {
-    console.log('좋아요 토글 요청:', characterId, token);
-    const response = await fetch(`http://localhost:3001/api/characters/${characterId}/like`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    console.log('좋아요 토글 응답:', response.status, response.statusText);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('좋아요 토글 에러 응답:', errorText);
-      throw new Error(`좋아요 토글에 실패했습니다: ${response.status} ${response.statusText}`);
-    }
-    
-    const result = await response.json();
-    console.log('좋아요 토글 성공:', result);
-    return result;
-  } catch (error) {
-    console.error('좋아요 토글 에러:', error);
-    throw error;
-  }
+  console.log('좋아요 토글 요청:', characterId, token);
+  
+  return apiCall(`http://localhost:3001/api/characters/${characterId}/like`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 };
 
 // 조회수 증가 API 호출 함수
 export const incrementViewCount = async (characterId) => {
-  try {
-    console.log('조회수 증가 요청:', characterId);
-    const response = await fetch(`http://localhost:3001/api/characters/${characterId}/view`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    console.log('조회수 증가 응답:', response.status, response.statusText);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('조회수 증가 에러 응답:', errorText);
-      throw new Error(`조회수 증가에 실패했습니다: ${response.status} ${response.statusText}`);
-    }
-    
-    const result = await response.json();
-    console.log('조회수 증가 성공:', result);
-    return result;
-  } catch (error) {
-    console.error('조회수 증가 에러:', error);  
-    throw error;
-  }
+  console.log('조회수 증가 요청:', characterId);
+  
+  return apiCall(`http://localhost:3001/api/characters/${characterId}/view`, {
+    method: 'POST',
+  });
 };  
 
   
