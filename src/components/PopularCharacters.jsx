@@ -20,6 +20,14 @@ export default function PopularCharacters() {
     }
   };
 
+  // 키보드 이벤트 핸들러
+  const handleKeyDown = (event, characterId) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleViewCount(characterId);
+    }
+  };
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -111,10 +119,12 @@ export default function PopularCharacters() {
         </style>
 
         {popularCharacters.map((character) => (
-          <div
+          <button
             key={character.character_id || character.id}
-            className="w-[240px] h-[320px] flex-shrink-0 relative rounded-2xl overflow-hidden shadow-lg bg-white/10 hover:scale-105 transition-transform duration-300 cursor-pointer"
+            className="w-[240px] h-[320px] flex-shrink-0 relative rounded-2xl overflow-hidden shadow-lg bg-white/10 hover:scale-105 transition-transform duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800"
             onClick={() => handleViewCount(character.character_id || character.id)}
+            onKeyDown={(event) => handleKeyDown(event, character.character_id || character.id)}
+            aria-label={`${character.name}와 대화하기`}
           >
             <img
               src={character.image_url || '/assets/icon-character.png'}
@@ -128,15 +138,14 @@ export default function PopularCharacters() {
               <h3 className="text-2xl font-extrabold text-white">{character.name}</h3>
               <p className="text-sm font-medium text-white mt-1">{character.description}</p>
               <div className="flex items-center justify-between mt-2">
-              <span className="text-xs text-white/80">👁️ {character.uses_count || 0}</span>
+                <span className="text-xs text-white/80">👁️ {character.uses_count || 0}</span>
                 <span className="text-xs text-white/80">❤️ {character.likes || 0}</span>
-                
               </div>
-              <button className="mt-3 w-full py-1.5 bg-[#4F46E5] rounded-lg text-white font-semibold text-sm hover:bg-purple-700 transition-all">
+              <div className="mt-3 w-full py-1.5 bg-[#4F46E5] rounded-lg text-white font-semibold text-sm hover:bg-purple-700 transition-all">
                 바로 대화하기
-              </button>
+              </div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
     </section>

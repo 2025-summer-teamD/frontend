@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
-import { Heart as OutlineHeart, Heart as SolidHeart } from 'lucide-react';
+import { Heart as OutlineHeart } from 'lucide-react';
 import { getSafeImageUrl } from '../utils/imageUtils';
 
 // 재사용 가능한 컴포넌트들
@@ -26,7 +26,7 @@ const CharacterInfoSection = ({ character }) => (
           <div className="text-gray-400 text-sm mb-3">태그</div>
           <div className="flex flex-wrap gap-2">
             {character.prompt.tag.split(',').map((tag, idx) => (
-              <span key={idx} className="bg-purple-700 text-white px-3 py-1 rounded-full text-xs">
+              <span key={`tag-${idx}-${tag.trim()}`} className="bg-purple-700 text-white px-3 py-1 rounded-full text-xs">
                 #{tag.trim()}
               </span>
             ))}
@@ -38,7 +38,7 @@ const CharacterInfoSection = ({ character }) => (
           <div className="text-gray-400 text-sm mb-3">추가 태그</div>
           <div className="flex flex-wrap gap-2">
             {character.aliases.map((alias, idx) => (
-              <span key={idx} className="bg-purple-700 text-white px-3 py-1 rounded-full text-xs">
+              <span key={`alias-${idx}-${alias}`} className="bg-purple-700 text-white px-3 py-1 rounded-full text-xs">
                 #{alias}
               </span>
             ))}
@@ -48,6 +48,17 @@ const CharacterInfoSection = ({ character }) => (
     </div>
   </div>
 );
+
+CharacterInfoSection.propTypes = {
+  character: PropTypes.shape({
+    prompt: PropTypes.shape({
+      personality: PropTypes.string,
+      tone: PropTypes.string,
+      tag: PropTypes.string,
+    }),
+    aliases: PropTypes.arrayOf(PropTypes.string),
+  }).isRequired,
+};
 
 const StatsSection = ({ stats, isMyCharacter }) => (
   <div className="flex justify-between mb-10">
@@ -80,6 +91,15 @@ const StatsSection = ({ stats, isMyCharacter }) => (
     )}
   </div>
 );
+
+StatsSection.propTypes = {
+  stats: PropTypes.shape({
+    intimacy: PropTypes.number,
+    uses_count: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    likes: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  }).isRequired,
+  isMyCharacter: PropTypes.bool.isRequired,
+};
 
 const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle }) => {
   const isMyCharacter = origin === 'my';
