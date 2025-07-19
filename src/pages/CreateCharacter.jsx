@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import Sidebar from '../components/SideBar'
 import AndrewImg from '/assets/andrew.png'
 import { useAuth } from "@clerk/clerk-react";
+import { getSafeImageUrl } from '../utils/imageUtils';
 
 export default function CreateCharacter() {
   const [activeTab, setActiveTab] = useState('custom')
@@ -20,23 +21,7 @@ export default function CreateCharacter() {
 
   const { getToken } = useAuth();
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0]
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        alert('이미지 파일만 업로드할 수 있습니다.')
-        return
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        alert('이미지 크기는 5MB 이하여야 합니다.')
-        return
-      }
-      const reader = new FileReader()
-      reader.onloadend = () => setImagePreview(reader.result)
-      reader.onerror = () => alert('이미지 읽기에 실패했습니다.')
-      reader.readAsDataURL(file)
-    }
-  }
+
 
   const handleTagKeyDown = (e) => {
     if (e.key === 'Enter' && !isComposing) {
@@ -72,17 +57,17 @@ export default function CreateCharacter() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          name,
-          image_url: "https://upload.wikimedia.org/wikipedia/commons/6/6a/JavaScript-logo.png", // base64 또는 url
-          is_public: isPublic,
-          prompt: {
-            tone,
-            personality,
-            tag: tags.join(","),
-          },
-          description,
-        }),
+                  body: JSON.stringify({
+            name,
+            image_url: "http://localhost:3001/api/uploads/default-character.svg", // 기본 이미지 사용
+            is_public: isPublic,
+            prompt: {
+              tone,
+              personality,
+              tag: tags.join(","),
+            },
+            description,
+          }),
       });
       if (!response.ok) {
         const err = await response.json();
@@ -243,7 +228,14 @@ export default function CreateCharacter() {
 
                   <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-600 overflow-hidden shadow-2xl">
                     <div className="relative p-6">
-                      <img src={imagePreview} alt="Preview" className="w-full h-72 object-contain" />
+                      <img 
+                        src={getSafeImageUrl(imagePreview)} 
+                        alt="Preview" 
+                        className="w-full h-72 object-contain"
+                        onError={(e) => {
+                          e.target.src = '/api/uploads/default-character.svg';
+                        }}
+                      />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                     </div>
                     <div className="p-6">
@@ -261,21 +253,7 @@ export default function CreateCharacter() {
                     </div>
                   </div>
 
-                  <div className="mt-6">
-                    <label className="block text-white text-sm font-medium mb-3">캐릭터 이미지 업로드</label>
-                    <label className="group flex flex-col items-center justify-center w-full h-24 border-2 border-gray-600 border-dashed rounded-lg cursor-pointer hover:bg-gray-700/50 transition-all">
-                      <div className="flex flex-col items-center justify-center">
-                        <svg className="w-6 h-6 mb-2 text-gray-400 group-hover:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                          <polyline points="17,8 12,3 7,8" />
-                          <line x1="12" y1="3" x2="12" y2="15" />
-                        </svg>
-                        <p className="text-xs text-gray-400 group-hover:text-gray-300">이미지 선택 또는 드래그</p>
-                      </div>
-                      <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-                    </label>
-                    <p className="text-xs text-gray-500 mt-2">최대 5MB, JPG/PNG/GIF</p>
-                  </div>
+
                 </div>
               </div>
             </div>

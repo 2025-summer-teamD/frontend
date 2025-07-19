@@ -1,59 +1,36 @@
 import { useEffect, useRef } from 'react';
-import AndrewImg from '/assets/andrew.png'
-import IronManImg from '/assets/ironman.png'
-import MoanaImg from '/assets/moana.png'
-import KarinaImg from '/assets/karina.png'
-
-const characters = [
-  {
-    name: 'Andrew Park',
-    desc: '언제나 믿고 따를 수 있는 든든한 조언자',
-    img: AndrewImg,
-  },
-  {
-    name: 'Iron Man',
-    desc: '천재,억만장자,발명가, 그리고 슈퍼히어로',
-    img: IronManImg,
-  },
-  {
-    name: 'Moana',
-    desc: '바다의 부름에 응답한 진정한 탐험가',
-    img: MoanaImg,
-  },
-  {
-    name: 'Karina',
-    desc: '에스파의 완성형 리더',
-    img: KarinaImg,
-  },
-  {
-    name: 'Karina',
-    desc: '에스파의 완성형 리더',
-    img: KarinaImg,
-  },
-  {
-    name: 'Karina',
-    desc: '에스파의 완성형 리더',
-    img: KarinaImg,
-  },
-  {
-    name: 'Karina',
-    desc: '에스파의 완성형 리더',
-    img: KarinaImg,
-  },
-  {
-    name: 'Karina',
-    desc: '에스파의 완성형 리더',
-    img: KarinaImg,
-  }
-  
-];
+import { useCommunityCharacters, incrementViewCount } from '../data/characters';
 
 export default function PopularCharacters() {
   const containerRef = useRef(null);
   const scrollInterval = useRef(null);
+  const { characters, loading, error } = useCommunityCharacters();
+
+  // 좋아요 수 순으로 정렬하고 상위 8개만 가져오기
+  const popularCharacters = characters
+    .sort((a, b) => (b.likes || 0) - (a.likes || 0))
+    .slice(0, 8);
+
+  // 조회수 증가 함수
+  const handleViewCount = async (characterId) => {
+    try {
+      await incrementViewCount(characterId);
+    } catch (error) {
+      console.error('조회수 증가 실패:', error);
+    }
+  };
+
+  // 키보드 이벤트 핸들러
+  const handleKeyDown = (event, characterId) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleViewCount(characterId);
+    }
+  };
 
   useEffect(() => {
     const container = containerRef.current;
+    if (!container) return;
 
     const handleMouseMove = (e) => {
       const { left, right } = container.getBoundingClientRect();
@@ -86,6 +63,34 @@ export default function PopularCharacters() {
     };
   }, []);
 
+  if (loading) {
+    return (
+      <section id="characters" className="py-8 md:py-16 px-4 md:px-8">
+        <h2 className="text-3xl md:text-4xl lg:text-5xl xl:text-[48px] font-bold text-center text-white mb-4 md:mb-6">
+          인기 캐릭터
+        </h2>
+        <p className="text-lg md:text-xl lg:text-2xl xl:text-[24px] text-center font-extrabold mb-16 md:mb-20 leading-relaxed">
+          복잡한 설정 없이, 인기 캐릭터와 바로 소통하세요.
+        </p>
+        <div className="text-center text-white">로딩 중...</div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section id="characters" className="py-8 md:py-16 px-4 md:px-8">
+        <h2 className="text-3xl md:text-4xl lg:text-5xl xl:text-[48px] font-bold text-center text-white mb-4 md:mb-6">
+          인기 캐릭터
+        </h2>
+        <p className="text-lg md:text-xl lg:text-2xl xl:text-[24px] text-center font-extrabold mb-16 md:mb-20 leading-relaxed">
+          복잡한 설정 없이, 인기 캐릭터와 바로 소통하세요.
+        </p>
+        <div className="text-center text-white">{error}</div>
+      </section>
+    );
+  }
+
   return (
     <section id="characters" className="py-8 md:py-16 px-4 md:px-8">
       <h2 className="text-3xl md:text-4xl lg:text-5xl xl:text-[48px] font-bold text-center text-white mb-4 md:mb-6">
@@ -113,24 +118,34 @@ export default function PopularCharacters() {
           `}
         </style>
 
-        {characters.map(({ name, desc, img }) => (
-          <div
-            key={name}
-            className="min-w-[240px] aspect-[3/4] relative rounded-2xl overflow-hidden shadow-lg bg-white/10 hover:scale-105 transition-transform duration-300"
+        {popularCharacters.map((character) => (
+          <button
+            key={character.character_id || character.id}
+            className="w-[240px] h-[320px] flex-shrink-0 relative rounded-2xl overflow-hidden shadow-lg bg-white/10 hover:scale-105 transition-transform duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+            onClick={() => handleViewCount(character.character_id || character.id)}
+            onKeyDown={(event) => handleKeyDown(event, character.character_id || character.id)}
+            aria-label={`${character.name}와 대화하기`}
           >
             <img
-              src={img}
-              alt={name}
+              src={character.image_url || '/assets/icon-character.png'}
+              alt={character.name}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.src = '/assets/icon-character.png';
+              }}
             />
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-              <h3 className="text-2xl font-extrabold text-white">{name}</h3>
-              <p className="text-sm font-medium text-white mt-1">{desc}</p>
-              <button className="mt-3 w-full py-1.5 bg-[#4F46E5] rounded-lg text-white font-semibold text-sm hover:bg-purple-700 transition-all">
+              <h3 className="text-2xl font-extrabold text-white">{character.name}</h3>
+              <p className="text-sm font-medium text-white mt-1">{character.description}</p>
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-xs text-white/80">👁️ {character.uses_count || 0}</span>
+                <span className="text-xs text-white/80">❤️ {character.likes || 0}</span>
+              </div>
+              <div className="mt-3 w-full py-1.5 bg-[#4F46E5] rounded-lg text-white font-semibold text-sm hover:bg-purple-700 transition-all">
                 바로 대화하기
-              </button>
+              </div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
     </section>
