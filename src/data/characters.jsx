@@ -30,7 +30,7 @@ const apiCall = async (url, options = {}) => {
 };
 
 // 인증 토큰을 포함한 API 호출 함수
-const authenticatedApiCall = async (url, options = {}, getToken) => {
+const authenticatedApiCall = async (url, getToken, options = {}) => {
   const token = await getToken();
   return apiCall(url, {
     ...options,
@@ -97,8 +97,8 @@ export function useMyChatCharacters() {
         setLoading(true);
         const data = await authenticatedApiCall(
           "http://localhost:3001/api/my/chat-characters",
-          {},
-          getToken
+          getToken,
+          {}
         );
         setCharacters(data.data);
       } catch (err) {
@@ -128,8 +128,8 @@ export function useMyCharacters() {
       setError(null);
       const data = await authenticatedApiCall(
         `http://localhost:3001/api/my/characters?type=created`,
-        {},
-        getToken
+        getToken,
+        {}
       );
       setCharacters(data.data);
     } catch (err) {
@@ -162,8 +162,8 @@ export function useCharacterDetail() {
       setError(null);
       const data = await authenticatedApiCall(
         `http://localhost:3001/api/my/characters/${characterId}`,
-        {},
-        getToken
+        getToken,
+        {}
       );
       setCharacter(data.data);
       return data.data;
@@ -211,11 +211,11 @@ export function useUpdateCharacter() {
       
       const data = await authenticatedApiCall(
         `http://localhost:3001/api/my/characters/${characterId}`,
+        getToken,
         {
           method: 'PATCH',
           body: JSON.stringify(requestData),
-        },
-        getToken
+        }
       );
       
       return data.data;
@@ -250,10 +250,10 @@ export function useDeleteCharacter() {
       
       const data = await authenticatedApiCall(
         `http://localhost:3001/api/my/characters/${characterId}`,
+        getToken,
         {
           method: 'DELETE',
-        },
-        getToken
+        }
       );
       
       return data.data;

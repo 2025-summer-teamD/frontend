@@ -29,10 +29,5 @@ export const isValidImageUrl = (url) => {
  * 안전한 이미지 URL을 반환하는 함수
  */
 export const getSafeImageUrl = (url) => {
-  if (isValidImageUrl(url)) {
-    return url;
-  }
-  
-  // 기본 이미지 반환
-  return '/api/uploads/default-character.svg';
+  return isValidImageUrl(url) ? url : '/api/uploads/default-character.svg';
 }; 
