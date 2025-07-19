@@ -3,10 +3,25 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Heart as OutlineHeart, Heart as SolidHeart } from 'lucide-react';
 import { useUpdateCharacter, useDeleteCharacter } from '../data/characters';
+import { useUser } from '@clerk/clerk-react';
 
 const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle }) => {
   const { updateCharacter, loading: updateLoading } = useUpdateCharacter();
   const { deleteCharacter, loading: deleteLoading } = useDeleteCharacter();
+  const { user } = useUser(); // username을 가져오기 위해 useUser 추가
+
+  // username 디버깅
+  useEffect(() => {
+    if (user) {
+      console.log('CharacterEditModal - User info:', {
+        id: user.id,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        fullName: user.fullName
+      });
+    }
+  }, [user]);
   
   const [formData, setFormData] = useState({
     name: character?.name || '',
@@ -21,7 +36,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
 
   const [previewImage, setPreviewImage] = useState(character?.image || character?.image_url || character?.imageUrl || '');
 
-  // character prop이 변경될 때 formData를 업데이트
+  // character prop이 변경될 때 formData를 업데이트 (모달이 열릴 때만)
   useEffect(() => {
     if (character) {
       console.log('Character data in modal:', character); // 디버깅용
@@ -37,7 +52,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
       });
       setPreviewImage(character?.image || character?.image_url || character?.imageUrl || '');
     }
-  }, [character]);
+  }, [character]); // character 객체 전체를 의존성으로 설정
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -78,7 +93,8 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
   };
 
   const toggleLike = () => {
-    onLikeToggle(character?.character_id || character?.id, !liked);
+    const characterId = character?.character_id || character?.id;
+    onLikeToggle(characterId, !liked);
   };
 
   const handleSave = async () => {
@@ -94,8 +110,10 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
     }
     
     try {
+      const characterId = character?.character_id || character?.id;
+      
       // API를 통해 캐릭터 수정
-      const updatedCharacter = await updateCharacter(character?.character_id || character?.id, {
+      const updatedCharacter = await updateCharacter(characterId, {
         introduction: formData.description,
         personality: formData.personality,
         tone: formData.tone,
@@ -104,8 +122,10 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
       
       console.log('Character updated successfully:', updatedCharacter);
       
-      // 성공 메시지 표시
-      alert('캐릭터 정보가 성공적으로 업데이트되었습니다!');
+      // 부모 컴포넌트에 수정 완료 알림 (alert는 부모에서 처리)
+      if (onSave) {
+        onSave(updatedCharacter);
+      }
       
       // 모달 닫기
       onClose();
@@ -125,19 +145,20 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
     }
     
     try {
+      const characterId = character?.character_id || character?.id;
+      
       // API를 통해 캐릭터 삭제
-      await deleteCharacter(character?.character_id || character?.id);
+      await deleteCharacter(characterId);
       
       console.log('Character deleted successfully');
       
-      // 성공 메시지 표시
-      alert('캐릭터가 성공적으로 삭제되었습니다.');
+      // 부모 컴포넌트에 삭제 완료 알림 (alert는 부모에서 처리)
+      if (onSave) {
+        onSave(null, 'deleted'); // 삭제됨을 알림
+      }
       
       // 모달 닫기
       onClose();
-      
-      // 페이지 새로고침 (목록 업데이트를 위해)
-      window.location.reload();
       
     } catch (error) {
       console.error('Error deleting character:', error);
@@ -204,17 +225,8 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
             
             {/* 작성자 표시 */}
             <div className="flex items-center mb-3">
-              <span className="text-gray-400 text-sm">By. {formData.creator}</span>
+              <span className="text-gray-400 text-sm">By. {character?.creator_name || character?.creator || user?.username || user?.firstName || formData.creator}</span>
             </div>
-
-            {/* 설명 입력 */}
-            <textarea
-              value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              className="text-gray-300 text-sm bg-transparent border border-gray-600 focus:border-indigo-500 outline-none w-full p-2 rounded resize-none"
-              placeholder="캐릭터 설명"
-              rows="2"
-            />
           </div>
           <button
             onClick={toggleLike}
@@ -232,8 +244,8 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
         {/* 통계 섹션 */}
         <div className="flex justify-between mb-10">
           <div className="text-center flex-1">
-            <div className="text-3xl font-bold text-white mb-1">{character?.uses_count || character?.messageCount || character?.conversations || 0}</div>
-            <div className="text-gray-400 text-sm">대화</div>
+            <div className="text-3xl font-bold text-white mb-1">{character?.uses_count || 0}</div>
+            <div className="text-gray-400 text-sm">조회수</div>
           </div>
           <div className="text-center flex-1">
             <div className="text-3xl font-bold text-white mb-1">{character?.likes || 0}</div>
@@ -274,12 +286,12 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
 
             {/* 특징 입력 */}
             <div className="pb-6 border-b border-gray-700">
-              <div className="text-gray-400 text-sm mb-3">특징</div>
+              <div className="text-gray-400 text-sm mb-3">설명</div>
               <textarea
-                value={formData.characteristics}
-                onChange={(e) => handleInputChange('characteristics', e.target.value)}
+                value={formData.description}
+                onChange={(e) => handleInputChange('description', e.target.value)}
                 className="w-full bg-transparent border border-gray-600 focus:border-indigo-500 outline-none p-3 rounded text-white resize-none"
-                placeholder="캐릭터의 특징을 입력하세요"
+                placeholder="캐릭터에 대한 설명을 입력하세요"
                 rows="3"
               />
             </div>
@@ -296,12 +308,9 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
               />
               <div className="flex flex-wrap gap-2 mt-3">
                 <span className="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-xs">
-                  #캐릭터 id
+                  #{character?.character_id || character?.id || '캐릭터'}번째로 생성된 캐릭터
                 </span>
-                <span className="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-xs">
-                  #{formData.creator}
-                </span>
-                {formData.tags?.split(',').map((tag, index) => (
+                {formData.tags?.split(',').filter(tag => tag.trim()).map((tag, index) => (
                   <span key={index} className="bg-indigo-600 text-white px-3 py-1 rounded-full text-xs">
                     #{tag.trim()}
                   </span>

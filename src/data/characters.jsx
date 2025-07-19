@@ -35,6 +35,7 @@ const authenticatedApiCall = async (url, getToken, options = {}) => {
   return apiCall(url, {
     ...options,
     headers: {
+      'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
       ...options.headers,
     },
@@ -116,18 +117,18 @@ export function useMyChatCharacters() {
 }
 
 // 내가 만든 캐릭터 목록을 가져오는 커스텀 훅
-export function useMyCharacters() {
+export function useMyCharacters(type = 'created') {
   const [characters, setCharacters] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { getToken } = useAuth();
 
-  const fetchMyCharacters = useCallback(async () => {
+  const fetchMyCharacters = useCallback(async (characterType = type) => {
     try {
       setLoading(true);
       setError(null);
       const data = await authenticatedApiCall(
-        `http://localhost:3001/api/my/characters?type=created`,
+        `http://localhost:3001/api/my/characters?type=${characterType}`,
         getToken,
         {}
       );
@@ -138,13 +139,13 @@ export function useMyCharacters() {
     } finally {
       setLoading(false);
     }
-  }, [getToken]);
+  }, [getToken, type]);
 
   useEffect(() => {
     fetchMyCharacters();
   }, [fetchMyCharacters]);
 
-  return { characters, loading, error };
+  return { characters, loading, error, fetchMyCharacters, setCharacters };
 }
 
 // 개별 캐릭터 상세 정보를 가져오는 커스텀 훅
@@ -282,11 +283,14 @@ export const toggleLike = async (characterId, token) => {
 };
 
 // 조회수 증가 API 호출 함수
-export const incrementViewCount = async (characterId) => {
+export const incrementViewCount = async (characterId, token) => {
   console.log('조회수 증가 요청:', characterId);
   
   return apiCall(`http://localhost:3001/api/characters/${characterId}/view`, {
     method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
   });
 };  
 
