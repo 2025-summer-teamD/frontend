@@ -57,7 +57,7 @@ export default function Communities() {
       }
     } catch (error) {
       console.error('좋아요 토글 실패:', error);
-      alert('좋아요 토글에 실패했습니다.');
+      alert('내가 만든 캐릭터는 찜할 수 없습니다.');
     }
   };
 

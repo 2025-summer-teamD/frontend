@@ -1,4 +1,5 @@
 import React from 'react';
+import { getSafeImageUrl } from '../utils/imageUtils';
 
 export default function CharacterGrid({
   characters,
@@ -26,9 +27,12 @@ export default function CharacterGrid({
             className="group relative aspect-[3/4] bg-gray-700 rounded-2xl overflow-hidden cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-indigo-500/30"
           >
             <img
-              src={character.image}
+              src={getSafeImageUrl(character.image)}
               alt={character.name}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+              onError={(e) => {
+                e.target.src = '/api/uploads/default-character.svg';
+              }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-3 text-white">

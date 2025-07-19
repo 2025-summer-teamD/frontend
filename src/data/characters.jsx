@@ -17,8 +17,11 @@ export function useCommunityCharacters(sortBy = 'likes') {
         setCharacters(response.data.data || []);
       } catch (err) {
         console.error('캐릭터 목록 조회 실패:', err);
-        // 400 에러는 정렬 파라미터 문제일 수 있으므로 빈 배열로 설정
-        if (err.response && err.response.status === 400) {
+        // 서버 연결 실패 시 빈 배열로 설정
+        if (err.code === 'ERR_NETWORK' || err.code === 'ERR_CONNECTION_REFUSED' || err.code === 'ERR_EMPTY_RESPONSE') {
+          setCharacters([]);
+          setError('서버에 연결할 수 없습니다. 백엔드 서버가 실행 중인지 확인해주세요.');
+        } else if (err.response && err.response.status === 400) {
           setCharacters([]);
           setError('정렬 옵션을 변경해주세요.');
         } else {
@@ -57,7 +60,12 @@ export function useMyChatCharacters() {
         const data = await response.json();
         setCharacters(data.data);
       } catch (err) {
-        setError(err.message);
+        console.error('채팅 목록 조회 실패:', err);
+        if (err.name === 'TypeError' && err.message.includes('fetch')) {
+          setError('서버에 연결할 수 없습니다. 백엔드 서버가 실행 중인지 확인해주세요.');
+        } else {
+          setError(err.message);
+        }
       } finally {
         setLoading(false);
       }
@@ -126,35 +134,4 @@ export const incrementViewCount = async (characterId) => {
   }
 };  
 
-// 이미지 업로드 API 호출 함수
-export const uploadImage = async (file, token) => {
-  try {
-    console.log('이미지 업로드 요청:', file.name);
-    
-    const formData = new FormData();
-    formData.append('image', file);
-    
-    const response = await fetch('http://localhost:3001/api/characters/upload-image', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-      body: formData,
-    });
-    
-    console.log('이미지 업로드 응답:', response.status, response.statusText);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('이미지 업로드 에러 응답:', errorText);
-      throw new Error(`이미지 업로드에 실패했습니다: ${response.status} ${response.statusText}`);
-    }
-    
-    const result = await response.json();
-    console.log('이미지 업로드 성공:', result);
-    return result;
-  } catch (error) {
-    console.error('이미지 업로드 에러:', error);
-    throw error;
-  }
-};  
+  

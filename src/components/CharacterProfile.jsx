@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { Heart as OutlineHeart, Heart as SolidHeart } from 'lucide-react';
+import { getSafeImageUrl } from '../utils/imageUtils';
 
 const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle }) => {
   const isMyCharacter = origin === 'my';
@@ -23,12 +24,19 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle }) =
         <div className="relative flex items-center mb-8">
           <div className="w-20 h-20 bg-gray-300 rounded-full border-4 border-white mr-5 overflow-hidden">
             {character.image_url && (
-              <img src={character.image_url} alt={character.name} className="w-full h-full object-cover" />
+              <img 
+                src={getSafeImageUrl(character.image_url)} 
+                alt={character.name} 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.src = '/api/uploads/default-character.svg';
+                }}
+              />
             )}
           </div>
           <div>
             <h1 className="text-2xl font-semibold text-white mb-1">{character.name}</h1>
-            <p className="text-gray-400 text-sm mb-3">By. {character.user_id || character.author}</p>
+            <p className="text-gray-400 text-sm mb-3">By. {character.creator_name || character.clerkId || character.user_id || character.author}</p>
             <p className="text-gray-300 text-sm">{character.introduction || character.description}</p>
           </div>
           <button
@@ -66,12 +74,30 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle }) =
             <div className="mb-8">
               <h2 className="text-xl font-semibold text-white mb-6">캐릭터 정보</h2>
               <div className="space-y-8">
-                <div className="pb-6 border-b border-gray-700">
-                  <div className="text-gray-400 text-sm">성격</div>
-                </div>
-                <div className="pb-6 border-b border-gray-700">
-                  <div className="text-gray-400 text-sm">특징</div>
-                </div>
+                {character.prompt?.personality && (
+                  <div className="pb-6 border-b border-gray-700">
+                    <div className="text-gray-400 text-sm mb-2">성격</div>
+                    <div className="text-white">{character.prompt.personality}</div>
+                  </div>
+                )}
+                {character.prompt?.tone && (
+                  <div className="pb-6 border-b border-gray-700">
+                    <div className="text-gray-400 text-sm mb-2">말투</div>
+                    <div className="text-white">{character.prompt.tone}</div>
+                  </div>
+                )}
+                {character.prompt?.tag && (
+                  <div className="pb-6 border-b border-gray-700">
+                    <div className="text-gray-400 text-sm mb-3">태그</div>
+                    <div className="flex flex-wrap gap-2">
+                      {character.prompt.tag.split(',').map((tag, idx) => (
+                        <span key={idx} className="bg-purple-700 text-white px-3 py-1 rounded-full text-xs">
+                          #{tag.trim()}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </>
@@ -92,16 +118,33 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle }) =
             <div className="mb-8">
               <h2 className="text-xl font-semibold text-white mb-6">캐릭터 정보</h2>
               <div className="space-y-8">
-                <div className="pb-6 border-b border-gray-700">
-                  <div className="text-gray-400 text-sm">성격</div>
-                </div>
-                <div className="pb-6 border-b border-gray-700">
-                  <div className="text-gray-400 text-sm">특징</div>
-                </div>
-
-                {character.aliases && character.aliases.length > 0 && (
+                {character.prompt?.personality && (
+                  <div className="pb-6 border-b border-gray-700">
+                    <div className="text-gray-400 text-sm mb-2">성격</div>
+                    <div className="text-white">{character.prompt.personality}</div>
+                  </div>
+                )}
+                {character.prompt?.tone && (
+                  <div className="pb-6 border-b border-gray-700">
+                    <div className="text-gray-400 text-sm mb-2">말투</div>
+                    <div className="text-white">{character.prompt.tone}</div>
+                  </div>
+                )}
+                {character.prompt?.tag && (
                   <div className="pb-6 border-b border-gray-700">
                     <div className="text-gray-400 text-sm mb-3">태그</div>
+                    <div className="flex flex-wrap gap-2">
+                      {character.prompt.tag.split(',').map((tag, idx) => (
+                        <span key={idx} className="bg-purple-700 text-white px-3 py-1 rounded-full text-xs">
+                          #{tag.trim()}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {character.aliases && character.aliases.length > 0 && (
+                  <div className="pb-6 border-b border-gray-700">
+                    <div className="text-gray-400 text-sm mb-3">추가 태그</div>
                     <div className="flex flex-wrap gap-2">
                       {character.aliases.map((alias, idx) => (
                         <span key={idx} className="bg-purple-700 text-white px-3 py-1 rounded-full text-xs">
