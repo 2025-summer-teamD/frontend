@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { useCommunityCharacters, incrementViewCount } from '../data/characters';
+import { useAuth } from "@clerk/clerk-react";
 
 export default function PopularCharacters() {
   const containerRef = useRef(null);
   const scrollInterval = useRef(null);
   const { characters, loading, error } = useCommunityCharacters();
+  const { getToken } = useAuth();
 
   // 좋아요 수 순으로 정렬하고 상위 8개만 가져오기
   const popularCharacters = characters
@@ -14,7 +16,8 @@ export default function PopularCharacters() {
   // 조회수 증가 함수
   const handleViewCount = async (characterId) => {
     try {
-      await incrementViewCount(characterId);
+      const token = await getToken();
+      await incrementViewCount(characterId, token);
     } catch (error) {
       console.error('조회수 증가 실패:', error);
     }
