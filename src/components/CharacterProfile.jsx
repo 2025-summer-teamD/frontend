@@ -2,13 +2,112 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { Heart as OutlineHeart } from 'lucide-react';
+import { getSafeImageUrl } from '../utils/imageUtils';
+
+// 재사용 가능한 컴포넌트들
+const CharacterInfoSection = ({ character }) => (
+  <div className="mb-8">
+    <h2 className="text-xl font-semibold text-white mb-6">캐릭터 정보</h2>
+    <div className="space-y-8">
+      {character.prompt?.personality && (
+        <div className="pb-6 border-b border-gray-700">
+          <div className="text-gray-400 text-sm mb-2">성격</div>
+          <div className="text-white">{character.prompt.personality}</div>
+        </div>
+      )}
+      {character.prompt?.tone && (
+        <div className="pb-6 border-b border-gray-700">
+          <div className="text-gray-400 text-sm mb-2">말투</div>
+          <div className="text-white">{character.prompt.tone}</div>
+        </div>
+      )}
+      {character.prompt?.tag && (
+        <div className="pb-6 border-b border-gray-700">
+          <div className="text-gray-400 text-sm mb-3">태그</div>
+          <div className="flex flex-wrap gap-2">
+            {character.prompt.tag.split(',').map((tag, idx) => (
+              <span key={`tag-${idx}-${tag.trim()}`} className="bg-purple-700 text-white px-3 py-1 rounded-full text-xs">
+                #{tag.trim()}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+      {character.aliases && character.aliases.length > 0 && (
+        <div className="pb-6 border-b border-gray-700">
+          <div className="text-gray-400 text-sm mb-3">추가 태그</div>
+          <div className="flex flex-wrap gap-2">
+            {character.aliases.map((alias, idx) => (
+              <span key={`alias-${idx}-${alias}`} className="bg-purple-700 text-white px-3 py-1 rounded-full text-xs">
+                #{alias}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+CharacterInfoSection.propTypes = {
+  character: PropTypes.shape({
+    prompt: PropTypes.shape({
+      personality: PropTypes.string,
+      tone: PropTypes.string,
+      tag: PropTypes.string,
+    }),
+    aliases: PropTypes.arrayOf(PropTypes.string),
+  }).isRequired,
+};
+
+const StatsSection = ({ stats, isMyCharacter }) => (
+  <div className="flex justify-between mb-10">
+    {isMyCharacter ? (
+      <>
+        <div className="text-center flex-1">
+          <div className="text-3xl font-bold text-white mb-1">5</div>
+          <div className="text-gray-400 text-sm">조회수</div>
+        </div>
+        <div className="text-center flex-1">
+          <div className="text-3xl font-bold text-white mb-1">10</div>
+          <div className="text-gray-400 text-sm">좋아요</div>
+        </div>
+        <div className="text-center flex-1">
+          <div className="text-3xl font-bold text-white mb-1">{stats.intimacy}</div>
+          <div className="text-gray-400 text-sm">친밀도</div>
+        </div>
+      </>
+    ) : (
+      <>
+        <div className="text-center flex-1">
+          <div className="text-3xl font-bold text-white mb-1">{stats.uses_count || 0}</div>
+          <div className="text-gray-400 text-sm">조회수</div>
+        </div>
+        <div className="text-center flex-1">
+          <div className="text-3xl font-bold text-white mb-1">{stats.likes || 0}</div>
+          <div className="text-gray-400 text-sm">좋아요</div>
+        </div>
+      </>
+    )}
+  </div>
+);
+
+StatsSection.propTypes = {
+  stats: PropTypes.shape({
+    intimacy: PropTypes.number,
+    uses_count: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    likes: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  }).isRequired,
+  isMyCharacter: PropTypes.bool.isRequired,
+};
 
 const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle }) => {
   const isMyCharacter = origin === 'my';
   const navigate = useNavigate();
 
   const toggleLike = () => {
-    onLikeToggle(character.id, !liked, origin);
+    const characterId = character.character_id || character.id;
+    onLikeToggle(characterId, !liked, origin);
   };
 
   const handleStartChat = () => {
@@ -21,14 +120,21 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle }) =
         {/* 프로필 헤더 */}
         <div className="relative flex items-center mb-8">
           <div className="w-20 h-20 bg-gray-300 rounded-full border-4 border-white mr-5 overflow-hidden">
-            {character.image && (
-              <img src={character.image} alt={character.name} className="w-full h-full object-cover" />
+            {character.image_url && (
+              <img 
+                src={getSafeImageUrl(character.image_url)} 
+                alt={character.name} 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.src = '/api/uploads/default-character.svg';
+                }}
+              />
             )}
           </div>
           <div>
             <h1 className="text-2xl font-semibold text-white mb-1">{character.name}</h1>
-            <p className="text-gray-400 text-sm mb-3">By. {character.clerkID}</p>
-            <p className="text-gray-300 text-sm">{character.description}</p>
+            <p className="text-gray-400 text-sm mb-3">By. {character.creator_name || character.clerkId || character.user_id || character.clerkID}</p>
+            <p className="text-gray-300 text-sm">{character.introduction || character.description}</p>
           </div>
           <button
             onClick={toggleLike}
@@ -36,89 +142,19 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle }) =
             aria-label={liked ? '좋아요 취소' : '좋아요'}
           >
             {liked ? (
-              <svg className="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2
-                  5.42 4.42 3 7.5 3c1.74 0 3.41 0.81
-                  4.5 2.09C13.09 3.81 14.76 3 16.5
-                  3 19.58 3 22 5.42 22 8.5c0
-                  3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-              </svg>
+              <span className="text-red-500 text-xl">❤️</span>
             ) : (
               <OutlineHeart className="w-6 h-6 text-gray-400 hover:text-red-500 transition-colors" />
             )}
           </button>
+          <span className="absolute top-8 right-0 text-sm text-gray-400">{character.likes || 0}</span>
         </div>
 
-        {isMyCharacter ? (
-          <>
-            {/* 내 캐릭터용 UI */}
-            <div className="flex justify-between mb-10">
-              <div className="text-center flex-1">
-                <div className="text-3xl font-bold text-white mb-1">5</div>
-                <div className="text-gray-400 text-sm">대화</div>
-              </div>
-              <div className="text-center flex-1">
-                <div className="text-3xl font-bold text-white mb-1">10</div>
-                <div className="text-gray-400 text-sm">좋아요</div>
-              </div>
-              <div className="text-center flex-1">
-                <div className="text-3xl font-bold text-white mb-1">{character.intimacy}</div>
-                <div className="text-gray-400 text-sm">친밀도</div>
-              </div>
-            </div>
+        {/* 통계 섹션 */}
+        <StatsSection stats={character} isMyCharacter={isMyCharacter} />
 
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold text-white mb-6">캐릭터 정보</h2>
-              <div className="space-y-8">
-                <div className="pb-6 border-b border-gray-700">
-                  <div className="text-gray-400 text-sm">성격</div>
-                </div>
-                <div className="pb-6 border-b border-gray-700">
-                  <div className="text-gray-400 text-sm">특징</div>
-                </div>
-              </div>
-            </div>
-          </>
-        ) : (
-          <>
-            {/* 커뮤니티 캐릭터용 UI */}
-            <div className="flex justify-between mb-10">
-              <div className="text-center flex-1">
-                <div className="text-3xl font-bold text-white mb-1">{character.chats || 0}</div>
-                <div className="text-gray-400 text-sm">조회수</div>
-              </div>
-              <div className="text-center flex-1">
-                <div className="text-3xl font-bold text-white mb-1">{character.likes || 0}</div>
-                <div className="text-gray-400 text-sm">좋아요</div>
-              </div>
-            </div>
-
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold text-white mb-6">캐릭터 정보</h2>
-              <div className="space-y-8">
-                <div className="pb-6 border-b border-gray-700">
-                  <div className="text-gray-400 text-sm">성격</div>
-                </div>
-                <div className="pb-6 border-b border-gray-700">
-                  <div className="text-gray-400 text-sm">특징</div>
-                </div>
-
-                {character.aliases && character.aliases.length > 0 && (
-                  <div className="pb-6 border-b border-gray-700">
-                    <div className="text-gray-400 text-sm mb-3">태그</div>
-                    <div className="flex flex-wrap gap-2">
-                      {character.aliases.map((alias, idx) => (
-                        <span key={idx} className="bg-purple-700 text-white px-3 py-1 rounded-full text-xs">
-                          #{alias}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </>
-        )}
+        {/* 캐릭터 정보 섹션 */}
+        <CharacterInfoSection character={character} />
 
         <div className="space-y-3">
           <button
@@ -149,16 +185,29 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle }) =
 CharacterProfile.propTypes = {
   character: PropTypes.shape({
     id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    character_id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     name: PropTypes.string,
     description: PropTypes.string,
+    introduction: PropTypes.string,
     author: PropTypes.string,
     image: PropTypes.string,
+    image_url: PropTypes.string,
     intimacy: PropTypes.number,
     messageCount: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     likes: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    uses_count: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     chats: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     creater: PropTypes.string,
+    creator_name: PropTypes.string,
+    clerkId: PropTypes.string,
+    clerkID: PropTypes.string,
+    user_id: PropTypes.string,
     aliases: PropTypes.arrayOf(PropTypes.string),
+    prompt: PropTypes.shape({
+      personality: PropTypes.string,
+      tone: PropTypes.string,
+      tag: PropTypes.string,
+    }),
   }).isRequired,
   liked: PropTypes.bool.isRequired,
   origin: PropTypes.string.isRequired,
