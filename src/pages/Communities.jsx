@@ -1,5 +1,5 @@
 // src/pages/Communities.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCommunityCharacters, toggleLike, incrementViewCount } from '../data/characters';
 import CharacterProfile from '../components/CharacterProfile';
 import CharacterEditModal from '../components/CharacterEditModal';
@@ -48,10 +48,11 @@ export default function Communities() {
         setLikedIds(prev => prev.filter(x => x !== id));
       }
       
-      // 해당 캐릭터의 좋아요 수 업데이트
+      // 해당 캐릭터의 좋아요 수와 상태 업데이트
       const character = characters.find(c => c.character_id === id);
       if (character) {
         character.likes = result.data.likesCount;
+        character.liked = result.data.isLiked; // character.liked 속성도 업데이트
         // 상태 강제 업데이트를 위해 배열을 새로 생성
         setCharacters(prev => [...prev]);
       }
@@ -181,11 +182,13 @@ export default function Communities() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
             {sortedCharacters.map(character => {
               const isLiked = character.liked || likedIds.includes(character.character_id);
+              
               const handleSelect = async () => {
                 try {
                   // 조회수 증가 - character_id가 있을 때만
                   if (character.character_id) {
-                    await incrementViewCount(character.character_id);
+                    const token = await getToken();
+                    await incrementViewCount(character.character_id, token);
                     // 조회수 증가 성공 시 해당 캐릭터의 조회수만 업데이트
                     character.uses_count = (character.uses_count || 0) + 1;
                     // 상태 강제 업데이트를 위해 배열을 새로 생성
