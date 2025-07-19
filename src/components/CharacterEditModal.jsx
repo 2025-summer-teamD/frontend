@@ -1,21 +1,43 @@
 // src/components/CharacterEditModal.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Heart as OutlineHeart, Heart as SolidHeart } from 'lucide-react';
+import { useUpdateCharacter, useDeleteCharacter } from '../data/characters';
 
 const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle }) => {
+  const { updateCharacter, loading: updateLoading } = useUpdateCharacter();
+  const { deleteCharacter, loading: deleteLoading } = useDeleteCharacter();
+  
   const [formData, setFormData] = useState({
     name: character?.name || '',
-    description: character?.description || '',
-    creater: character?.creater || '',
-    image: character?.image || '',
-    personality: character?.personality || '',
+    description: character?.description || character?.introduction || '',
+    creator: character?.creator || character?.creater || character?.user_id || character?.clerkId || '',
+    image: character?.image || character?.image_url || character?.imageUrl || '',
+    personality: character?.personality || character?.prompt?.personality || '',
+    tone: character?.tone || character?.prompt?.tone || '',
     characteristics: character?.characteristics || '',
-    tags: character?.tags || ''
+    tags: character?.tags || character?.tag || character?.prompt?.tag || ''
   });
 
+  const [previewImage, setPreviewImage] = useState(character?.image || character?.image_url || character?.imageUrl || '');
 
-  const [previewImage, setPreviewImage] = useState(character?.image || '');
+  // character prop이 변경될 때 formData를 업데이트
+  useEffect(() => {
+    if (character) {
+      console.log('Character data in modal:', character); // 디버깅용
+      setFormData({
+        name: character?.name || '',
+        description: character?.description || character?.introduction || '',
+        creator: character?.creator || character?.creater || character?.user_id || character?.clerkId || '',
+        image: character?.image || character?.image_url || character?.imageUrl || '',
+        personality: character?.personality || character?.prompt?.personality || '',
+        tone: character?.tone || character?.prompt?.tone || '',
+        characteristics: character?.characteristics || '',
+        tags: character?.tags || character?.tag || character?.prompt?.tag || ''
+      });
+      setPreviewImage(character?.image || character?.image_url || character?.imageUrl || '');
+    }
+  }, [character]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -56,10 +78,10 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
   };
 
   const toggleLike = () => {
-    onLikeToggle(character?.id, !liked);
+    onLikeToggle(character?.character_id || character?.id, !liked);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Validate required fields
     if (!formData.name.trim()) {
       alert('캐릭터 이름을 입력해주세요.');
@@ -70,8 +92,57 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
       alert('캐릭터 설명을 입력해주세요.');
       return;
     }
-    onSave(character?.id, formData);
-    onClose();
+    
+    try {
+      // API를 통해 캐릭터 수정
+      const updatedCharacter = await updateCharacter(character?.character_id || character?.id, {
+        introduction: formData.description,
+        personality: formData.personality,
+        tone: formData.tone,
+        tag: formData.tags
+      });
+      
+      console.log('Character updated successfully:', updatedCharacter);
+      
+      // 성공 메시지 표시
+      alert('캐릭터 정보가 성공적으로 업데이트되었습니다!');
+      
+      // 모달 닫기
+      onClose();
+      
+    } catch (error) {
+      console.error('Error updating character:', error);
+      alert(`캐릭터 수정 중 오류가 발생했습니다: ${error.message}`);
+    }
+  };
+
+  const handleDelete = async () => {
+    // 삭제 확인
+    const confirmDelete = window.confirm(`정말로 "${formData.name}" 캐릭터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`);
+    
+    if (!confirmDelete) {
+      return;
+    }
+    
+    try {
+      // API를 통해 캐릭터 삭제
+      await deleteCharacter(character?.character_id || character?.id);
+      
+      console.log('Character deleted successfully');
+      
+      // 성공 메시지 표시
+      alert('캐릭터가 성공적으로 삭제되었습니다.');
+      
+      // 모달 닫기
+      onClose();
+      
+      // 페이지 새로고침 (목록 업데이트를 위해)
+      window.location.reload();
+      
+    } catch (error) {
+      console.error('Error deleting character:', error);
+      alert(`캐릭터 삭제 중 오류가 발생했습니다: ${error.message}`);
+    }
   };
 
   const handleBackdropClick = (e) => {
@@ -122,18 +193,18 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
             />
           </div>
           <div className="flex-1">
-            <span className="text-gray-400 text-sm">By. {formData.creater}</span>
-
-            {/* 작성자 입력 */}
+            {/* 캐릭터 이름 입력 */}
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => handleInputChange('name', e.target.value)}
+              className="text-white text-xl font-bold bg-transparent border-b border-gray-600 focus:border-indigo-500 outline-none w-full mb-2"
+              placeholder="캐릭터 이름"
+            />
+            
+            {/* 작성자 표시 */}
             <div className="flex items-center mb-3">
-              <span className="text-gray-400 text-sm mr-2">By.{formData.creater} </span>
-              {/* <input
-                type="text"
-                value={formData.creater}
-                onChange={(e) => handleInputChange('creater', e.target.value)}
-                className="text-gray-400 text-sm bg-transparent border-b border-gray-600 focus:border-indigo-500 outline-none flex-1"
-                placeholder="작성자"
-              /> */}
+              <span className="text-gray-400 text-sm">By. {formData.creator}</span>
             </div>
 
             {/* 설명 입력 */}
@@ -161,7 +232,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
         {/* 통계 섹션 */}
         <div className="flex justify-between mb-10">
           <div className="text-center flex-1">
-            <div className="text-3xl font-bold text-white mb-1">{character?.conversations || 0}</div>
+            <div className="text-3xl font-bold text-white mb-1">{character?.uses_count || character?.messageCount || character?.conversations || 0}</div>
             <div className="text-gray-400 text-sm">대화</div>
           </div>
           <div className="text-center flex-1">
@@ -184,8 +255,20 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
                 value={formData.personality}
                 onChange={(e) => handleInputChange('personality', e.target.value)}
                 className="w-full bg-transparent border border-gray-600 focus:border-indigo-500 outline-none p-3 rounded text-white resize-none"
-                placeholder="캐릭터의 성격을 입력하세요"
+                placeholder="캐릭터의 성격을 입력하세요 (예: 친절함, 호기심, 적극성)"
                 rows="3"
+              />
+            </div>
+
+            {/* 말투 입력 */}
+            <div className="pb-6 border-b border-gray-700">
+              <div className="text-gray-400 text-sm mb-3">말투</div>
+              <input
+                type="text"
+                value={formData.tone}
+                onChange={(e) => handleInputChange('tone', e.target.value)}
+                className="w-full bg-transparent border border-gray-600 focus:border-indigo-500 outline-none p-3 rounded text-white"
+                placeholder="캐릭터의 말투를 입력하세요 (예: 차분하고 논리적인, 활기차고 친근한)"
               />
             </div>
 
@@ -216,7 +299,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
                   #캐릭터 id
                 </span>
                 <span className="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-xs">
-                  #{formData.creater}
+                  #{formData.creator}
                 </span>
                 {formData.tags?.split(',').map((tag, index) => (
                   <span key={index} className="bg-indigo-600 text-white px-3 py-1 rounded-full text-xs">
@@ -230,22 +313,65 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
 
         {/* 버튼 섹션 */}
         <div className="space-y-3">
+          {/* 수정하기 버튼 */}
           <button
             onClick={handleSave}
-            className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2"
+            disabled={updateLoading || deleteLoading}
+            className={`w-full ${updateLoading || deleteLoading ? 'bg-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700'} text-white font-medium py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2`}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-              />
-            </svg>
-            수정하기
+            {updateLoading ? (
+              <>
+                <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                수정 중...
+              </>
+            ) : (
+              <>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                  />
+                </svg>
+                수정하기
+              </>
+            )}
           </button>
+          
+          {/* 취소 버튼 */}
           <button
             onClick={onClose}
+            disabled={updateLoading || deleteLoading}
             className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-6 rounded-2xl transition-colors duration-200"
           >
             취소
+          </button>
+
+          {/* 삭제하기 버튼 */}
+          <button
+            onClick={handleDelete}
+            disabled={updateLoading || deleteLoading}
+            className={`w-full ${deleteLoading ? 'bg-gray-500 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'} text-white font-medium py-3 px-6 rounded-2xl transition-all duration-200 flex items-center justify-center gap-2`}
+          >
+            {deleteLoading ? (
+              <>
+                <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                삭제 중...
+              </>
+            ) : (
+              <>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+                삭제하기
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -256,14 +382,34 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
 CharacterEditModal.propTypes = {
   character: PropTypes.shape({
     id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    character_id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     name: PropTypes.string,
     description: PropTypes.string,
+    introduction: PropTypes.string,
+    creator: PropTypes.string,
     creater: PropTypes.string,
+    user_id: PropTypes.string,
+    clerkId: PropTypes.string,
     image: PropTypes.string,
+    image_url: PropTypes.string,
+    imageUrl: PropTypes.string,
     intimacy: PropTypes.number,
     personality: PropTypes.string,
+    tone: PropTypes.string,
     characteristics: PropTypes.string,
-    tags: PropTypes.string
+    tags: PropTypes.string,
+    tag: PropTypes.string,
+    prompt: PropTypes.shape({
+      personality: PropTypes.string,
+      tone: PropTypes.string,
+      tag: PropTypes.string
+    }),
+    messageCount: PropTypes.number,
+    conversations: PropTypes.number,
+    uses_count: PropTypes.number,
+    likes: PropTypes.number,
+    is_public: PropTypes.bool,
+    liked: PropTypes.bool
   }).isRequired,
   liked: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
