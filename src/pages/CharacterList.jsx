@@ -1,14 +1,19 @@
 // src/pages/CharacterList.jsx
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-// import CharacterProfile from '../components/CharacterProfile'; // 더 이상 사용하지 않음
 import CharacterEditModal from '../components/CharacterEditModal';
-import CharacterProfile from '../components/CharacterProfile'; // 추가
-import CharacterSearchBar from '../components/CharacterSearchBar'; // 필요하다면 다시 활성화
+import CharacterProfile from '../components/CharacterProfile';
+import CharacterSearchBar from '../components/CharacterSearchBar';
 import CharacterGrid from '../components/CharacterGrid';
-import { useMyCharacters, useCharacterDetail, useUpdateCharacter, toggleLike, useDeleteCharacter } from '../data/characters'; // 수정된 useMyCharacters 훅과 useCharacterDetail, useUpdateCharacter 임포트
+import LoadingSpinner from '../components/LoadingSpinner';
+import ErrorDisplay from '../components/ErrorDisplay';
+import SearchBar from '../components/SearchBar';
+import EmptyState from '../components/EmptyState';
+import PageLayout from '../components/PageLayout';
+import TabButton from '../components/TabButton';
+import Button from '../components/Button';
+import { useMyCharacters, useCharacterDetail, useUpdateCharacter, toggleLike, useDeleteCharacter } from '../data/characters';
 import { useAuth, useUser } from '@clerk/clerk-react';
-import { Search, XCircle } from 'lucide-react';
 
 export default function CharacterList() {
   const { userId, getToken } = useAuth();
@@ -168,144 +173,89 @@ export default function CharacterList() {
   };
 
   if (loading) {
-    return (
-      <div className="bg-gray-800 text-white min-h-screen font-sans flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto"></div>
-          <p className="mt-4 text-gray-400">캐릭터 목록을 불러오는 중...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error) {
-    return (
-      <div className="bg-gray-800 text-white min-h-screen font-sans flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-400">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-indigo-600 rounded-lg hover:bg-indigo-700"
-          >
-            다시 시도
-          </button>
-        </div>
-      </div>
-    );
+    return <ErrorDisplay error={error} />;
   }
 
   return (
-    <div className="bg-gray-800 text-white min-h-screen font-sans">
-      <main className="max-w-screen-xl mx-auto px-6 py-8">
-        {/* Header */}
-        <header className="text-center mb-8">
-          <h1 className="text-white font-bold md:text-[1.5rem] text-center">내 캐릭터 목록</h1>
-          <p className="text-[1rem] text-gray-400">내가 만들거나 저장한 캐릭터 목록이에요</p>
-        </header>
+    <PageLayout 
+      title="내 캐릭터 목록"
+      subtitle="내가 만들거나 저장한 캐릭터 목록이에요"
+    >
+      {/* Search and Filter */}
+      <SearchBar 
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+      />
 
-        {/* Search and Filter */}
-        <div className="mb-8 top-4 z-10 bg-gray-800 py-4">
-          <div className="max-w-2xl mx-auto">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="text-gray-400" />
-              </div>
-              <input
-                type="text"
-                placeholder="캐릭터 이름 또는 설명으로 검색..."
-                className="w-full bg-gray-700 text-white placeholder-gray-400 border border-transparent rounded-full py-3 pl-10 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  aria-label="검색어 지우기"
-                >
-                  <XCircle className="text-gray-400 hover:text-white" />
-                </button>
-              )}
-            </div>
-            {/* 정렬 버튼 제거 */}
-          </div>
-        </div>
-
-        {/* 버튼 3개: 왼쪽 2개, 오른쪽 1개 */}
-        <div className="flex items-center justify-between mb-4 max-w-2xl mx-auto">
-          <div className="flex gap-2">
-            <button
-              className={`px-4 py-2 text-sm sm:text-base font-semibold rounded-full transition-colors ${
-                tab === 'created' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              }`}
-              onClick={() => setTab('created') }
-            >
-              내 캐릭터
-            </button>
-            <button
-              className={`px-4 py-2 text-sm sm:text-base font-semibold rounded-full transition-colors ${
-                tab === 'liked' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              }`}
-              onClick={() => setTab('liked')}
-            >
-              찜한 캐릭터
-            </button>
-          </div>
-          <Link
-            to="/createCharacter"
-            className="text-sm sm:text-base px-4 py-2 rounded-full font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white transition-all text-center"
+      {/* 버튼 3개: 왼쪽 2개, 오른쪽 1개 */}
+      <div className="flex items-center justify-between mb-4 max-w-2xl mx-auto">
+        <div className="flex gap-2">
+          <TabButton
+            isActive={tab === 'created'}
+            onClick={() => setTab('created') }
           >
-            캐릭터 생성
-          </Link>
+            내 캐릭터
+          </TabButton>
+          <TabButton
+            isActive={tab === 'liked'}
+            onClick={() => setTab('liked')}
+          >
+            찜한 캐릭터
+          </TabButton>
         </div>
+        <Link to="/createCharacter">
+          <Button>
+            캐릭터 생성
+          </Button>
+        </Link>
+      </div>
 
-        {/* 캐릭터 카드 그리드 */}
-        {showCharacters.length === 0 ? (
-          <div className="text-center py-20">
-            <Search className="mx-auto h-12 w-12 text-gray-500" />
-            <h3 className="mt-2 text-lg font-medium text-white">검색 결과가 없습니다</h3>
-            <p className="mt-1 text-sm text-gray-400">다른 검색어로 다시 시도해보세요.</p>
-          </div>
-        ) : (
-          <CharacterGrid
-            characters={showCharacters}
-            myId={userId}
-            tab={tab}
-            likedIds={likedIds}
-            onLikeToggle={handleLikeToggle}
-            onEdit={handleEditCharacter}
-            onDelete={handleDeleteCharacter}
-            onSelect={handleEditCharacter}
-          />
-        )}
+      {/* 캐릭터 카드 그리드 */}
+      {showCharacters.length === 0 ? (
+        <EmptyState />
+      ) : (
+        <CharacterGrid
+          characters={showCharacters}
+          myId={userId}
+          tab={tab}
+          likedIds={likedIds}
+          onLikeToggle={handleLikeToggle}
+          onEdit={handleEditCharacter}
+          onDelete={handleDeleteCharacter}
+          onSelect={handleEditCharacter}
+        />
+      )}
 
-        {/* 캐릭터 상세 모달 제거됨 - 이제 캐릭터 클릭시 바로 수정 모달이 열림 */}
+      {/* 캐릭터 상세 모달 제거됨 - 이제 캐릭터 클릭시 바로 수정 모달이 열림 */}
 
-        {editingCharacter && tab === 'created' && (
-          <CharacterEditModal
-            character={editingCharacter}
-            liked={likedIds.includes(editingCharacter.character_id || editingCharacter.id)}
-            onClose={() => {
-              setEditingCharacter(null);
-              resetCharacter(); // 상세 정보 리셋
-            }}
-            onSave={handleSaveCharacter}
-            onLikeToggle={handleLikeToggle}
-          />
-        )}
+      {editingCharacter && tab === 'created' && (
+        <CharacterEditModal
+          character={editingCharacter}
+          liked={likedIds.includes(editingCharacter.character_id || editingCharacter.id)}
+          onClose={() => {
+            setEditingCharacter(null);
+            resetCharacter(); // 상세 정보 리셋
+          }}
+          onSave={handleSaveCharacter}
+          onLikeToggle={handleLikeToggle}
+        />
+      )}
 
-        {editingCharacter && tab === 'liked' && (
-          <CharacterProfile
-            character={editingCharacter}
-            liked={likedIds.includes(editingCharacter.character_id || editingCharacter.id)}
-            onClose={() => {
-              setEditingCharacter(null);
-              resetCharacter(); // 상세 정보 리셋
-            }}
-            onLikeToggle={handleLikeToggle}
-          />
-        )}
-      </main>
-    </div>
+      {editingCharacter && tab === 'liked' && (
+        <CharacterProfile
+          character={editingCharacter}
+          liked={likedIds.includes(editingCharacter.character_id || editingCharacter.id)}
+          onClose={() => {
+            setEditingCharacter(null);
+            resetCharacter(); // 상세 정보 리셋
+          }}
+          onLikeToggle={handleLikeToggle}
+        />
+      )}
+    </PageLayout>
   );
 }
