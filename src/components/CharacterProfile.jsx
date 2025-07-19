@@ -1,14 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
-import { Heart as OutlineHeart } from 'lucide-react';
+import { Heart as OutlineHeart, Heart as SolidHeart } from 'lucide-react';
 
 const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle }) => {
   const isMyCharacter = origin === 'my';
   const navigate = useNavigate();
 
   const toggleLike = () => {
-    onLikeToggle(character.id, !liked, origin);
+    const characterId = character.character_id || character.id;
+    onLikeToggle(characterId, !liked, origin);
   };
 
   const handleStartChat = () => {
@@ -21,14 +22,14 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle }) =
         {/* 프로필 헤더 */}
         <div className="relative flex items-center mb-8">
           <div className="w-20 h-20 bg-gray-300 rounded-full border-4 border-white mr-5 overflow-hidden">
-            {character.image && (
-              <img src={character.image} alt={character.name} className="w-full h-full object-cover" />
+            {character.image_url && (
+              <img src={character.image_url} alt={character.name} className="w-full h-full object-cover" />
             )}
           </div>
           <div>
             <h1 className="text-2xl font-semibold text-white mb-1">{character.name}</h1>
-            <p className="text-gray-400 text-sm mb-3">By. {character.author}</p>
-            <p className="text-gray-300 text-sm">{character.description}</p>
+            <p className="text-gray-400 text-sm mb-3">By. {character.user_id || character.author}</p>
+            <p className="text-gray-300 text-sm">{character.introduction || character.description}</p>
           </div>
           <button
             onClick={toggleLike}
@@ -36,17 +37,12 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle }) =
             aria-label={liked ? '좋아요 취소' : '좋아요'}
           >
             {liked ? (
-              <svg className="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 
-                  5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 
-                  4.5 2.09C13.09 3.81 14.76 3 16.5 
-                  3 19.58 3 22 5.42 22 8.5c0 
-                  3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-              </svg>
+              <span className="text-red-500 text-xl">❤️</span>
             ) : (
               <OutlineHeart className="w-6 h-6 text-gray-400 hover:text-red-500 transition-colors" />
             )}
           </button>
+          <span className="absolute top-8 right-0 text-sm text-gray-400">{character.likes || 0}</span>
         </div>
 
         {isMyCharacter ? (
@@ -84,7 +80,7 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle }) =
             {/* 커뮤니티 캐릭터용 UI */}
             <div className="flex justify-between mb-10">
               <div className="text-center flex-1">
-                <div className="text-3xl font-bold text-white mb-1">{character.chats || 0}</div>
+                <div className="text-3xl font-bold text-white mb-1">{character.uses_count || 0}</div>
                 <div className="text-gray-400 text-sm">조회수</div>
               </div>
               <div className="text-center flex-1">
