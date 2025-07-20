@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import chatMessages from '../data/chatMessages';
+import { useChatMessages } from '../data/chatMessages';
 import { useUser } from '@clerk/clerk-react';
 
 const ChatMate = () => {
@@ -10,7 +10,11 @@ const ChatMate = () => {
   const { user } = useUser();
 
   const [newMessage, setNewMessage] = useState('');
-  const [messages, setMessages] = useState(() => chatMessages.filter(m => m.characterId === character?.id));
+  
+  // API 훅으로 채팅 메시지 가져오기
+  const roomId = character?.id; // character ID를 room ID로 사용
+  const { messages, loading, error, setMessages } = useChatMessages(roomId);
+  
   const scrollContainerRef = useRef(null);
   const messagesEndRef = useRef(null);
   const isInitialMount = useRef(true);
@@ -37,10 +41,9 @@ const ChatMate = () => {
   // character 정보가 없으면 아무것도 렌더하지 않음
   if (!character) return null;
 
-  // character가 바뀌면 해당 캐릭터의 메시지로 상태 초기화
-  useEffect(() => {
-    setMessages(chatMessages.filter(m => m.characterId === character?.id));
-  }, [character]);
+  // 로딩 및 에러 상태 처리
+  if (loading) return <div className="flex items-center justify-center h-screen text-white">메시지 로딩 중...</div>;
+  if (error) return <div className="flex items-center justify-center h-screen text-red-500">에러: {error}</div>;
 
   const sendMessage = () => {
     if (!newMessage.trim()) return;
@@ -50,15 +53,19 @@ const ChatMate = () => {
       hour12: true,
     });
     const msg = {
-      id: chatMessages.length + 1,
+      id: Date.now(), // 임시 ID
       text: newMessage,
       sender: 'me',
       time: now,
       characterId: character.id,
     };
-    chatMessages.push(msg);
-    setMessages(chatMessages.filter(m => m.characterId === character.id));
+    
+    // 로컬 상태에 새 메시지 추가
+    setMessages(prevMessages => [...prevMessages, msg]);
     setNewMessage('');
+    
+    // TODO: 실제로는 여기서 API 호출로 메시지를 서버에 저장해야 함
+    // await sendMessageToServer(roomId, msg);
   };
 
   const handleKeyPress = e => {

@@ -48,7 +48,7 @@ export default function CharacterList() {
   const [refreshKey, setRefreshKey] = useState(0); // 목록 새로고침을 위한 키
 
   // useMyCharacters 훅은 이제 'tab' 파라미터를 받지 않고 모든 'created' 캐릭터를 가져옵니다.
-  const { characters, loading, error, fetchMyCharacters, setCharacters } = useMyCharacters(tab);
+  const { characters, loading, error, fetchMyCharacters, setCharacters } = useMyCharacters();
   
   // 캐릭터 상세 정보를 가져오는 훅
   const { character: detailCharacter, loading: detailLoading, fetchCharacterDetail, resetCharacter } = useCharacterDetail();

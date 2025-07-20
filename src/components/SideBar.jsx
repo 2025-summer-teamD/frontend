@@ -1,22 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useMyChatCharacters } from '../data/characters';
-import { chatMessages } from '../data/chatMessages';
 import logo from '/assets/logo.png';
 import AnimatedAuthHeader from './AnimatedAuthHeader';
-
-// 캐릭터별 마지막 메시지 시간
-function getLastMsgTime(character) {
-  const msgs = chatMessages.filter(msg => msg.characterId === character.id);
-  if (msgs.length === 0) return null;
-  return msgs[msgs.length - 1].time;
-}
-
-function getLastMsgText(character) {
-  const msgs = chatMessages.filter(msg => msg.characterId === character.id);
-  if (msgs.length === 0) return character.description;
-  return msgs[msgs.length - 1].text;
-}
 
 const Sidebar = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
