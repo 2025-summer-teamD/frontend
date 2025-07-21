@@ -1,13 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { Heart as OutlineHeart } from 'lucide-react';
 import { getSafeImageUrl } from '../utils/imageUtils';
-import { useUser } from '@clerk/clerk-react';
+import { useUser, useAuth } from '@clerk/clerk-react';
 
 // 재사용 가능한 캐릭터 헤더 컴포넌트
 export const CharacterHeader = ({ character, liked, onLikeToggle, showLikeButton = true }) => {
-  const characterId = character.character_id || character.id;
+  const characterId = character.id;
   const { user } = useUser(); // username을 가져오기 위해 useUser 추가
   
 
@@ -21,9 +21,9 @@ export const CharacterHeader = ({ character, liked, onLikeToggle, showLikeButton
   return (
     <div className="relative flex items-center mb-8">
       <div className="w-20 h-20 bg-gray-300 rounded-full border-4 border-white mr-5 overflow-hidden">
-        {character.image_url && (
+        {character.imageUrl && (
           <img 
-            src={getSafeImageUrl(character.image_url)} 
+            src={getSafeImageUrl(character.imageUrl)} 
             alt={character.name} 
             className="w-full h-full object-cover"
             onError={(e) => {
@@ -124,21 +124,19 @@ export const CharacterInfo = ({ character }) => (
           <div className="text-white">{character.introduction || character.description}</div>
         </div>
       )}
-      {character.prompt?.tag && (
-        <div className="pb-6 border-b border-gray-700">
-          <div className="text-gray-400 text-sm mb-3">태그</div>
-          <div className="flex flex-wrap gap-2">
-            <span className="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-xs">
-              #{character.character_id || character.id || '캐릭터'}번째로 생성된 캐릭터
+      <div className="pb-6 border-b border-gray-700">
+        <div className="text-gray-400 text-sm mb-3">태그</div>
+        <div className="flex flex-wrap gap-2">
+          <span className="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-xs">
+            #{character.id || '캐릭터'}번째로 생성된 캐릭터
+          </span>
+          {character.prompt?.tag && character.prompt.tag.split(',').filter(tag => tag.trim()).map((tag, idx) => (
+            <span key={`tag-${idx}-${tag.trim()}`} className="bg-purple-700 text-white px-3 py-1 rounded-full text-xs">
+              #{tag.trim()}
             </span>
-            {character.prompt.tag.split(',').filter(tag => tag.trim()).map((tag, idx) => (
-              <span key={`tag-${idx}-${tag.trim()}`} className="bg-purple-700 text-white px-3 py-1 rounded-full text-xs">
-                #{tag.trim()}
-              </span>
-            ))}
-          </div>
+          ))}
         </div>
-      )}
+      </div>
       {character.aliases && character.aliases.length > 0 && (
         <div className="pb-6 border-b border-gray-700">
           <div className="text-gray-400 text-sm mb-3">추가 태그</div>
@@ -166,12 +164,46 @@ CharacterInfo.propTypes = {
   }).isRequired,
 };
 
-const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle }) => {
+const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onChatRoomCreated }) => {
   const isMyCharacter = origin === 'my';
   const navigate = useNavigate();
+  const { getToken } = useAuth();
+  const [loading, setLoading] = useState(false);
 
-  const handleStartChat = () => {
-    navigate('/chatMate', { state: { character } });
+  // 채팅방 생성/조회 API 호출 함수
+  const createOrGetChatRoom = async (characterId) => {
+    const token = await getToken();
+    console.log('채팅방 생성 요청 토큰:', token);
+    const headers = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    };
+    console.log('채팅방 생성 요청 헤더:', headers);
+    const response = await fetch('http://localhost:3001/api/chat/rooms', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ character_id: characterId }),
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || '채팅방 생성에 실패했습니다.');
+    }
+    const data = await response.json();
+    return data.data.roomId || data.data.id || data.data.room_id;
+  };
+
+  const handleStartChat = async () => {
+    setLoading(true);
+    try {
+      const characterId = character.id;
+      const roomId = await createOrGetChatRoom(characterId);
+      if (onChatRoomCreated) onChatRoomCreated();
+      navigate(`/chatMate/${roomId}`, { state: { character } });
+    } catch (error) {
+      alert('채팅방 생성에 실패했습니다: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -194,6 +226,7 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle }) =
           <button
             onClick={handleStartChat}
             className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2"
+            disabled={loading}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -202,7 +235,7 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle }) =
                 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
               />
             </svg>
-            대화하기
+            {loading ? '채팅방 입장 중...' : '대화하기'}
           </button>
           <button
             onClick={onClose}

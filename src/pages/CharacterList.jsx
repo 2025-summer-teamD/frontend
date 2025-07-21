@@ -14,6 +14,7 @@ import TabButton from '../components/TabButton';
 import Button from '../components/Button';
 import { useMyCharacters, useCharacterDetail, useUpdateCharacter, toggleLike, useDeleteCharacter } from '../data/characters';
 import { useAuth, useUser } from '@clerk/clerk-react';
+import { useChatRooms } from '../contexts/ChatRoomsContext';
 
 export default function CharacterList() {
   const { userId, getToken } = useAuth();
@@ -58,6 +59,8 @@ export default function CharacterList() {
   
   // 캐릭터 삭제를 위한 훅
   const { deleteCharacter, loading: deleteLoading } = useDeleteCharacter();
+  // 사이드바 채팅방 목록 갱신용
+  const { refetch: refetchMyChatRooms } = useChatRooms();
 
   // 탭 변경 시 데이터 새로고침
   useEffect(() => {
@@ -108,7 +111,7 @@ export default function CharacterList() {
       
       // 이미 업데이트된 데이터가 있는지 확인
       const updatedCharacter = characters.find(char => 
-        (char.character_id || char.id) === (character.character_id || character.id)
+        (char.id) === (character.id)
       );
       
       if (updatedCharacter && updatedCharacter !== character) {
@@ -143,7 +146,7 @@ export default function CharacterList() {
         // 로컬 상태에서 해당 캐릭터 업데이트
         setCharacters(prevCharacters => 
           prevCharacters.map(char => 
-            (char.character_id || char.id) === (updatedCharacter.character_id || updatedCharacter.id) 
+            (char.id) === (updatedCharacter.id) 
               ? updatedCharacter 
               : char
           )
@@ -161,10 +164,11 @@ export default function CharacterList() {
   const handleDeleteCharacter = async (character) => {
     if (window.confirm(`${character.name} 캐릭터를 삭제하시겠습니까?`)) {
       try {
-        const characterId = character.character_id || character.id;
+        const characterId = character.id;
         await deleteCharacter(characterId);
         alert('캐릭터가 성공적으로 삭제되었습니다.');
         await fetchMyCharacters(); // 목록 새로고침
+        if (refetchMyChatRooms) await refetchMyChatRooms(); // 사이드바 목록도 새로고침
       } catch (error) {
         console.error('Error deleting character:', error);
         alert('캐릭터 삭제 중 오류가 발생했습니다.');
@@ -235,7 +239,7 @@ export default function CharacterList() {
       {editingCharacter && tab === 'created' && (
         <CharacterEditModal
           character={editingCharacter}
-          liked={likedIds.includes(editingCharacter.character_id || editingCharacter.id)}
+          liked={likedIds.includes(editingCharacter.id)}
           onClose={() => {
             setEditingCharacter(null);
             resetCharacter(); // 상세 정보 리셋
@@ -248,7 +252,7 @@ export default function CharacterList() {
       {editingCharacter && tab === 'liked' && (
         <CharacterProfile
           character={editingCharacter}
-          liked={likedIds.includes(editingCharacter.character_id || editingCharacter.id)}
+          liked={likedIds.includes(editingCharacter.id)}
           onClose={() => {
             setEditingCharacter(null);
             resetCharacter(); // 상세 정보 리셋

@@ -92,28 +92,28 @@ export function useMyChatCharacters() {
   const [error, setError] = useState(null);
   const { getToken } = useAuth();
 
-  useEffect(() => {
-    const fetchMyChatCharacters = async () => {
-      try {
-        setLoading(true);
-        const data = await authenticatedApiCall(
-          "http://localhost:3001/api/my/chat-characters",
-          getToken,
-          {}
-        );
-        setCharacters(data.data);
-      } catch (err) {
-        const errorMessage = handleApiError(err, '채팅 목록을 불러오는데 실패했습니다.');
-        setError(errorMessage);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMyChatCharacters();
+  const fetchMyChatCharacters = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await authenticatedApiCall(
+        "http://localhost:3001/api/my/chat-characters",
+        getToken,
+        {}
+      );
+      setCharacters((data.data || []).filter(chat => !!chat.room_id));
+    } catch (err) {
+      const errorMessage = handleApiError(err, '채팅 목록을 불러오는데 실패했습니다.');
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   }, [getToken]);
 
-  return { characters, loading, error };
+  useEffect(() => {
+    fetchMyChatCharacters();
+  }, [fetchMyChatCharacters]);
+
+  return { characters, loading, error, refetch: fetchMyChatCharacters };
 }
 
 // 내가 만든 캐릭터 목록을 가져오는 커스텀 훅
