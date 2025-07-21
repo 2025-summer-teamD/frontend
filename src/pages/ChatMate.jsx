@@ -12,20 +12,72 @@ const ChatMate = () => {
   // AI 응답 훅 추가
   const { sendMessage: sendMessageToAI, loading: aiLoading, error: aiError } = useSendMessageToAI();
 
+  // 이전 대화기록을 메시지 형식으로 변환하는 함수
+  const convertChatHistoryToMessages = (chatHistory, characterData) => {
+    console.log('📜 채팅 히스토리 변환 시작:', { chatHistory, characterData });
+    
+    if (!chatHistory || !Array.isArray(chatHistory)) {
+      console.log('❌ 채팅 히스토리가 없거나 배열이 아님');
+      return [];
+    }
+    
+    return chatHistory.map(item => {
+      const convertedMessage = {
+        id: item.id,
+        text: item.text,
+        sender: item.speaker === 'user' ? 'me' : 'other',
+        time: new Date(item.time).toLocaleTimeString('ko-KR', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true,
+        }),
+        characterId: characterData?.character_id || characterData?.id
+      };
+      console.log('💬 변환된 메시지:', convertedMessage);
+      return convertedMessage;
+    });
+  };
+
   // 캐릭터 정보 상태
   const [character, setCharacter] = useState(state?.character || null);
   const [loading, setLoading] = useState(!state?.character && !!roomId);
   const [error, setError] = useState(null);
 
-  // 메시지 상태(초기값 빈 배열)
+  // 메시지 상태 (이전 대화기록이 있으면 초기값으로 설정)
   const [newMessage, setNewMessage] = useState('');
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(() => {
+    console.log('🏁 초기 메시지 상태 설정');
+    console.log('🔍 state?.chatHistory:', state?.chatHistory);
+    console.log('🔍 state?.character:', state?.character);
+    
+    const chatHistory = state?.chatHistory || [];
+    const initialCharacter = state?.character;
+    
+    if (chatHistory.length > 0) {
+      console.log('✅ 채팅 히스토리 발견, 변환 시작');
+      const convertedMessages = convertChatHistoryToMessages(chatHistory, initialCharacter);
+      console.log('✅ 변환 완료:', convertedMessages);
+      return convertedMessages;
+    } else {
+      console.log('❌ 채팅 히스토리 없음');
+      return [];
+    }
+  });
+  
   const scrollContainerRef = useRef(null);
   const messagesEndRef = useRef(null);
   const isInitialMount = useRef(true);
 
-  // roomId로 백엔드에서 캐릭터 정보 fetch
+  // roomId로 백엔드에서 캐릭터 정보 fetch (state가 없을 때만)
   useEffect(() => {
+    console.log('🔄 useEffect 실행 - roomId:', roomId, 'state?.character:', !!state?.character);
+    
+    // state에서 캐릭터 정보가 있으면 API 호출하지 않음
+    if (state?.character) {
+      console.log('✅ state에서 캐릭터 정보 있음, API 호출 생략');
+      return;
+    }
+    
     setCharacter(null);
     setMessages([]);
     setError(null);
@@ -43,7 +95,7 @@ const ChatMate = () => {
         .catch(() => setError('존재하지 않거나 삭제된 채팅방입니다.'))
         .finally(() => setLoading(false));
     }
-  }, [roomId]);
+  }, [roomId, state?.character]);
 
   // 더미 데이터 삭제: character가 바뀌어도 messages는 빈 배열 유지
 
@@ -261,7 +313,7 @@ const ChatMate = () => {
       {/* 입력창: sticky bottom */}
       <footer className="sticky bottom-0 px-4 py-4 border-t border-white/10 bg-black/20 backdrop-blur-xl">
         <div className="flex items-center space-x-3 max-w-4xl mx-auto">
-          <button className="text-white hover:text-white/90 p-2 text-xl">📎</button>
+          <button className="text-white hover:text-white/90 p-2 text-xl">��</button>
           <div className="flex-1 flex items-center space-x-2 bg-white/10 border border-white/20 rounded-full px-4 py-2.5">
             <input
               type="text"

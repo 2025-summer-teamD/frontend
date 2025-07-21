@@ -173,47 +173,62 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onC
   const { getToken } = useAuth();
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    // 모달 열릴 때 body 스크롤 막기
-    document.body.style.overflow = 'hidden';
 
-    // 모달 닫힐 때 body 스크롤 다시 가능하게
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, []);
-
-  // 채팅방 생성/조회 API 호출 함수
-  const createOrGetChatRoom = async (characterId) => {
+  // 채팅방 입장/조회 API 호출 함수 (이전 대화기록 포함)
+  const enterChatRoom = async (characterId) => {
     const token = await getToken();
-    console.log('채팅방 생성 요청 토큰:', token);
+    console.log('채팅방 입장 요청 토큰:', token);
     const headers = {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     };
-    console.log('채팅방 생성 요청 헤더:', headers);
-    const response = await fetch('http://localhost:3001/api/chat/rooms', {
-      method: 'POST',
+    console.log('채팅방 입장 요청 헤더:', headers);
+    
+    // GET 방식으로 변경 (쿼리 파라미터 사용)
+    const response = await fetch(`http://localhost:3001/api/chat/rooms?character_id=${characterId}`, {
+      method: 'GET',
       headers,
-      body: JSON.stringify({ character_id: characterId }),
     });
+    
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(errorText || '채팅방 생성에 실패했습니다.');
+      throw new Error(errorText || '채팅방 입장에 실패했습니다.');
     }
+    
     const data = await response.json();
-    return data.data.roomId || data.data.id || data.data.room_id;
+    console.log('채팅방 입장 응답:', data);
+    
+    return {
+      roomId: data.data.room_id,
+      character: data.data.character,
+      chatHistory: data.data.chat_history || []
+    };
   };
 
   const handleStartChat = async () => {
     setLoading(true);
     try {
-      const characterId = character.id;
-      const roomId = await createOrGetChatRoom(characterId);
+      // character_id 사용 (이전 로그에서 character.id는 undefined였음)
+      const characterId = character.character_id || character.id;
+      console.log('채팅방 입장 시도 - characterId:', characterId);
+      
+      const { roomId, character: updatedCharacter, chatHistory } = await enterChatRoom(characterId);
+      
+      console.log('채팅방 입장 성공:', { roomId, updatedCharacter, chatHistoryLength: chatHistory.length });
+      
       if (onChatRoomCreated) onChatRoomCreated();
-      navigate(`/chatMate/${roomId}`, { state: { character } });
+      
+      // ChatMate로 이전 대화기록도 함께 전달
+      navigate(`/chatMate/${roomId}`, { 
+        state: { 
+          character: updatedCharacter, 
+          chatHistory: chatHistory,
+          roomId: roomId 
+        } 
+      });
     } catch (error) {
-      alert('채팅방 생성에 실패했습니다: ' + error.message);
+      console.error('채팅방 입장 에러:', error);
+      alert('채팅방 입장에 실패했습니다: ' + error.message);
     } finally {
       setLoading(false);
     }
