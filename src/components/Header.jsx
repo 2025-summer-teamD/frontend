@@ -5,7 +5,7 @@ import { Menu } from 'lucide-react';
 
 export default function Header({ onMenuClick }) {
   return (
-    <div className="w-full h-[80px] z-50 border-b border-white bg-[linear-gradient(40deg,_#040438_17.08%,_#3C3C56_73.2%)] flex items-center px-5">
+    <div className="w-full h-[80px] z-50 bg-[linear-gradient(40deg,_#040438_17.08%,_#3C3C56_73.2%)] flex items-center px-5">
       {/* 왼쪽 로고 */}
       <Link to="/">
         <div className="flex items-center">
@@ -18,16 +18,14 @@ export default function Header({ onMenuClick }) {
       <nav className="hidden md:flex items-center space-x-4 ml-auto">
         <NavLink
           to="/"
-          className={({ isActive }) =>
-            `text-white hover:text-white px-3 py-2 text-[24px] rounded hover:bg-white/10`
-          }
+          className={({ isActive }) => isActive ? "text-white hover:text-white  text-[1.2rem] rounded hover:bg-white/10" : "text-[1.2rem] text-gray-400"}
         >
           홈
         </NavLink>
         <NavLink
           to="/communities"
           className={({ isActive }) =>
-            `text-white/70 hover:text-white text-white text-[18px] px-3 py-2 rounded hover:bg-white/10`
+            `text-[1.2rem] px-1 text-gray-400`
           }
         >
           커뮤니티
@@ -35,7 +33,7 @@ export default function Header({ onMenuClick }) {
         <NavLink
           to="/createCharacter"
           className={({ isActive }) =>
-            `text-white/70 hover:text-white px-3 py-2 text-[18px] rounded hover:bg-white/10`
+            `text-[1.2rem] px-1 text-gray-400`
           }
         >
           만들기
@@ -43,7 +41,7 @@ export default function Header({ onMenuClick }) {
         <NavLink
           to="/characterList"
           className={({ isActive }) =>
-            `text-white/70 hover:text-white px-3 py-2 text-[18px] rounded hover:bg-white/10`
+            `text-[1.2rem] px-1 text-gray-400`
           }
         >
           내 캐릭터

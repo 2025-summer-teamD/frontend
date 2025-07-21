@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, NavLink } from 'react-router-dom';
 import { useChatRooms } from '../contexts/ChatRoomsContext';
 import { chatMessages } from '../data/chatMessages';
 import logo from '/assets/logo.png';
@@ -75,12 +75,6 @@ const Sidebar = ({ children }) => {
               <img src={logo} alt="Logo" className="w-10 h-10" />
               <span className="text-white font-bold text-lg ml-2">ChatMate</span>
             </Link>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="text-white/70 hover:text-white text-2xl hover:bg-white/10 p-1 rounded"
-            >
-              ×
-            </button>
           </div>
 
           {/* Buttons */}
@@ -101,7 +95,7 @@ const Sidebar = ({ children }) => {
               <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              <span>내 캐릭터</span>
+              <span>My Characters</span>
             </Link>
           </div>
 
@@ -114,7 +108,7 @@ const Sidebar = ({ children }) => {
               </svg>
               <input
                 type="text"
-                placeholder="캐릭터 검색"
+                placeholder="Search Characters"
                 className="w-full bg-white/10 border-none rounded-full px-10 py-2.5 text-white placeholder-white/60 focus:outline-none focus:bg-white/15"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
@@ -124,11 +118,11 @@ const Sidebar = ({ children }) => {
 
           {/* Character List */}
           <div ref={sidebarListRef} className="flex-1 overflow-y-auto no-scrollbar">
-            <h3 className="text-white/70 text-sm px-4 pt-4 pb-2">채팅 목록</h3>
+            <h3 className="text-white/70 text-sm px-4 pt-4 pb-2">Chat List</h3>
             {loading ? (
               <div className="p-4 text-center">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mx-auto"></div>
-                <p className="text-white/50 text-sm mt-2">로딩 중...</p>
+                <p className="text-white/50 text-sm mt-2">Loading...</p>
               </div>
             ) : error ? (
               <div className="p-4 text-center">
@@ -136,7 +130,7 @@ const Sidebar = ({ children }) => {
               </div>
             ) : filteredCharacters.length === 0 ? (
               <div className="p-4 text-center">
-                <p className="text-white/50 text-sm">캐릭터가 없습니다</p>
+                <p className="text-white/50 text-sm">No characters found</p>
               </div>
             ) : (
               filteredCharacters.filter(chat => !!chat.room_id).map(chat => (
@@ -155,7 +149,7 @@ const Sidebar = ({ children }) => {
                       <h3 className="text-white font-medium text-[0.9rem]">{chat.name}</h3>
                       <span className="text-white/50 text-sm">{formatLastMessageTime(chat.time)}</span>
                     </div>
-                    <p className="text-white/70 text-sm mt-1 truncate">{chat.last_chat || '채팅을 시작해보세요'}</p>
+                    <p className="text-white/70 text-sm mt-1 truncate">{chat.last_chat || 'Start a chat'}</p>
                   </div>
                 </Link>
               ))
@@ -176,7 +170,7 @@ const Sidebar = ({ children }) => {
       {/* Main content */}
       <div className={`flex-1 flex flex-col transition-all duration-300 w-full ${sidebarOpen ? 'ml-60' : 'ml-0'}`}>
         {/* Topbar */}
-        <div className="flex items-center w-full space-x-4 h-[80px] justify-between p-5 border-b border-white bg-black/20 backdrop-blur-xl">
+        <div className="w-full h-[80px] z-50 bg-[linear-gradient(40deg,_#040438_17.08%,_#3C3C56_73.2%)] flex items-center px-5">
           <div className="flex items-center">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -193,7 +187,33 @@ const Sidebar = ({ children }) => {
               </Link>
             )}
           </div>
-          <AnimatedAuthHeader />
+          <nav className="hidden md:flex items-center space-x-4 ml-auto">
+        <NavLink
+          to="/"
+          className={({ isActive }) => isActive ? "text-white hover:text-white  text-[1.2rem] rounded hover:bg-white/10" : "text-[1.2rem] px-1 text-gray-400"}
+        >
+          홈
+        </NavLink>
+        <NavLink
+          to="/communities"
+          className={({ isActive }) => isActive ? "text-white hover:text-white  text-[1.2rem] rounded hover:bg-white/10" : "text-[1.2rem] px-1 text-gray-400"}
+        >
+          커뮤니티
+        </NavLink>
+        <NavLink
+          to="/createCharacter"
+          className={({ isActive }) => isActive ? "text-white hover:text-white  text-[1.2rem] rounded hover:bg-white/10" : "text-[1.2rem] px-1 text-gray-400"}
+        >
+          만들기
+        </NavLink>
+        <NavLink
+          to="/characterList"
+          className={({ isActive }) => isActive ? "text-white hover:text-white  text-[1.2rem] rounded hover:bg-white/10" : "text-[1.2rem] px-1 text-gray-400"}
+        >
+          내 캐릭터
+        </NavLink>
+        <AnimatedAuthHeader />
+      </nav>
         </div>
 
         {/* Main children */}
