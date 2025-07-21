@@ -86,7 +86,6 @@ export default function CreateCharacter() {
         console.error('서버 응답:', err); // 서버 응답 전체 로그
         throw new Error(err.message || "캐릭터 생성 실패");
       }
-      alert("캐릭터가 성공적으로 생성되었습니다!");
       
       // 폼 초기화
       setName('');
@@ -97,8 +96,7 @@ export default function CreateCharacter() {
       setImagePreview(AndrewImg);
       setIsPublic(true);
       
-      // 성공 후 캐릭터 목록 페이지로 이동 (선택사항)
-      // window.location.href = '/characterList';
+      window.location.href = '/characterList';
       
     } catch (err) {
       alert(err.message || "에러가 발생했습니다.");
@@ -108,13 +106,13 @@ export default function CreateCharacter() {
   };
 
   return (
-    <PageLayout 
+    <PageLayout
       title="새 캐릭터 만들기"
-      subtitle="나만의 AI 인격체를 만들어보세요."
+      subtitle="나만의 AI 인격체를 만들어보세요"
     >
-      <div className="flex flex-col h-screen">
-        <div className="relative flex flex-col items-center justify-center gap-6 mt-[2rem] mb-[2rem] px-[1.5rem] max-w-[100rem] mx-auto w-full">
-          <div className="flex gap-[0.5rem] w-full max-w-[30rem]">
+      <div className="flex flex-col">
+        <div className="relative flex flex-col items-center justify-center gap-6 mb-[2rem] px-[1.5rem] max-w-[100rem] mx-auto w-full">
+          <div className="flex gap-[0.5rem] w-full max-w-[30rem] justify-center">
             {[
               { key: 'custom', label: '나만의 AI 인격체 만들기' },
               { key: 'existing', label: '실제 캐릭터 가져오기' },
@@ -130,9 +128,9 @@ export default function CreateCharacter() {
           </div>
         </div>
 
-        <div className="flex-1 px-[1.5rem] overflow-auto">
-          <main className="max-w-[100rem] mx-auto no-scrollbar">
-            <div className="flex flex-col xl:flex-row gap-8 xl:gap-12 items-start no-scrollbar">
+        <div className="flex-1 px-[1.5rem]">
+          <main className="max-w-[100rem] mx-auto">
+            <div className="flex flex-col xl:flex-row gap-8 xl:gap-12 items-start">
               <div className="flex-1 w-full">
                 <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-gray-700">
                   {activeTab === 'custom' ? (
@@ -191,11 +189,11 @@ export default function CreateCharacter() {
                             ))}
                           </div>
                         </div>
-
                         <Checkbox
                           label="다른 사람에게 공개"
                           checked={isPublic}
                           onChange={e => setIsPublic(e.target.checked)}
+                          className="bg-transparent px-1 py-1"
                         />
 
                         <Button
@@ -222,6 +220,7 @@ export default function CreateCharacter() {
                         label="다른 사람에게 공개"
                         checked={isPublic}
                         onChange={e => setIsPublic(e.target.checked)}
+                        className="bg-transparent px-1 py-1"
                       />
                     </>
                   )}
@@ -234,7 +233,7 @@ export default function CreateCharacter() {
                   <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700">
                     <h3 className="text-white font-bold text-xl mb-6 text-center">미리보기</h3>
 
-                    <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-600 overflow-hidden shadow-2xl">
+                    <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-600 shadow-2xl">
                       <div className="relative p-6">
                         <img 
                           src={getSafeImageUrl(imagePreview)} 

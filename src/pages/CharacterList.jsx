@@ -161,21 +161,6 @@ export default function CharacterList() {
     }
   };
 
-  const handleDeleteCharacter = async (character) => {
-    if (window.confirm(`${character.name} 캐릭터를 삭제하시겠습니까?`)) {
-      try {
-        const characterId = character.id;
-        await deleteCharacter(characterId);
-        alert('캐릭터가 성공적으로 삭제되었습니다.');
-        await fetchMyCharacters(); // 목록 새로고침
-        if (refetchMyChatRooms) await refetchMyChatRooms(); // 사이드바 목록도 새로고침
-      } catch (error) {
-        console.error('Error deleting character:', error);
-        alert('캐릭터 삭제 중 오류가 발생했습니다.');
-      }
-    }
-  };
-
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -229,7 +214,6 @@ export default function CharacterList() {
           likedIds={likedIds}
           onLikeToggle={handleLikeToggle}
           onEdit={handleEditCharacter}
-          onDelete={handleDeleteCharacter}
           onSelect={handleEditCharacter}
         />
       )}

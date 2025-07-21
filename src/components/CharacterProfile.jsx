@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { Heart as OutlineHeart } from 'lucide-react';
@@ -65,31 +65,35 @@ CharacterHeader.propTypes = {
 
 // 재사용 가능한 통계 섹션 컴포넌트
 export const CharacterStats = ({ character, isMyCharacter = false }) => (
-  <div className="flex justify-between mb-10">
+  <div className="flex justify-between mb-3">
     {isMyCharacter ? (
       <>
-        <div className="text-center flex-1">
-          <div className="text-3xl font-bold text-white mb-1">5</div>
+      <div className="w-full flex justify-center items-center gap-30">
+        <div className="text-center">
+          <div className="text-[28px] font-bold text-white mb-1">5</div>
           <div className="text-gray-400 text-sm">조회수</div>
         </div>
-        <div className="text-center flex-1">
-          <div className="text-3xl font-bold text-white mb-1">10</div>
+        <div className="text-center">
+          <div className="text-[28px] font-bold text-white mb-1">10</div>
           <div className="text-gray-400 text-sm">좋아요</div>
         </div>
-        <div className="text-center flex-1">
-          <div className="text-3xl font-bold text-white mb-1">{character.intimacy || 0}</div>
+        <div className="text-center">
+          <div className="text-[28px] font-bold text-white mb-1">{character.intimacy || 0}</div>
           <div className="text-gray-400 text-sm">친밀도</div>
+        </div>
         </div>
       </>
     ) : (
       <>
-        <div className="text-center flex-1">
-          <div className="text-3xl font-bold text-white mb-1">{character.uses_count || 0}</div>
+        <div className="w-full flex justify-center items-center gap-40">
+        <div className="text-center">
+          <div className="text-[28px] font-bold text-white mb-1">{character.uses_count || 0}</div>
           <div className="text-gray-400 text-sm">조회수</div>
         </div>
-        <div className="text-center flex-1">
-          <div className="text-3xl font-bold text-white mb-1">{character.likes || 0}</div>
+        <div className="text-center">
+          <div className="text-[28px] font-bold text-white mb-1">{character.likes || 0}</div>
           <div className="text-gray-400 text-sm">좋아요</div>
+        </div>
         </div>
       </>
     )}
@@ -104,27 +108,26 @@ CharacterStats.propTypes = {
 // 재사용 가능한 캐릭터 정보 섹션 컴포넌트
 export const CharacterInfo = ({ character }) => (
   <div className="mb-8">
-    <h2 className="text-xl font-semibold text-white mb-6">캐릭터 정보</h2>
     <div className="space-y-8">
       {character.prompt?.personality && (
-        <div className="pb-6 border-b border-gray-700">
+        <div>
           <div className="text-gray-400 text-sm mb-2">성격</div>
           <div className="text-white">{character.prompt.personality}</div>
         </div>
       )}
       {character.prompt?.tone && (
-        <div className="pb-6 border-b border-gray-700">
+        <div>
           <div className="text-gray-400 text-sm mb-2">말투</div>
           <div className="text-white">{character.prompt.tone}</div>
         </div>
       )}
       {(character.introduction || character.description) && (
-        <div className="pb-6 border-b border-gray-700">
+        <div>
           <div className="text-gray-400 text-sm mb-2">설명</div>
           <div className="text-white">{character.introduction || character.description}</div>
         </div>
       )}
-      <div className="pb-6 border-b border-gray-700">
+      <div>
         <div className="text-gray-400 text-sm mb-3">태그</div>
         <div className="flex flex-wrap gap-2">
           <span className="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-xs">
@@ -169,6 +172,7 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onC
   const navigate = useNavigate();
   const { getToken } = useAuth();
   const [loading, setLoading] = useState(false);
+
 
   // 채팅방 입장/조회 API 호출 함수 (이전 대화기록 포함)
   const enterChatRoom = async (characterId) => {
@@ -230,9 +234,15 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onC
     }
   };
 
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 flex justify-center items-center z-50 p-5">
-      <div className="bg-gray-800 rounded-3xl p-8 w-160 shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 flex justify-center items-center z-50 p-5" onClick={handleBackdropClick}>
+      <div className="bg-gray-800 rounded-3xl p-8 w-140 shadow-2xl max-h-[90vh]">
         {/* 캐릭터 헤더 */}
         <CharacterHeader 
           character={character} 

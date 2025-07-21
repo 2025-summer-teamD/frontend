@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useCommunityCharacters, incrementViewCount } from '../data/characters';
 import { useAuth } from "@clerk/clerk-react";
 
@@ -7,6 +7,7 @@ export default function PopularCharacters() {
   const scrollInterval = useRef(null);
   const { characters, loading, error } = useCommunityCharacters();
   const { getToken } = useAuth();
+  const [setLoading] = useState(false);
 
   // 좋아요 수 순으로 정렬하고 상위 8개만 가져오기
   const popularCharacters = characters
@@ -56,6 +57,20 @@ export default function PopularCharacters() {
       clearInterval(scrollInterval.current);
     };
 
+    const handleStartChat = async () => {
+      setLoading(true);
+      try {
+        const characterId = character.id;
+        const roomId = await createOrGetChatRoom(characterId);
+        if (onChatRoomCreated) onChatRoomCreated();
+        navigate(`/chatMate/${roomId}`, { state: { character } });
+      } catch (error) {
+        alert('채팅방 생성에 실패했습니다: ' + error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     container.addEventListener('mousemove', handleMouseMove);
     container.addEventListener('mouseleave', stopScrolling);
 
@@ -72,7 +87,7 @@ export default function PopularCharacters() {
         <h2 className="text-3xl md:text-4xl lg:text-5xl xl:text-[48px] font-bold text-center text-white mb-4 md:mb-6">
           인기 캐릭터
         </h2>
-        <p className="text-lg md:text-xl lg:text-2xl xl:text-[24px] text-center font-extrabold mb-16 md:mb-20 leading-relaxed">
+        <p className="text-lg md:text-xl lg:text-2xl xl:text-[24px] text-center font-bold mb-16 md:mb-20 leading-relaxed">
           복잡한 설정 없이, 인기 캐릭터와 바로 소통하세요.
         </p>
         <div className="text-center text-white">로딩 중...</div>
@@ -86,7 +101,7 @@ export default function PopularCharacters() {
         <h2 className="text-3xl md:text-4xl lg:text-5xl xl:text-[48px] font-bold text-center text-white mb-4 md:mb-6">
           인기 캐릭터
         </h2>
-        <p className="text-lg md:text-xl lg:text-2xl xl:text-[24px] text-center font-extrabold mb-16 md:mb-20 leading-relaxed">
+        <p className="text-lg md:text-xl lg:text-2xl xl:text-[24px] text-center font-bold mb-16 md:mb-20 leading-relaxed">
           복잡한 설정 없이, 인기 캐릭터와 바로 소통하세요.
         </p>
         <div className="text-center text-white">{error}</div>
@@ -99,7 +114,7 @@ export default function PopularCharacters() {
       <h2 className="text-3xl md:text-4xl lg:text-5xl xl:text-[48px] font-bold text-center text-white mb-4 md:mb-6">
         인기 캐릭터
       </h2>
-      <p className="text-lg md:text-xl lg:text-2xl xl:text-[24px] text-center font-extrabold mb-16 md:mb-20 leading-relaxed">
+      <p className="text-lg md:text-xl lg:text-2xl xl:text-[24px] text-center font-bold mb-16 md:mb-20 leading-relaxed">
         복잡한 설정 없이, 인기 캐릭터와 바로 소통하세요.
       </p>
 
@@ -124,8 +139,12 @@ export default function PopularCharacters() {
         {popularCharacters.map((character) => (
           <button
             key={character.id}
-            className="w-[240px] h-[320px] flex-shrink-0 relative rounded-2xl overflow-hidden shadow-lg bg-white/10 hover:scale-105 transition-transform duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800"
-            onClick={() => handleViewCount(character.id)}
+            className="w-[240px] h-[320px] flex-shrink-0 relative rounded-2xl overflow-hidden shadow-lg bg-white/10 hover:scale-105 transition-transform duration-300 cursor-pointer focus:outline-none focus:ring-offset-2 focus:ring-offset-gray-800"
+            onClick={() => {
+              handleViewCount(character.id);
+              handleStartChat();
+            }}
+            
             onKeyDown={(event) => handleKeyDown(event, character.id)}
             aria-label={`${character.name}와 대화하기`}
           >
@@ -138,7 +157,7 @@ export default function PopularCharacters() {
               }}
             />
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-              <h3 className="text-2xl font-extrabold text-white">{character.name}</h3>
+              <h3 className="text-2xl font-bold text-white">{character.name}</h3>
               <p className="text-sm font-medium text-white mt-1">{character.description}</p>
               <div className="flex items-center justify-between mt-2">
                 <span className="text-xs text-white/80">👁️ {character.uses_count || 0}</span>

@@ -119,7 +119,7 @@ export default function Communities() {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
       />
-      <div className="flex justify-center gap-2 sm:gap-4 mt-4">
+      <div className="flex justify-center gap-2 sm:gap-4 mt-4 mb-3">
         {['인기순', '조회수순'].map(tab => (
           <TabButton
             key={tab}

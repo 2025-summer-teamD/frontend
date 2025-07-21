@@ -23,10 +23,10 @@ import { Search, XCircle } from 'lucide-react';
 const SearchBar = ({ 
   searchQuery, 
   setSearchQuery, 
-  placeholder = "캐릭터 이름 또는 설명으로 검색..." 
+  placeholder = "캐릭터 이름 또는 설명으로 검색" 
 }) => {
   return (
-    <div className="mb-8 top-4 z-10 bg-gray-800 py-4">
+    <div className="mb-3 top-4 z-10 bg-[#1e2139] py-4">
       <div className="max-w-2xl mx-auto">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
