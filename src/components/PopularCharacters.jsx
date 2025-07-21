@@ -123,10 +123,10 @@ export default function PopularCharacters() {
 
         {popularCharacters.map((character) => (
           <button
-            key={character.character_id || character.id}
+            key={character.id}
             className="w-[240px] h-[320px] flex-shrink-0 relative rounded-2xl overflow-hidden shadow-lg bg-white/10 hover:scale-105 transition-transform duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800"
-            onClick={() => handleViewCount(character.character_id || character.id)}
-            onKeyDown={(event) => handleKeyDown(event, character.character_id || character.id)}
+            onClick={() => handleViewCount(character.id)}
+            onKeyDown={(event) => handleKeyDown(event, character.id)}
             aria-label={`${character.name}와 대화하기`}
           >
             <img

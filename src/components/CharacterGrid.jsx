@@ -14,7 +14,7 @@ export const CharacterCard = ({
   onSelect,
   showEditButtons = false 
 }) => {
-  const characterId = character.character_id || character.id;
+  const characterId = character.id;
 
   return (
     <div
