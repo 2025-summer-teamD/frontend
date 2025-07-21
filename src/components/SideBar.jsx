@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useMyChatCharacters } from '../data/characters';
+import { useChatRooms } from '../contexts/ChatRoomsContext';
 import { chatMessages } from '../data/chatMessages';
 import logo from '/assets/logo.png';
 import AnimatedAuthHeader from './AnimatedAuthHeader';
@@ -22,7 +22,7 @@ const Sidebar = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { pathname } = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
-  const { characters, loading, error } = useMyChatCharacters();
+  const { characters, loading, error, refetch } = useChatRooms();
 
   const sidebarListRef = useRef(null);
   const contentRef = useRef(null);
@@ -139,16 +139,16 @@ const Sidebar = ({ children }) => {
                 <p className="text-white/50 text-sm">캐릭터가 없습니다</p>
               </div>
             ) : (
-              filteredCharacters.map(chat => (
+              filteredCharacters.filter(chat => !!chat.room_id).map(chat => (
                 <Link
-                  key={chat.character_id}
-                  to="/chatMate"
+                  key={chat.room_id}
+                  to={`/chatMate/${chat.room_id}`}
                   state={{ character: chat }}
                   onClick={() => setSidebarOpen(false)}
                   className="flex items-center p-4 hover:bg-white/5 cursor-pointer border-b border-white/5"
                 >
                   <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-                    <img src={chat.image_url} alt={chat.name} className="w-full h-full object-cover" />
+                    <img src={chat.imageUrl} alt={chat.name} className="w-full h-full object-cover" />
                   </div>
                   <div className="ml-3 flex-1 truncate">
                     <div className="flex items-center justify-between">

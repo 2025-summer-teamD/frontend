@@ -3,10 +3,11 @@ import Home from './pages/Home';
 import Communities from './pages/Communities';
 import CharacterList from './pages/CharacterList';
 import CreateCharacter from './pages/CreateCharacter';
-import ChatMate from './pages/ChatMate';
+import ChatMate from './pages/chatMate';
 import AppLayout from './layouts/AppLayout';
 import Sidebar from './components/SideBar';
 import ProtectedRoute from './components/ProtectedRoute';
+import { ChatRoomsProvider } from './contexts/ChatRoomsContext';
 
 function App() {
   const location = useLocation();
@@ -15,7 +16,7 @@ function App() {
   const isHome = path === '/';
 
   return (
-    <>
+    <ChatRoomsProvider>
       {isHome ? (
         <AppLayout>
           <Home />
@@ -41,7 +42,7 @@ function App() {
               }
             />
             <Route
-              path="/chatMate"
+              path="/chatMate/:roomId"
               element={
                 <ProtectedRoute>
                   <ChatMate />
@@ -51,7 +52,7 @@ function App() {
           </Routes>
         </Sidebar>
       )}
-    </>
+    </ChatRoomsProvider>
   );
 }
 

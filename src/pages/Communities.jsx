@@ -1,6 +1,7 @@
 // src/pages/Communities.jsx
 import React, { useState, useEffect } from 'react';
 import { useCommunityCharacters, toggleLike, incrementViewCount } from '../data/characters';
+import { useChatRooms } from '../contexts/ChatRoomsContext';
 import CharacterProfile from '../components/CharacterProfile';
 import CharacterEditModal from '../components/CharacterEditModal';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -26,6 +27,7 @@ export default function Communities() {
   const [sortBy, setSortBy] = useState('likes'); // 정렬 기준 추가
 
   const { characters, loading, error, setCharacters } = useCommunityCharacters(sortBy);
+  const { refetch: refetchMyChatCharacters } = useChatRooms();
 
   React.useEffect(() => {
     localStorage.setItem('likedIds', JSON.stringify(likedIds));
@@ -55,7 +57,7 @@ export default function Communities() {
       }
       
       // 해당 캐릭터의 좋아요 수와 상태 업데이트
-      const character = characters.find(c => c.character_id === id);
+      const character = characters.find(c => c.id === id);
       if (character) {
         character.likes = result.data.likesCount;
         character.liked = result.data.isLiked; // character.liked 속성도 업데이트
@@ -135,14 +137,14 @@ export default function Communities() {
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
           {sortedCharacters.map(character => {
-            const isLiked = character.liked || likedIds.includes(character.character_id);
+            const isLiked = character.liked || likedIds.includes(character.id);
             
             const handleSelect = async () => {
               try {
-                // 조회수 증가 - character_id가 있을 때만
-                if (character.character_id) {
+                // 조회수 증가 - id가 있을 때만
+                if (character.id) {
                   const token = await getToken();
-                  await incrementViewCount(character.character_id, token);
+                  await incrementViewCount(character.id, token);
                   // 조회수 증가 성공 시 해당 캐릭터의 조회수만 업데이트
                   character.uses_count = (character.uses_count || 0) + 1;
                   // 상태 강제 업데이트를 위해 배열을 새로 생성
@@ -158,7 +160,7 @@ export default function Communities() {
 
             return (
               <div
-                key={character.character_id}
+                key={character.id}
                 role="button"
                 tabIndex={0}
                 onClick={handleSelect}
@@ -166,7 +168,7 @@ export default function Communities() {
                 className="group relative aspect-[3/4] bg-gray-700 rounded-2xl overflow-hidden cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-indigo-500/30"
               >
                 <img
-                  src={character.image_url}
+                  src={character.imageUrl}
                   alt={character.name}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                 />
@@ -182,7 +184,7 @@ export default function Communities() {
                       <button
                         onClick={e => {
                           e.stopPropagation();
-                          handleLikeToggle(character.character_id, !isLiked);
+                          handleLikeToggle(character.id, !isLiked);
                         }}
                         className="flex items-center focus:outline-none"
                         aria-label="좋아요 토글"
@@ -205,18 +207,19 @@ export default function Communities() {
 
       {selectedCharacter && (
         <CharacterProfile
-          character={selectedCharacter}
-          liked={likedIds.includes(selectedCharacter.character_id)}
+          character={{ ...selectedCharacter, id: selectedCharacter.id }}
+          liked={likedIds.includes(selectedCharacter.id)}
           origin="communities"
           onClose={() => setSelectedCharacter(null)}
           onLikeToggle={handleLikeToggle}
+          onChatRoomCreated={refetchMyChatCharacters}
         />
       )}
 
       {editingCharacter && (
         <CharacterEditModal
-          character={editingCharacter}
-          liked={likedIds.includes(editingCharacter.character_id)}
+          character={{ ...editingCharacter, id: editingCharacter.id }}
+          liked={likedIds.includes(editingCharacter.id)}
           onClose={() => setEditingCharacter(null)}
           onSave={handleSaveCharacter}
           onLikeToggle={handleLikeToggle}

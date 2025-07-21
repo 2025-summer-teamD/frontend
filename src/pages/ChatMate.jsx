@@ -1,19 +1,47 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
-import chatMessages from '../data/chatMessages';
+import { useLocation, useParams } from 'react-router-dom';
+// import chatMessages from '../data/chatMessages'; // 더미 데이터 삭제
 import { useUser } from '@clerk/clerk-react';
 
 const ChatMate = () => {
   const { state } = useLocation();
-  const character = state?.character;
-
+  const { roomId } = useParams();
   const { user } = useUser();
 
+  // 캐릭터 정보 상태
+  const [character, setCharacter] = useState(state?.character || null);
+  const [loading, setLoading] = useState(!state?.character && !!roomId);
+  const [error, setError] = useState(null);
+
+  // 메시지 상태(초기값 빈 배열)
   const [newMessage, setNewMessage] = useState('');
-  const [messages, setMessages] = useState(() => chatMessages.filter(m => m.characterId === character?.id));
+  const [messages, setMessages] = useState([]);
   const scrollContainerRef = useRef(null);
   const messagesEndRef = useRef(null);
   const isInitialMount = useRef(true);
+
+  // roomId로 백엔드에서 캐릭터 정보 fetch
+  useEffect(() => {
+    setCharacter(null);
+    setMessages([]);
+    setError(null);
+    if (roomId) {
+      setLoading(true);
+      fetch(`http://localhost:3001/api/chat/room-info?room_id=${roomId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.data && data.data.character) {
+            setCharacter(data.data.character);
+          } else {
+            setError('존재하지 않거나 삭제된 채팅방입니다.');
+          }
+        })
+        .catch(() => setError('존재하지 않거나 삭제된 채팅방입니다.'))
+        .finally(() => setLoading(false));
+    }
+  }, [roomId]);
+
+  // 더미 데이터 삭제: character가 바뀌어도 messages는 빈 배열 유지
 
   // 첫 로드시 스크롤을 맨 위에 고정
   useEffect(() => {
@@ -34,14 +62,17 @@ const ChatMate = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // character 정보가 없으면 아무것도 렌더하지 않음
-  if (!character) return null;
-
-  // character가 바뀌면 해당 캐릭터의 메시지로 상태 초기화
   useEffect(() => {
-    setMessages(chatMessages.filter(m => m.characterId === character?.id));
+    if (character) {
+      console.log(`[ChatMate] 채팅방 입장: 캐릭터 이름 = ${character.name}, id = ${character.id}`);
+    }
   }, [character]);
 
+  if (loading) return <div className="text-white p-8">캐릭터 정보를 불러오는 중...</div>;
+  if (error) return <div className="text-red-500 p-8">{error}</div>;
+  if (!character) return null;
+
+  // 메시지 전송(임시: 프론트 상태에만 추가)
   const sendMessage = () => {
     if (!newMessage.trim()) return;
     const now = new Date().toLocaleTimeString('ko-KR', {
@@ -50,14 +81,13 @@ const ChatMate = () => {
       hour12: true,
     });
     const msg = {
-      id: chatMessages.length + 1,
+      id: messages.length + 1,
       text: newMessage,
       sender: 'me',
       time: now,
       characterId: character.id,
     };
-    chatMessages.push(msg);
-    setMessages(chatMessages.filter(m => m.characterId === character.id));
+    setMessages([...messages, msg]);
     setNewMessage('');
   };
 
@@ -72,7 +102,7 @@ const ChatMate = () => {
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full overflow-hidden bg-[#a6c0c6]">
             <img
-              src={character.image}
+              src={character.image_url}
               alt={character.name}
               className="w-full h-full object-cover"
             />
@@ -86,27 +116,26 @@ const ChatMate = () => {
       {/* 스크롤 영역: 프로필 + 메시지 */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 px-4 overflow-y-auto no-scrollbar sm:px-6 md:px-8 lg:px-12" // Adjusted horizontal padding
+        className="flex-1 px-4 overflow-y-auto no-scrollbar sm:px-6 md:px-8 lg:px-12"
       >
         {/* 프로필 */}
-        <div className="flex flex-col items-center my-6 text-center"> {/* Added text-center for small screens */}
-          <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden"> {/* Responsive profile image size */}
+        <div className="flex flex-col items-center my-6 text-center">
+          <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden">
             <img
-              src={character.image}
+              src={character.image_url  }
               alt={character.name}
               className="w-full h-full object-cover"
             />
           </div>
-          <h3 className="text-xl sm:text-2xl font-semibold text-white mb-2 mt-3"> {/* Responsive font size */}
+          <h3 className="text-xl sm:text-2xl font-semibold text-white mb-2 mt-3">
             {character.name}
           </h3>
-          <p className="text-white/70 text-sm sm:text-base px-2 max-w-lg mx-auto"> {/* Responsive font size and max-width */}
+          <p className="text-white/70 text-sm sm:text-base px-2 max-w-lg mx-auto">
             {character.description}
           </p>
         </div>
 
         {/* 메시지들 */}
-{/* 메시지들 */}
         <div className="space-y-4 pb-4 max-w-3xl mx-auto">
           {messages.map((msg, idx) => {
             const isLast = idx === messages.length - 1;
@@ -121,10 +150,10 @@ const ChatMate = () => {
                 className={`flex flex-col w-full ${msg.sender === 'me' ? 'items-end' : 'items-start'}`}
               >
                 {showProfile && (
-                  <div className={`flex items-center mb-1 ${msg.sender === 'me' ? 'flex-row-reverse' : 'flex-row'}`}> {/* Profile image and name */}
+                  <div className={`flex items-center mb-1 ${msg.sender === 'me' ? 'flex-row-reverse' : 'flex-row'}`}>
                     <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-gradient-to-br from-green-300 to-teal-400">
                       <img
-                        src={msg.sender === 'me' ? user?.imageUrl || '/assets/icon-character.png' : character.image}
+                        src={msg.sender === 'me' ? user?.imageUrl || '/assets/icon-character.png' : character.image_url}
                         alt=""
                         className="w-full h-full object-cover"
                       />
@@ -137,7 +166,7 @@ const ChatMate = () => {
                 <div
                   className={`max-w-[80%] sm:max-w-[70%] lg:max-w-[60%] px-4 py-3 rounded-2xl break-words ${
                     msg.sender === 'me'
-                      ? 'bg-[#413ebc] text-white mr-10' // <-- 여기에 mr-10을 추가합니다.
+                      ? 'bg-[#413ebc] text-white mr-10'
                       : 'bg-white text-black ml-10'
                   }`}
                 >
@@ -159,24 +188,23 @@ const ChatMate = () => {
         </div>
       </div>
 
-
       {/* 입력창: sticky bottom */}
-      <footer className="sticky bottom-0 px-4 py-4 border-t border-white/10 bg-black/20 backdrop-blur-xl"> {/* Added background for footer and adjusted horizontal padding */}
+      <footer className="sticky bottom-0 px-4 py-4 border-t border-white/10 bg-black/20 backdrop-blur-xl">
         <div className="flex items-center space-x-3 max-w-4xl mx-auto">
-          <button className="text-white hover:text-white/90 p-2 text-xl">📎</button> {/* Increased icon size */}
-          <div className="flex-1 flex items-center space-x-2 bg-white/10 border border-white/20 rounded-full px-4 py-2.5"> {/* Adjusted vertical padding */}
+          <button className="text-white hover:text-white/90 p-2 text-xl">📎</button>
+          <div className="flex-1 flex items-center space-x-2 bg-white/10 border border-white/20 rounded-full px-4 py-2.5">
             <input
               type="text"
               value={newMessage}
               onChange={e => setNewMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="메시지를 입력하세요..."
-              className="w-full bg-white/10 border border-white/20 rounded-full px-4 py-2.5 text-white placeholder-white/60 focus:outline-none focus:border-blue-400 focus:bg-white/15" // Adjusted vertical padding
+              className="w-full bg-white/10 border border-white/20 rounded-full px-4 py-2.5 text-white placeholder-white/60 focus:outline-none focus:border-blue-400 focus:bg-white/15"
             />
           </div>
           <button
             onClick={sendMessage}
-            className="bg-blue-500 hover:bg-blue-600 text-white w-10 h-10 flex items-center justify-center rounded-full transition-colors text-xl" // Changed padding to fixed width/height and added flex for centering
+            className="bg-blue-500 hover:bg-blue-600 text-white w-10 h-10 flex items-center justify-center rounded-full transition-colors text-xl"
           >
             ➤
           </button>
