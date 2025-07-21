@@ -1,13 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { useCommunityCharacters, incrementViewCount } from '../data/characters';
 import { useAuth } from "@clerk/clerk-react";
+import { useNavigate } from 'react-router-dom';
+import { useEnterOrCreateChatRoom } from '../data/chatMessages';
 
 export default function PopularCharacters() {
   const containerRef = useRef(null);
   const scrollInterval = useRef(null);
   const { characters, loading, error } = useCommunityCharacters();
   const { getToken } = useAuth();
-  const [setLoading] = useState(false);
+  const navigate = useNavigate();
+  const [chatLoading, setChatLoading] = useState(false);
+  const { enterOrCreateChatRoom } = useEnterOrCreateChatRoom();
 
   // 좋아요 수 순으로 정렬하고 상위 8개만 가져오기
   const popularCharacters = characters
@@ -21,6 +25,25 @@ export default function PopularCharacters() {
       await incrementViewCount(characterId, token);
     } catch (error) {
       console.error('조회수 증가 실패:', error);
+    }
+  };
+
+  // 채팅방 입장/생성 함수 (기존 방이 있으면 히스토리와 함께 입장, 없으면 새로 생성)
+  const handleStartChat = async (character) => {
+    setChatLoading(true);
+    try {
+      const characterId = character.character_id || character.id;
+      const { roomId, character: updatedCharacter, chatHistory, isNewRoom } = await enterOrCreateChatRoom(characterId);
+      
+      console.log(isNewRoom ? '🆕 새 채팅방 생성됨' : '🔄 기존 채팅방 입장 (히스토리 ' + chatHistory.length + '개)');
+      
+      navigate(`/chatMate/${roomId}`, {
+        state: { character: updatedCharacter, chatHistory: chatHistory, roomId: roomId }
+      });
+    } catch (error) {
+      alert('채팅방 처리에 실패했습니다: ' + error.message);
+    } finally {
+      setChatLoading(false);
     }
   };
 
@@ -57,26 +80,13 @@ export default function PopularCharacters() {
       clearInterval(scrollInterval.current);
     };
 
-    const handleStartChat = async () => {
-      setLoading(true);
-      try {
-        const characterId = character.id;
-        const roomId = await createOrGetChatRoom(characterId);
-        if (onChatRoomCreated) onChatRoomCreated();
-        navigate(`/chatMate/${roomId}`, { state: { character } });
-      } catch (error) {
-        alert('채팅방 생성에 실패했습니다: ' + error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     container.addEventListener('mousemove', handleMouseMove);
     container.addEventListener('mouseleave', stopScrolling);
 
     return () => {
       container.removeEventListener('mousemove', handleMouseMove);
       container.removeEventListener('mouseleave', stopScrolling);
+
       clearInterval(scrollInterval.current);
     };
   }, []);
@@ -142,9 +152,9 @@ export default function PopularCharacters() {
             className="w-[240px] h-[320px] flex-shrink-0 relative rounded-2xl overflow-hidden shadow-lg bg-white/10 hover:scale-105 transition-transform duration-300 cursor-pointer focus:outline-none focus:ring-offset-2 focus:ring-offset-gray-800"
             onClick={() => {
               handleViewCount(character.id);
-              handleStartChat();
+              handleStartChat(character);
             }}
-            
+            disabled={chatLoading}
             onKeyDown={(event) => handleKeyDown(event, character.id)}
             aria-label={`${character.name}와 대화하기`}
           >
@@ -164,7 +174,7 @@ export default function PopularCharacters() {
                 <span className="text-xs text-white/80">❤️ {character.likes || 0}</span>
               </div>
               <div className="mt-3 w-full py-1.5 bg-[#4F46E5] rounded-lg text-white font-semibold text-sm hover:bg-purple-700 transition-all">
-                바로 대화하기
+                {chatLoading ? '생성 중...' : '바로 대화하기'}
               </div>
             </div>
           </button>

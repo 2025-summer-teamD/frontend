@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Heart as OutlineHeart } from 'lucide-react';
 import { getSafeImageUrl } from '../utils/imageUtils';
 import { useUser, useAuth } from '@clerk/clerk-react';
+import { useEnterOrCreateChatRoom } from '../data/chatMessages';
 
 // 재사용 가능한 캐릭터 헤더 컴포넌트
 export const CharacterHeader = ({ character, liked, onLikeToggle, showLikeButton = true }) => {
@@ -174,51 +175,24 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onC
   const [loading, setLoading] = useState(false);
 
 
-  // 채팅방 입장/조회 API 호출 함수 (이전 대화기록 포함)
-  const enterChatRoom = async (characterId) => {
-    const token = await getToken();
-    console.log('채팅방 입장 요청 토큰:', token);
-    const headers = {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    };
-    console.log('채팅방 입장 요청 헤더:', headers);
-    
-    // GET 방식으로 변경 (쿼리 파라미터 사용)
-    const response = await fetch(`http://localhost:3001/api/chat/rooms?character_id=${characterId}`, {
-      method: 'GET',
-      headers,
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || '채팅방 입장에 실패했습니다.');
-    }
-    
-    const data = await response.json();
-    console.log('채팅방 입장 응답:', data);
-    
-    return {
-      roomId: data.data.room_id,
-      character: data.data.character,
-      chatHistory: data.data.chat_history || []
-    };
-  };
+  // 채팅방 입장/생성 (기존 방이 있으면 입장, 없으면 생성)
+  const { enterOrCreateChatRoom } = useEnterOrCreateChatRoom();
 
   const handleStartChat = async () => {
     setLoading(true);
     try {
       // character_id 사용 (이전 로그에서 character.id는 undefined였음)
       const characterId = character.character_id || character.id;
-      console.log('채팅방 입장 시도 - characterId:', characterId);
+      console.log('🔍 채팅방 입장/생성 시도 - characterId:', characterId);
       
-      const { roomId, character: updatedCharacter, chatHistory } = await enterChatRoom(characterId);
+      const { roomId, character: updatedCharacter, chatHistory, isNewRoom } = await enterOrCreateChatRoom(characterId);
       
-      console.log('채팅방 입장 성공:', { roomId, updatedCharacter, chatHistoryLength: chatHistory.length });
+      console.log(isNewRoom ? '✅ 새 채팅방 생성 완료' : '✅ 기존 채팅방 입장 완료', 
+                  { roomId, updatedCharacter, chatHistoryLength: chatHistory.length });
       
       if (onChatRoomCreated) onChatRoomCreated();
       
-      // ChatMate로 이전 대화기록도 함께 전달
+      // ChatMate로 채팅방 정보 전달 (히스토리 포함)
       navigate(`/chatMate/${roomId}`, { 
         state: { 
           character: updatedCharacter, 
@@ -227,8 +201,8 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onC
         } 
       });
     } catch (error) {
-      console.error('채팅방 입장 에러:', error);
-      alert('채팅방 입장에 실패했습니다: ' + error.message);
+      console.error('💥 채팅방 처리 에러:', error);
+      alert('채팅방 처리에 실패했습니다: ' + error.message);
     } finally {
       setLoading(false);
     }
