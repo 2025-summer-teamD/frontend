@@ -3,12 +3,17 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Heart as OutlineHeart, Heart as SolidHeart } from 'lucide-react';
 import { useUpdateCharacter, useDeleteCharacter } from '../data/characters';
-import { useUser } from '@clerk/clerk-react';
+import { useUser, useAuth } from '@clerk/clerk-react';
+import { useNavigate } from 'react-router-dom';
+import { useEnterOrCreateChatRoom } from '../data/chatMessages';
 
-const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle }) => {
+const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, onChatRoomCreated }) => {
   const { updateCharacter, loading: updateLoading } = useUpdateCharacter();
   const { deleteCharacter, loading: deleteLoading } = useDeleteCharacter();
   const { user } = useUser(); // username을 가져오기 위해 useUser 추가
+  const { getToken } = useAuth();
+  const navigate = useNavigate();
+  const { enterOrCreateChatRoom } = useEnterOrCreateChatRoom();
   const [loading, setLoading] = useState(false);
 
   // username 디버깅
@@ -140,12 +145,17 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
   const handleStartChat = async () => {
     setLoading(true);
     try {
-      const characterId = character.id;
-      const roomId = await createOrGetChatRoom(characterId);
+      const characterId = character.character_id || character.id;
+      const { roomId, character: updatedCharacter, chatHistory, isNewRoom } = await enterOrCreateChatRoom(characterId);
+      
+      console.log(isNewRoom ? '🆕 새 채팅방 생성됨' : '🔄 기존 채팅방 입장 (히스토리 ' + chatHistory.length + '개)');
+      
       if (onChatRoomCreated) onChatRoomCreated();
-      navigate(`/chatMate/${roomId}`, { state: { character } });
+      navigate(`/chatMate/${roomId}`, {
+        state: { character: updatedCharacter, chatHistory: chatHistory, roomId: roomId }
+      });
     } catch (error) {
-      alert('채팅방 생성에 실패했습니다: ' + error.message);
+      alert('채팅방 처리에 실패했습니다: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -422,41 +432,12 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
 };
 
 CharacterEditModal.propTypes = {
-  character: PropTypes.shape({
-    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    character_id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    name: PropTypes.string,
-    description: PropTypes.string,
-    introduction: PropTypes.string,
-    creator: PropTypes.string,
-    creater: PropTypes.string,
-    user_id: PropTypes.string,
-    clerkId: PropTypes.string,
-    image: PropTypes.string,
-    image_url: PropTypes.string,
-    imageUrl: PropTypes.string,
-    intimacy: PropTypes.number,
-    personality: PropTypes.string,
-    tone: PropTypes.string,
-    characteristics: PropTypes.string,
-    tags: PropTypes.string,
-    tag: PropTypes.string,
-    prompt: PropTypes.shape({
-      personality: PropTypes.string,
-      tone: PropTypes.string,
-      tag: PropTypes.string
-    }),
-    messageCount: PropTypes.number,
-    conversations: PropTypes.number,
-    uses_count: PropTypes.number,
-    likes: PropTypes.number,
-    is_public: PropTypes.bool,
-    liked: PropTypes.bool
-  }).isRequired,
-  liked: PropTypes.bool.isRequired,
+  character: PropTypes.object.isRequired,
+  liked: PropTypes.bool,
   onClose: PropTypes.func.isRequired,
-  onSave: PropTypes.func.isRequired,
-  onLikeToggle: PropTypes.func.isRequired
+  onSave: PropTypes.func,
+  onLikeToggle: PropTypes.func,
+  onChatRoomCreated: PropTypes.func, // 새로 추가된 옵셔널 prop
 };
 
 export default CharacterEditModal;

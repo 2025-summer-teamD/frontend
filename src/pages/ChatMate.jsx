@@ -68,16 +68,45 @@ const ChatMate = () => {
   const messagesEndRef = useRef(null);
   const isInitialMount = useRef(true);
 
+  // 🆕 사이드바 채팅방 전환 감지: state 변경 시 상태 업데이트
+  useEffect(() => {
+    console.log('🔄 [채팅방 전환 감지] state 변경됨');
+    console.log('🔍 새로운 state?.character:', state?.character);
+    console.log('🔍 새로운 state?.chatHistory 길이:', state?.chatHistory?.length || 0);
+    
+    if (state?.character) {
+      console.log('✅ 새로운 채팅방 데이터로 상태 업데이트');
+      
+      // 캐릭터 정보 업데이트
+      setCharacter(state.character);
+      setError(null);
+      setLoading(false);
+      
+      // 메시지 히스토리 업데이트
+      const newChatHistory = state.chatHistory || [];
+      if (newChatHistory.length > 0) {
+        console.log('✅ 새로운 채팅 히스토리 변환 시작');
+        const convertedMessages = convertChatHistoryToMessages(newChatHistory, state.character);
+        console.log('✅ 새로운 메시지 변환 완료:', convertedMessages);
+        setMessages(convertedMessages);
+      } else {
+        console.log('❌ 새로운 채팅방에 히스토리 없음, 메시지 초기화');
+        setMessages([]);
+      }
+    }
+  }, [state?.character, state?.chatHistory, roomId]); // roomId도 의존성에 추가
+
   // roomId로 백엔드에서 캐릭터 정보 fetch (state가 없을 때만)
   useEffect(() => {
-    console.log('🔄 useEffect 실행 - roomId:', roomId, 'state?.character:', !!state?.character);
+    console.log('🔄 [API 호출 체크] useEffect 실행 - roomId:', roomId, 'state?.character:', !!state?.character);
     
-    // state에서 캐릭터 정보가 있으면 API 호출하지 않음
+    // state에서 캐릭터 정보가 있으면 API 호출하지 않음 (위의 useEffect에서 처리됨)
     if (state?.character) {
-      console.log('✅ state에서 캐릭터 정보 있음, API 호출 생략');
+      console.log('✅ state에서 캐릭터 정보 있음, API 호출 생략 (이미 위에서 처리됨)');
       return;
     }
     
+    console.log('🌐 state에 캐릭터 정보 없음, API 호출 시작');
     setCharacter(null);
     setMessages([]);
     setError(null);
