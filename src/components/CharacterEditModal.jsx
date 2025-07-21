@@ -9,6 +9,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
   const { updateCharacter, loading: updateLoading } = useUpdateCharacter();
   const { deleteCharacter, loading: deleteLoading } = useDeleteCharacter();
   const { user } = useUser(); // username을 가져오기 위해 useUser 추가
+  const [loading, setLoading] = useState(false);
 
   // username 디버깅
   useEffect(() => {
@@ -136,6 +137,20 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
     }
   };
 
+  const handleStartChat = async () => {
+    setLoading(true);
+    try {
+      const characterId = character.id;
+      const roomId = await createOrGetChatRoom(characterId);
+      if (onChatRoomCreated) onChatRoomCreated();
+      navigate(`/chatMate/${roomId}`, { state: { character } });
+    } catch (error) {
+      alert('채팅방 생성에 실패했습니다: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDelete = async () => {
     // 삭제 확인
     const confirmDelete = window.confirm(`정말로 "${formData.name}" 캐릭터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`);
@@ -180,7 +195,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
 
   return (
     <div
-      className="fixed inset-0 flex justify-center items-center z-50 p-5 bg-black bg-opacity-50"
+      className="fixed inset-0 flex justify-center items-center z-50 p-5 bg-opacity-50"
       onClick={handleBackdropClick}
       onKeyDown={handleBackdropKeyDown}
       role="dialog"
@@ -188,9 +203,9 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
       aria-labelledby="edit-character-title"
       tabIndex={-1}
     >
-      <div className="bg-gray-800 rounded-3xl p-8 w-160 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-gray-800 rounded-3xl p-8 w-140 shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar">
         {/* 프로필 헤더 */}
-        <div className="relative flex items-center mb-8">
+        <div className="relative flex items-center mb-5">
           <div className="w-20 h-20 bg-gray-300 rounded-full border-4 border-white mr-5 overflow-hidden relative group cursor-pointer">
             {previewImage && (
               <img
@@ -219,7 +234,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
               type="text"
               value={formData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
-              className="text-white text-xl font-bold bg-transparent border-b border-gray-600 focus:border-indigo-500 outline-none w-full mb-2"
+              className="text-white text-xl font-bold bg-transparent focus:border-indigo-500 outline-none mb-2"
               placeholder="캐릭터 이름"
             />
             
@@ -242,38 +257,38 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
         </div>
 
         {/* 통계 섹션 */}
-        <div className="flex justify-between mb-10">
-          <div className="text-center flex-1">
-            <div className="text-3xl font-bold text-white mb-1">{character?.uses_count || 0}</div>
+        <div className="w-full flex justify-center items-center gap-30 mb-3">
+          <div className="text-center">
+            <div className="text-[28px] font-bold text-white mb-1">{character?.uses_count || 0}</div>
             <div className="text-gray-400 text-sm">조회수</div>
           </div>
-          <div className="text-center flex-1">
-            <div className="text-3xl font-bold text-white mb-1">{character?.likes || 0}</div>
+          <div className="text-center">
+            <div className="text-[28px] font-bold text-white mb-1">{character?.likes || 0}</div>
             <div className="text-gray-400 text-sm">좋아요</div>
           </div>
-          <div className="text-center flex-1">
-            <div className="text-3xl font-bold text-white mb-1">{character?.intimacy || 0}</div>
+          <div className="text-center">
+            <div className="text-[28px] font-bold text-white mb-1">{character?.intimacy || 0}</div>
             <div className="text-gray-400 text-sm">친밀도</div>
           </div>
         </div>
+        
 
         <div className="mb-8">
-          <h2 id="edit-character-title" className="text-xl font-semibold text-white mb-6">캐릭터 정보</h2>
-          <div className="space-y-8">
+          <div className="space-y-5">
             {/* 성격 입력 */}
-            <div className="pb-6 border-b border-gray-700">
+            <div>
               <div className="text-gray-400 text-sm mb-3">성격</div>
               <textarea
                 value={formData.personality}
                 onChange={(e) => handleInputChange('personality', e.target.value)}
                 className="w-full bg-transparent border border-gray-600 focus:border-indigo-500 outline-none p-3 rounded text-white resize-none"
                 placeholder="캐릭터의 성격을 입력하세요 (예: 친절함, 호기심, 적극성)"
-                rows="3"
+                rows="2"
               />
             </div>
 
             {/* 말투 입력 */}
-            <div className="pb-6 border-b border-gray-700">
+            <div>
               <div className="text-gray-400 text-sm mb-3">말투</div>
               <input
                 type="text"
@@ -285,19 +300,19 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
             </div>
 
             {/* 특징 입력 */}
-            <div className="pb-6 border-b border-gray-700">
+            <div>
               <div className="text-gray-400 text-sm mb-3">설명</div>
               <textarea
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 className="w-full bg-transparent border border-gray-600 focus:border-indigo-500 outline-none p-3 rounded text-white resize-none"
                 placeholder="캐릭터에 대한 설명을 입력하세요"
-                rows="3"
+                rows="2"
               />
             </div>
 
             {/* 태그 입력 */}
-            <div className="pb-6 border-b border-gray-700">
+            <div>
               <div className="text-gray-400 text-sm mb-3">태그</div>
               <input
                 type="text"
@@ -322,11 +337,27 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
 
         {/* 버튼 섹션 */}
         <div className="space-y-3">
+          {/* 대화하기 버튼 */}
+          <button
+            onClick={handleStartChat}
+            className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2"
+            disabled={loading}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03
+                8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512
+                15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
+            </svg>
+            {loading ? '채팅방 입장 중...' : '대화하기'}
+          </button>
+          <div className="flex justify-between space-x-4">
           {/* 수정하기 버튼 */}
           <button
             onClick={handleSave}
             disabled={updateLoading || deleteLoading}
-            className={`w-full ${updateLoading || deleteLoading ? 'bg-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700'} text-white font-medium py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2`}
+            className={`w-full ${updateLoading || deleteLoading ? 'bg-gray-500 cursor-not-allowed' : 'bg-indigo-600'} text-white font-medium py-3 px-6 rounded-2xl transition-all duration-200 text-lg transform flex items-center justify-center gap-2`}
           >
             {updateLoading ? (
               <>
@@ -347,21 +378,11 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
               </>
             )}
           </button>
-          
-          {/* 취소 버튼 */}
-          <button
-            onClick={onClose}
-            disabled={updateLoading || deleteLoading}
-            className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-6 rounded-2xl transition-colors duration-200"
-          >
-            취소
-          </button>
-
           {/* 삭제하기 버튼 */}
           <button
             onClick={handleDelete}
             disabled={updateLoading || deleteLoading}
-            className={`w-full ${deleteLoading ? 'bg-gray-500 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'} text-white font-medium py-3 px-6 rounded-2xl transition-all duration-200 flex items-center justify-center gap-2`}
+            className={`w-full ${deleteLoading ? 'bg-gray-500 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'} text-white font-medium py-3 px-6 rounded-2xl text-lg transition-all duration-200 flex items-center justify-center gap-2`}
           >
             {deleteLoading ? (
               <>
@@ -382,6 +403,18 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
               </>
             )}
           </button>
+          </div>
+          
+          {/* 취소 버튼 */}
+          <button
+            onClick={onClose}
+            disabled={updateLoading || deleteLoading}
+            className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-6 rounded-2xl transition-colors duration-200"
+          >
+            취소
+          </button>
+
+          
         </div>
       </div>
     </div>

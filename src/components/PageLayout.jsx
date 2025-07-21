@@ -22,7 +22,7 @@ const PageLayout = ({
   children, 
   title, 
   subtitle, 
-  className = "bg-gray-800 text-white min-h-screen font-sans" 
+  className = "bg-[#1e2139] text-white min-h-screen font-sans" 
 }) => {
   return (
     <div className={className}>
