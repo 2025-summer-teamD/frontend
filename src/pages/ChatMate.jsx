@@ -1,12 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 // import chatMessages from '../data/chatMessages'; // 더미 데이터 삭제
+import { useSendMessageToAI } from '../data/chatMessages';
 import { useUser } from '@clerk/clerk-react';
 
 const ChatMate = () => {
   const { state } = useLocation();
   const { roomId } = useParams();
   const { user } = useUser();
+
+  // AI 응답 훅 추가
+  const { sendMessage: sendMessageToAI, loading: aiLoading, error: aiError } = useSendMessageToAI();
 
   // 캐릭터 정보 상태
   const [character, setCharacter] = useState(state?.character || null);
@@ -72,27 +76,93 @@ const ChatMate = () => {
   if (error) return <div className="text-red-500 p-8">{error}</div>;
   if (!character) return null;
 
-  // 메시지 전송(임시: 프론트 상태에만 추가)
-  const sendMessage = () => {
-    if (!newMessage.trim()) return;
+  // AI 응답 포함한 메시지 전송
+  const sendMessage = async () => {
+    console.log('🚀 ChatMate sendMessage 시작');
+    console.log('🔍 newMessage.trim():', newMessage.trim());
+    console.log('🔍 aiLoading:', aiLoading);
+    
+    if (!newMessage.trim() || aiLoading) {
+      console.log('❌ 조건 체크 실패 - 메시지 전송 중단');
+      return;
+    }
+    
+    console.log('✅ 조건 체크 통과');
+    const messageText = newMessage.trim();
+    setNewMessage(''); // 입력창 즉시 비우기
+    
+    console.log('⏰ 시간 생성 시작');
     const now = new Date().toLocaleTimeString('ko-KR', {
       hour: 'numeric',
       minute: '2-digit',
       hour12: true,
     });
-    const msg = {
-      id: messages.length + 1,
-      text: newMessage,
+    console.log('✅ 시간 생성 성공:', now);
+
+    // 사용자 메시지 추가
+    console.log('👤 사용자 메시지 객체 생성 시작');
+    const userMsg = {
+      id: Date.now(), // 고유 ID 생성
+      text: messageText,
       sender: 'me',
       time: now,
       characterId: character.id,
     };
-    setMessages([...messages, msg]);
-    setNewMessage('');
+    console.log('✅ 사용자 메시지 객체 생성 성공:', userMsg);
+
+    // 로컬 상태에 사용자 메시지 즉시 추가
+    console.log('📝 로컬 상태에 사용자 메시지 추가');
+    setMessages(prev => [...prev, userMsg]);
+
+    try {
+      // AI API 호출
+      console.log('🤖 AI API 호출 시작');
+      console.log('💬 AI에게 메시지 전송:', { roomId, message: messageText });
+      const aiResponse = await sendMessageToAI(roomId, messageText);
+      console.log('✅ AI API 호출 성공, 응답:', aiResponse);
+      console.log('🔍 AI 응답 타입:', typeof aiResponse);
+      
+      // AI 응답 메시지 추가 -> 객체에서 string형식으로 변경,, 향후 ai resopose를 객체로 변경 가능
+      console.log('💭 AI 메시지 객체 생성 시작');
+      const aiMsg = {
+        id: Date.now() + 1,
+        text: typeof aiResponse === 'string' ? aiResponse : '응답을 받지 못했습니다.',
+        sender: 'other',
+        time: now,
+        characterId: character.id,
+      };
+      console.log('✅ AI 메시지 객체 생성 성공:', aiMsg);
+
+      // 로컬 상태에 AI 메시지 추가
+      console.log('📝 로컬 상태에 AI 메시지 추가');
+      setMessages(prev => [...prev, aiMsg]);
+
+    } catch (error) {
+      console.error('💥 ChatMate sendMessage에서 에러 발생:', error);
+      console.error('💥 에러 타입:', typeof error);
+      console.error('💥 에러 message:', error.message);
+      console.error('💥 에러 stack:', error.stack);
+      console.error('AI 응답 실패:', error);
+      
+      // 에러 메시지 추가
+      console.log('❌ 에러 메시지 객체 생성 시작');
+      const errorMsg = {
+        id: Date.now() + 2,
+        text: '죄송합니다. 응답을 생성하는데 문제가 발생했습니다.',
+        sender: 'other',
+        time: now,
+        characterId: character.id,
+      };
+      console.log('✅ 에러 메시지 객체 생성 성공:', errorMsg);
+
+      setMessages(prev => [...prev, errorMsg]);
+    }
+    
+    console.log('🏁 ChatMate sendMessage 완료');
   };
 
   const handleKeyPress = e => {
-    if (e.key === 'Enter') sendMessage();
+    if (e.key === 'Enter' && !aiLoading) sendMessage();
   };
 
   return (
