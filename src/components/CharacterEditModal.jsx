@@ -308,7 +308,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle })
               />
               <div className="flex flex-wrap gap-2 mt-3">
                 <span className="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-xs">
-                  #{character?.character_id || character?.id || '캐릭터'}번째로 생성된 캐릭터
+                  #{character?.id || '캐릭터'}번째로 생성된 캐릭터
                 </span>
                 {formData.tags?.split(',').filter(tag => tag.trim()).map((tag, index) => (
                   <span key={index} className="bg-indigo-600 text-white px-3 py-1 rounded-full text-xs">
