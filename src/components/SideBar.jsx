@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useChatRooms } from '../contexts/ChatRoomsContext';
 import { chatMessages } from '../data/chatMessages';
+import { useAuth } from '@clerk/clerk-react';
 import logo from '/assets/logo.png';
 import AnimatedAuthHeader from './AnimatedAuthHeader';
 
@@ -21,6 +22,8 @@ function getLastMsgText(character) {
 const Sidebar = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { getToken } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const { characters, loading, error, refetch } = useChatRooms();
 
@@ -31,6 +34,73 @@ const Sidebar = ({ children }) => {
     room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (room.last_chat && room.last_chat.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  // 채팅방 입장 API 호출 함수
+  const enterChatRoom = async (characterId) => {
+    console.log('🚪 [Sidebar] 채팅방 입장 시도 - characterId:', characterId);
+    
+    try {
+      const token = await getToken();
+      const response = await fetch(`http://localhost:3001/api/chat/rooms?character_id=${characterId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ [Sidebar] 채팅방 입장 API 에러:', errorText);
+        throw new Error(`채팅방 입장 실패: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ [Sidebar] 채팅방 입장 성공:', result);
+      
+      return {
+        roomId: result.data?.room_id,
+        character: result.data?.character,
+        chatHistory: result.data?.chat_history || []
+      };
+    } catch (err) {
+      console.error('💥 [Sidebar] 채팅방 입장 에러:', err);
+      throw err;
+    }
+  };
+
+  // 채팅방 클릭 핸들러
+  const handleChatRoomClick = async (e, chat) => {
+    e.preventDefault();
+    console.log('🖱️ [Sidebar] 채팅방 클릭:', chat);
+    
+    try {
+      setSidebarOpen(false);
+      
+      const characterId = chat.character_id || chat.id;
+      console.log('🔍 [Sidebar] 사용할 characterId:', characterId);
+      
+      const { roomId, character: updatedCharacter, chatHistory } = await enterChatRoom(characterId);
+      
+      console.log('✅ [Sidebar] 채팅방 입장 완료:', { 
+        roomId, 
+        updatedCharacter, 
+        chatHistoryLength: chatHistory.length 
+      });
+      
+      // ChatMate로 이동 (채팅 히스토리 포함)
+      navigate(`/chatMate/${roomId}`, { 
+        state: { 
+          character: updatedCharacter, 
+          chatHistory: chatHistory,
+          roomId: roomId 
+        } 
+      });
+    } catch (error) {
+      console.error('💥 [Sidebar] 채팅방 입장 실패:', error);
+      alert('채팅방 입장에 실패했습니다: ' + error.message);
+    }
+  };
 
   // 마지막 메시지 시간 포맷팅 함수
   const formatLastMessageTime = (timeString) => {
@@ -144,7 +214,7 @@ const Sidebar = ({ children }) => {
                   key={chat.room_id}
                   to={`/chatMate/${chat.room_id}`}
                   state={{ character: chat }}
-                  onClick={() => setSidebarOpen(false)}
+                  onClick={(e) => handleChatRoomClick(e, chat)}
                   className="flex items-center p-4 hover:bg-white/5 cursor-pointer border-b border-white/5"
                 >
                   <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
