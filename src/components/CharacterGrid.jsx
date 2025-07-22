@@ -38,7 +38,7 @@ export const CharacterCard = ({
         <p className="text-xs text-gray-300 truncate">{character.introduction || character.description}</p>
         <div className="flex justify-between items-center mt-2 text-xs">
           <div className="flex items-center gap-1">
-            <span>👁️ {character.usesCount || character.usesCount || character.messageCount || 0}</span>
+            <span>👁️ {character.usesCount || character.messageCount || 0}</span>
           </div>
           <div className="flex items-center gap-1">
             <button
