@@ -35,7 +35,7 @@ export const CharacterHeader = ({ character, liked, onLikeToggle, showLikeButton
       </div>
       <div>
         <h1 className="text-2xl font-semibold text-white mb-1">{character.name}</h1>
-        <p className="text-gray-400 text-sm mb-3">By. {character.creator_name || '알 수 없음'}</p>
+        <p className="text-gray-400 text-sm mb-3">By. {character.creatorName || '알 수 없음'}</p>
       </div>
       {showLikeButton && (
         <>
@@ -88,7 +88,7 @@ export const CharacterStats = ({ character, isMyCharacter = false }) => (
       <>
         <div className="w-full flex justify-center items-center gap-40">
         <div className="text-center">
-          <div className="text-[28px] font-bold text-white mb-1">{character.uses_count || 0}</div>
+          <div className="text-[28px] font-bold text-white mb-1">{character.usesCount || 0}</div>
           <div className="text-gray-400 text-sm">조회수</div>
         </div>
         <div className="text-center">
@@ -182,7 +182,7 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onC
     setLoading(true);
     try {
       // character_id 사용 (이전 로그에서 character.id는 undefined였음)
-      const characterId = character.character_id || character.id;
+      const characterId = character.characterId || character.id;
       console.log('🔍 채팅방 입장/생성 시도 - characterId:', characterId);
       
       const { roomId, character: updatedCharacter, chatHistory, isNewRoom } = await enterOrCreateChatRoom(characterId);

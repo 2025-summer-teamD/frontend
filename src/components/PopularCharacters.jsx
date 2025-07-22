@@ -32,7 +32,7 @@ export default function PopularCharacters() {
   const handleStartChat = async (character) => {
     setChatLoading(true);
     try {
-      const characterId = character.character_id || character.id;
+      const characterId = character.characterId || characterId;
       const { roomId, character: updatedCharacter, chatHistory, isNewRoom } = await enterOrCreateChatRoom(characterId);
       
       console.log(isNewRoom ? '🆕 새 채팅방 생성됨' : '🔄 기존 채팅방 입장 (히스토리 ' + chatHistory.length + '개)');
@@ -159,7 +159,7 @@ export default function PopularCharacters() {
             aria-label={`${character.name}와 대화하기`}
           >
             <img
-              src={character.image_url || '/assets/icon-character.png'}
+              src={character.imageUrl || '/assets/icon-character.png'}
               alt={character.name}
               className="w-full h-full object-cover"
               onError={(e) => {
@@ -170,7 +170,7 @@ export default function PopularCharacters() {
               <h3 className="text-2xl font-bold text-white">{character.name}</h3>
               <p className="text-sm font-medium text-white mt-1">{character.description}</p>
               <div className="flex items-center justify-between mt-2">
-                <span className="text-xs text-white/80">👁️ {character.uses_count || 0}</span>
+                <span className="text-xs text-white/80">👁️ {character.usesCount || 0}</span>
                 <span className="text-xs text-white/80">❤️ {character.likes || 0}</span>
               </div>
               <div className="mt-3 w-full py-1.5 bg-[#4F46E5] rounded-lg text-white font-semibold text-sm hover:bg-purple-700 transition-all">

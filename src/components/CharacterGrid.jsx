@@ -38,7 +38,7 @@ export const CharacterCard = ({
         <p className="text-xs text-gray-300 truncate">{character.introduction || character.description}</p>
         <div className="flex justify-between items-center mt-2 text-xs">
           <div className="flex items-center gap-1">
-            <span>👁️ {character.uses_count || character.usesCount || character.messageCount || 0}</span>
+            <span>👁️ {character.usesCount || character.messageCount || 0}</span>
           </div>
           <div className="flex items-center gap-1">
             <button
@@ -112,7 +112,7 @@ export default function CharacterGrid({
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
       {characters.map(character => {
-        const characterId = character.character_id || character.id;
+        const characterId = character.characterId || character.id;
         const isMine = character.creator === myId;
         const isLiked = likedIds.includes(characterId);
         const showEditButtons = tab === 'created'; // 내 캐릭터일 때만 수정/삭제 버튼 표시

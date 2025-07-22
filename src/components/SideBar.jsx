@@ -32,10 +32,25 @@ const Sidebar = ({ children }) => {
   const sidebarListRef = useRef(null);
   const contentRef = useRef(null);
 
+  console.log('[SideBar] 렌더 시작');
+
+  // characters 원본 데이터 로그
+  console.log('[SideBar] characters:', characters);
+  // searchQuery 값 로그
+  console.log('[SideBar] searchQuery:', searchQuery);
+
   const filteredCharacters = characters.filter(room =>
     room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (room.last_chat && room.last_chat.toLowerCase().includes(searchQuery.toLowerCase()))
+    (room.lastChat && room.lastChat.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  // filteredCharacters가 바뀔 때마다 로그 출력
+  useEffect(() => {
+    console.log('[SideBar] filteredCharacters:', filteredCharacters);
+    filteredCharacters.forEach((chat, idx) => {
+      console.log(`[SideBar] filteredCharacters[${idx}]:`, chat);
+    });
+  }, [filteredCharacters]);
 
   // 채팅방 입장 API 호출 함수
   const enterChatRoom = async (characterId) => {
@@ -43,7 +58,7 @@ const Sidebar = ({ children }) => {
     
     try {
       const token = await getToken();
-      const response = await fetch(`http://localhost:3001/api/chat/rooms?character_id=${characterId}`, {
+      const response = await fetch(`http://localhost:3001/api/chat/rooms?characterId=${characterId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -61,9 +76,9 @@ const Sidebar = ({ children }) => {
       console.log('✅ [Sidebar] 채팅방 입장 성공:', result);
       
       return {
-        roomId: result.data?.room_id,
+        roomId: result.data?.roomId,
         character: result.data?.character,
-        chatHistory: result.data?.chat_history || []
+        chatHistory: result.data?.chatHistory || []
       };
     } catch (err) {
       console.error('💥 [Sidebar] 채팅방 입장 에러:', err);
@@ -79,7 +94,7 @@ const Sidebar = ({ children }) => {
     try {
       setSidebarOpen(false);
       
-      const characterId = chat.character_id || chat.id;
+      const characterId = chat.characterId || chat.id;
       console.log('🔍 [Sidebar] 사용할 characterId:', characterId);
       
       const { roomId, character: updatedCharacter, chatHistory } = await enterChatRoom(characterId);
@@ -121,7 +136,7 @@ const Sidebar = ({ children }) => {
   // 🔄 사이드바가 열릴 때마다 채팅목록 새로고침
   useEffect(() => {
     if (sidebarOpen) {
-      console.log('메뉴 열림 - 채팅목록 새로고침');
+      console.log('[SideBar] 메뉴 열림 - 채팅목록 새로고침(refetch 호출)');
       refetch(); // 채팅목록 업데이트
     }
   }, [sidebarOpen, refetch]);
@@ -213,26 +228,29 @@ const Sidebar = ({ children }) => {
                 <p className="text-white/50 text-sm">No characters found</p>
               </div>
             ) : (
-              filteredCharacters.filter(chat => !!chat.room_id).map(chat => (
-                <Link
-                  key={chat.room_id}
-                  to={`/chatMate/${chat.room_id}`}
-                  state={{ character: chat }}
-                  onClick={(e) => handleChatRoomClick(e, chat)}
-                  className="flex items-center p-4 hover:bg-white/5 cursor-pointer border-b border-white/5"
-                >
-                  <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-                    <img src={chat.imageUrl} alt={chat.name} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="ml-3 flex-1 truncate">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-white font-medium text-[0.9rem]">{chat.name}</h3>
-                      <span className="text-white/50 text-sm">{formatLastMessageTime(chat.time)}</span>
+              filteredCharacters.filter(chat => !!chat.roomId).map((chat, idx) => {
+                console.log(`[SideBar] map chat[${idx}]:`, chat);
+                return (
+                  <Link
+                    key={chat.roomId}
+                    to={`/chatMate/${chat.roomId}`}
+                    state={{ character: chat }}
+                    onClick={(e) => handleChatRoomClick(e, chat)}
+                    className="flex items-center p-4 hover:bg-white/5 cursor-pointer border-b border-white/5"
+                  >
+                    <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                      <img src={chat.imageUrl} alt={chat.name} className="w-full h-full object-cover" />
                     </div>
-                    <p className="text-white/70 text-sm mt-1 truncate">{chat.last_chat || 'Start a chat'}</p>
-                  </div>
-                </Link>
-              ))
+                    <div className="ml-3 flex-1 truncate">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-white font-medium text-[0.9rem]">{chat.name}</h3>
+                        <span className="text-white/50 text-sm">{formatLastMessageTime(chat.time)}</span>
+                      </div>
+                      <p className="text-white/70 text-sm mt-1 truncate">{chat.lastChat || 'Start a chat'}</p>
+                    </div>
+                  </Link>
+                );
+              })
             )}
           </div>
 
