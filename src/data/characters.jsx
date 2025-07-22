@@ -100,7 +100,7 @@ export function useMyChatCharacters() {
         getToken,
         {}
       );
-      setCharacters((data.data || []).filter(chat => !!chat.room_id));
+      setCharacters((data.data || []).filter(chat => !!chat.roomId));
     } catch (err) {
       const errorMessage = handleApiError(err, '채팅 목록을 불러오는데 실패했습니다.');
       setError(errorMessage);

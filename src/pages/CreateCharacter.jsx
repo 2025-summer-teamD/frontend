@@ -62,15 +62,15 @@ export default function CreateCharacter() {
       
       const requestData = {
         name,
-        image_url: "http://localhost:3001/api/uploads/default-character.svg", // 기본 이미지 사용
-        is_public: isPublic,
+        imageUrl: "http://localhost:3001/api/uploads/default-character.svg", // 기본 이미지 사용
+        isPublic: isPublic,
         prompt: {
           tone,
           personality,
           tag: tags.join(","),
         },
         description,
-        creator_name: user?.username || user?.firstName || user?.fullName || '사용자',
+        creatorName: user?.username || user?.firstName || user?.fullName || '사용자',
       };
       
       const response = await fetch("http://localhost:3001/api/characters/custom", {

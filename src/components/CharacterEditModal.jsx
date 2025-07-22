@@ -32,15 +32,15 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
   const [formData, setFormData] = useState({
     name: character?.name || '',
     description: character?.description || character?.introduction || '',
-    creator: character?.creator || character?.creater || character?.user_id || character?.clerkId || '',
-    image: character?.image || character?.image_url || character?.imageUrl || '',
+    creator: character?.creator || character?.creater || character?.userId || character?.clerkId || '',
+    image: character?.image || character?.imageUrl || character?.imageUrl || '',
     personality: character?.personality || character?.prompt?.personality || '',
     tone: character?.tone || character?.prompt?.tone || '',
     characteristics: character?.characteristics || '',
     tags: character?.tags || character?.tag || character?.prompt?.tag || ''
   });
 
-  const [previewImage, setPreviewImage] = useState(character?.image || character?.image_url || character?.imageUrl || '');
+  const [previewImage, setPreviewImage] = useState(character?.image || character?.imageUrl || character?.imageUrl || '');
 
   // character prop이 변경될 때 formData를 업데이트 (모달이 열릴 때만)
   useEffect(() => {
@@ -49,14 +49,14 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
       setFormData({
         name: character?.name || '',
         description: character?.description || character?.introduction || '',
-        creator: character?.creator || character?.creater || character?.user_id || character?.clerkId || '',
-        image: character?.image || character?.image_url || character?.imageUrl || '',
+        creator: character?.creator || character?.creater || character?.userId || character?.clerkId || '',
+        image: character?.image || character?.imageUrl || character?.imageUrl || '',
         personality: character?.personality || character?.prompt?.personality || '',
         tone: character?.tone || character?.prompt?.tone || '',
         characteristics: character?.characteristics || '',
         tags: character?.tags || character?.tag || character?.prompt?.tag || ''
       });
-      setPreviewImage(character?.image || character?.image_url || character?.imageUrl || '');
+      setPreviewImage(character?.image || character?.imageUrl || character?.imageUrl || '');
     }
   }, [character]); // character 객체 전체를 의존성으로 설정
 
@@ -99,7 +99,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
   };
 
   const toggleLike = () => {
-    const characterId = character?.character_id || character?.id;
+    const characterId = character?.characterId || character?.id;
     onLikeToggle(characterId, !liked);
   };
 
@@ -116,7 +116,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
     }
     
     try {
-      const characterId = character?.character_id || character?.id;
+      const characterId = character?.characterId || character?.id;
       
       // API를 통해 캐릭터 수정
       const updatedCharacter = await updateCharacter(characterId, {
@@ -145,7 +145,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
   const handleStartChat = async () => {
     setLoading(true);
     try {
-      const characterId = character.character_id || character.id;
+      const characterId = character.characterId || character.id;
       const { roomId, character: updatedCharacter, chatHistory, isNewRoom } = await enterOrCreateChatRoom(characterId);
       
       console.log(isNewRoom ? '🆕 새 채팅방 생성됨' : '🔄 기존 채팅방 입장 (히스토리 ' + chatHistory.length + '개)');
@@ -170,7 +170,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
     }
     
     try {
-      const characterId = character?.character_id || character?.id;
+      const characterId = character?.characterId || character?.id;
       
       // API를 통해 캐릭터 삭제
       await deleteCharacter(characterId);
@@ -250,7 +250,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
             
             {/* 작성자 표시 */}
             <div className="flex items-center mb-3">
-              <span className="text-gray-400 text-sm">By. {character?.creator_name || character?.creator || user?.username || user?.firstName || formData.creator}</span>
+              <span className="text-gray-400 text-sm">By. {character?.creatorName || character?.creator || user?.username || user?.firstName || formData.creator}</span>
             </div>
           </div>
           <button
@@ -269,7 +269,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
         {/* 통계 섹션 */}
         <div className="w-full flex justify-center items-center gap-30 mb-3">
           <div className="text-center">
-            <div className="text-[28px] font-bold text-white mb-1">{character?.uses_count || 0}</div>
+            <div className="text-[28px] font-bold text-white mb-1">{character?.usesCount || 0}</div>
             <div className="text-gray-400 text-sm">조회수</div>
           </div>
           <div className="text-center">

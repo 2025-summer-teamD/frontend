@@ -42,7 +42,7 @@ const ChatMate = () => {
           minute: '2-digit',
           hour12: true,
         }),
-        characterId: characterData?.character_id || characterData?.id
+        characterId: characterData?.characterId || characterData?.id
       };
       console.log('💬 변환된 메시지:', convertedMessage);
       return convertedMessage;
@@ -246,7 +246,7 @@ const ChatMate = () => {
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full overflow-hidden bg-[#a6c0c6]">
             <img
-              src={character.image_url}
+              src={character.imageUrl}
               alt={character.name}
               className="w-full h-full object-cover"
             />
@@ -266,7 +266,7 @@ const ChatMate = () => {
         <div className="flex flex-col items-center my-6 text-center">
           <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden">
             <img
-              src={character.image_url  }
+              src={character.imageUrl  }
               alt={character.name}
               className="w-full h-full object-cover"
             />
@@ -297,7 +297,7 @@ const ChatMate = () => {
                   <div className={`flex items-center mb-1 ${msg.sender === 'me' ? 'flex-row-reverse' : 'flex-row'}`}>
                     <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-gradient-to-br from-green-300 to-teal-400">
                       <img
-                        src={msg.sender === 'me' ? user?.imageUrl || '/assets/icon-character.png' : character.image_url}
+                        src={msg.sender === 'me' ? user?.imageUrl || '/assets/icon-character.png' : character.imageUrl}
                         alt=""
                         className="w-full h-full object-cover"
                       />

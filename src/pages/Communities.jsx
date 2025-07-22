@@ -36,7 +36,7 @@ export default function Communities() {
   // 정렬 버튼 클릭 핸들러
   const handleSortChange = (newSort) => {
     setActiveTab(newSort);
-    setSortBy(newSort === '인기순' ? 'likes' : 'uses_count');
+    setSortBy(newSort === '인기순' ? 'likes' : 'usesCount');
   };
 
   const handleLikeToggle = async (id, newLiked) => {
@@ -96,8 +96,8 @@ export default function Communities() {
 
   // 정렬 (API 데이터 구조에 맞게 수정)
   const sortedCharacters = [...filteredCharacters].sort((a, b) => {
-    const valA = parseFloat(activeTab === '조회수순' ? a.uses_count : a.likes);
-    const valB = parseFloat(activeTab === '조회수순' ? b.uses_count : b.likes);
+    const valA = parseFloat(activeTab === '조회수순' ? a.usesCount : a.likes);
+    const valB = parseFloat(activeTab === '조회수순' ? b.usesCount : b.likes);
     return valB - valA;
   });
 
@@ -146,7 +146,7 @@ export default function Communities() {
                   const token = await getToken();
                   await incrementViewCount(character.id, token);
                   // 조회수 증가 성공 시 해당 캐릭터의 조회수만 업데이트
-                  character.uses_count = (character.uses_count || 0) + 1;
+                  character.usesCount = (character.usesCount || 0) + 1;
                   // 상태 강제 업데이트를 위해 배열을 새로 생성
                   setCharacters(prev => [...prev]);
                 }
@@ -178,7 +178,7 @@ export default function Communities() {
                   <p className="text-xs text-gray-300 truncate">{character.introduction}</p>
                   <div className="flex justify-between items-center mt-2 text-xs">
                     <div className="flex items-center gap-1">
-                      <span>👁️ {character.uses_count || 0}</span>
+                      <span>👁️ {character.usesCount || 0}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <button

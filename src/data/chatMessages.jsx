@@ -200,7 +200,7 @@ export function useCreateChatRoom() {
       console.log('✅ 토큰 가져오기 성공');
       
       const requestData = {
-        character_id: characterId
+        characterId: characterId
       };
       
       console.log('📤 채팅방 생성 요청 데이터:', requestData);
@@ -226,7 +226,7 @@ export function useCreateChatRoom() {
       return {
         roomId: data.data.id,
         character: data.data.character || data.data,
-        chatHistory: data.data.chat_history || []
+        chatHistory: data.data.chatHistory || []
       };
     } catch (err) {
       console.error('💥 채팅방 생성 에러:', err);
@@ -262,7 +262,7 @@ export function useEnterOrCreateChatRoom() {
       // 1단계: 먼저 기존 채팅방 조회 시도 (GET)
       console.log('📖 1단계: 기존 채팅방 조회 시도...');
       try {
-        const getResponse = await fetch(`http://localhost:3001/api/chat/rooms?character_id=${characterId}`, {
+        const getResponse = await fetch(`http://localhost:3001/api/chat/rooms?characterId=${characterId}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -275,9 +275,9 @@ export function useEnterOrCreateChatRoom() {
           console.log('✅ 기존 채팅방 발견! 히스토리와 함께 입장:', getData);
           
           return {
-            roomId: getData.data.room_id,
+            roomId: getData.data.roomId,
             character: getData.data.character,
-            chatHistory: getData.data.chat_history || [],
+            chatHistory: getData.data.chatHistory || [],
             isNewRoom: false
           };
         }
@@ -288,7 +288,7 @@ export function useEnterOrCreateChatRoom() {
       // 2단계: 기존 채팅방이 없으면 새로 생성 (POST)
       console.log('🆕 2단계: 새 채팅방 생성...');
       const requestData = {
-        character_id: characterId
+        characterId: characterId
       };
       
       const postResponse = await fetch('http://localhost:3001/api/chat/rooms', {
@@ -312,7 +312,7 @@ export function useEnterOrCreateChatRoom() {
       return {
         roomId: postData.data.id,
         character: postData.data.character || postData.data,
-        chatHistory: postData.data.chat_history || [],
+        chatHistory: postData.data.chatHistory || [],
         isNewRoom: true
       };
     } catch (err) {
