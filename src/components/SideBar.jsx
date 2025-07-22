@@ -118,6 +118,14 @@ const Sidebar = ({ children }) => {
     return `${Math.floor(diffInMinutes / 1440)}일 전`;
   };
 
+  // 🔄 사이드바가 열릴 때마다 채팅목록 새로고침
+  useEffect(() => {
+    if (sidebarOpen) {
+      console.log('메뉴 열림 - 채팅목록 새로고침');
+      refetch(); // 채팅목록 업데이트
+    }
+  }, [sidebarOpen, refetch]);
+
   useEffect(() => {
     const handleKeyDown = e => {
       if (e.key === 'Escape' && sidebarOpen) {
