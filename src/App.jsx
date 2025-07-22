@@ -8,6 +8,7 @@ import AppLayout from './layouts/AppLayout';
 import Sidebar from './components/SideBar';
 import ProtectedRoute from './components/ProtectedRoute';
 import { ChatRoomsProvider } from './contexts/ChatRoomsContext';
+import { ChatMessagesProvider } from './contexts/ChatMessagesContext';
 
 function App() {
   const location = useLocation();
@@ -17,6 +18,7 @@ function App() {
 
   return (
     <ChatRoomsProvider>
+      <ChatMessagesProvider>
       {isHome ? (
         <AppLayout>
           <Home />
@@ -52,6 +54,7 @@ function App() {
           </Routes>
         </Sidebar>
       )}
+      </ChatMessagesProvider>
     </ChatRoomsProvider>
   );
 }
