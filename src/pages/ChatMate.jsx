@@ -292,8 +292,8 @@ const ChatMate = () => {
             const isLast = idx === messages.length - 1;
             const nextMsg = messages[idx + 1];
             const prevMsg = messages[idx - 1];
-            const showTime = isLast || msg.time !== nextMsg?.time;
-            const showProfile = idx === 0 || msg.time !== prevMsg?.time;
+            const showTime = isLast || msg.time !== nextMsg?.time || msg.sender !== "prevMsg?.sender";
+            const showProfile = idx === 0 || msg.time !== prevMsg?.time || msg.sender !== "prevMsg?.sender";
 
             return (
               <div
