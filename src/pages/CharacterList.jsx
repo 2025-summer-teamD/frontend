@@ -15,6 +15,7 @@ import Button from '../components/Button';
 import { useMyCharacters, useCharacterDetail, useUpdateCharacter, toggleLike, useDeleteCharacter } from '../data/characters';
 import { useAuth, useUser } from '@clerk/clerk-react';
 import { useChatRooms } from '../contexts/ChatRoomsContext';
+import { getSafeImageUrl } from '../utils/imageUtils';
 
 export default function CharacterList() {
   const { userId, getToken } = useAuth();
@@ -208,7 +209,10 @@ export default function CharacterList() {
         <EmptyState />
       ) : (
         <CharacterGrid
-          characters={showCharacters}
+          characters={showCharacters.map(char => ({
+            ...char,
+            imageUrl: getSafeImageUrl(char.imageUrl || char.image)
+          }))}
           myId={userId}
           tab={tab}
           likedIds={likedIds}

@@ -277,7 +277,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
             <div className="text-gray-400 text-sm">좋아요</div>
           </div>
           <div className="text-center">
-            <div className="text-[28px] font-bold text-white mb-1">{character?.intimacy || 0}</div>
+            <div className="text-[28px] font-bold text-white mb-1">{character?.exp || 0}</div>
             <div className="text-gray-400 text-sm">친밀도</div>
           </div>
         </div>
