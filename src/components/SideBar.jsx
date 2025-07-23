@@ -178,19 +178,19 @@ const Sidebar = ({ children }) => {
               <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
-              <span>Create</span>
+              <span>만들기</span>
             </Link>
             <Link to="/communities" onClick={() => setSidebarOpen(false)} className="flex items-center p-3 rounded-full bg-white/10 text-white justify-center hover:bg-white/20 transition-colors">
               <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.001 12.001 0 002.944 12c.036 1.157.26 2.27.653 3.332" />
               </svg>
-              <span>Community</span>
+              <span>커뮤니티</span>
             </Link>
             <Link to="/characterList" onClick={() => setSidebarOpen(false)} className="flex items-center p-3 rounded-full bg-white/10 text-white justify-center hover:bg-white/20 transition-colors">
               <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              <span>My Characters</span>
+              <span>내 캐릭터</span>
             </Link>
           </div>
 
@@ -203,7 +203,7 @@ const Sidebar = ({ children }) => {
               </svg>
               <input
                 type="text"
-                placeholder="Search Characters"
+                placeholder="검색하기"
                 className="w-full bg-white/10 border-none rounded-full px-10 py-2.5 text-white placeholder-white/60 focus:outline-none focus:bg-white/15"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
@@ -213,11 +213,11 @@ const Sidebar = ({ children }) => {
 
           {/* Character List */}
           <div ref={sidebarListRef} className="flex-1 overflow-y-auto no-scrollbar">
-            <h3 className="text-white/70 text-sm px-4 pt-4 pb-2">Chat List</h3>
+            <h3 className="text-white/70 text-sm px-4 pt-4 pb-2">채팅 목록</h3>
             {loading ? (
               <div className="p-4 text-center">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mx-auto"></div>
-                <p className="text-white/50 text-sm mt-2">Loading...</p>
+                <p className="text-white/50 text-sm mt-2">로딩 중...</p>
               </div>
             ) : error ? (
               <div className="p-4 text-center">
@@ -225,7 +225,7 @@ const Sidebar = ({ children }) => {
               </div>
             ) : filteredCharacters.length === 0 ? (
               <div className="p-4 text-center">
-                <p className="text-white/50 text-sm">No characters found</p>
+                <p className="text-white/50 text-sm">캐릭터와 대화해보세요!</p>
               </div>
             ) : (
               filteredCharacters.filter(chat => !!chat.roomId).map((chat, idx) => {
@@ -246,7 +246,7 @@ const Sidebar = ({ children }) => {
                         <h3 className="text-white font-medium text-[0.9rem]">{chat.name}</h3>
                         <span className="text-white/50 text-sm">{formatLastMessageTime(chat.time)}</span>
                       </div>
-                      <p className="text-white/70 text-sm mt-1 truncate">{chat.lastChat || 'Start a chat'}</p>
+                      <p className="text-white/70 text-sm mt-1 truncate">{chat.lastChat || '대화 시작하기'}</p>
                     </div>
                   </Link>
                 );

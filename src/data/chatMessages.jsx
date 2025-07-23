@@ -311,7 +311,7 @@ export function useEnterOrCreateChatRoom() {
       
       return {
         roomId: postData.data.id,
-        character: postData.data.character || postData.data,
+        character: postData.data.character, // 백엔드에서 이제 character 정보를 포함해서 반환함
         chatHistory: postData.data.chatHistory || [],
         isNewRoom: true
       };
