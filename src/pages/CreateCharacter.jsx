@@ -25,6 +25,8 @@ export default function CreateCharacter() {
   const [characterQuery, setCharacterQuery] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const [imageFile, setImageFile] = useState(null);
+  const [fetchingAi, setFetchingAi] = useState(false);
+  const [fetchAiError, setFetchAiError] = useState('');
 
   const { getToken } = useAuth();
   const { user } = useUser(); // username을 가져오기 위해 useUser 추가
@@ -102,6 +104,39 @@ export default function CreateCharacter() {
       setIsCreating(false);
     }
   };
+
+  // --- 실제 캐릭터 가져오기(기존 캐릭터 AI 생성) 핸들러 추가 ---
+  async function handleFetchExistingCharacter(name) {
+    setFetchingAi(true);
+    setFetchAiError('');
+    try {
+      const token = await getToken();
+      const res = await fetch('/api/characters/existing/preview', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name }),
+        credentials: 'include', // 인증 필요시
+      });
+      const data = await res.json();
+      if (res.ok && data && (data.persona || data.data)) {
+        const persona = data.persona || data.data;
+        setName(persona.name || '');
+        setTone(persona.tone || (persona.prompt && persona.prompt.tone) || '');
+        setPersonality(persona.personality || (persona.prompt && persona.prompt.personality) || '');
+        setDescription(persona.description || '');
+        setTags(persona.tag ? persona.tag.split(',') : (persona.prompt && persona.prompt.tag ? persona.prompt.tag.split(',') : []));
+      } else {
+        setFetchAiError(data.error || '캐릭터 정보를 가져오지 못했습니다.');
+      }
+    } catch (err) {
+      setFetchAiError('네트워크 오류 또는 서버 에러');
+    } finally {
+      setFetchingAi(false);
+    }
+  }
 
   return (
     <PageLayout
@@ -206,20 +241,37 @@ export default function CreateCharacter() {
                   ) : (
                     <>
                       <h3 className="text-white text-xl font-bold mb-3">실제 캐릭터 가져오기</h3>
-                      <p className="text-gray-400 text-base mb-6">존재하는 캐릭터의 이름을 입력해 검색하세요.</p>
+                      <p className="text-gray-400 text-base mb-6">존재하는 캐릭터의 이름을 입력해 검색하세요. 사진은 직접 업로드 해주세요.</p>
                       <Input
                         type="text"
                         value={characterQuery}
                         onChange={(e) => setCharacterQuery(e.target.value)}
-                        placeholder="예: 해리 포터"
+                        placeholder="존재하는 캐릭터의 이름을 입력하세요."
                       />
-                      <div className="text-gray-400 text-sm">* 검색 API는 추후 연동 예정입니다.</div>
-                      <Checkbox
-                        label="다른 사람에게 공개"
-                        checked={isPublic}
-                        onChange={e => setIsPublic(e.target.checked)}
-                        className="bg-transparent px-1 py-1"
-                      />
+                      <div className="flex items-center gap-2 mt-2 justify-between">
+                        <Checkbox
+                          label="다른 사람에게 공개"
+                          checked={isPublic}
+                          onChange={e => setIsPublic(e.target.checked)}
+                          className="bg-transparent px-1 py-1"
+                        />
+                        <button
+                          onClick={() => handleFetchExistingCharacter(characterQuery)}
+                          disabled={fetchingAi || !characterQuery.trim()}
+                          className="bg-[#413ebc] text-white px-3 py-1 rounded disabled:opacity-50"
+                        >
+                          {fetchingAi ? '가져오는 중...' : '가져오기'}
+                        </button>
+                      </div>
+                      {fetchAiError && <div className="text-red-500 text-xs mt-1">{fetchAiError}</div>}
+                      <Button
+                        onClick={handleCreateCharacter}
+                        disabled={isCreating}
+                        fullWidth
+                        className="mt-6"
+                      >
+                        {isCreating ? '생성 중...' : '캐릭터 만들기'}
+                      </Button>
                     </>
                   )}
                 </div>
@@ -263,9 +315,13 @@ export default function CreateCharacter() {
                       </div>
                       <div className="p-6">
                         <h4 className="text-white font-bold text-xl mb-2">{name || '캐릭터 이름'}</h4>
-                        <p className="text-gray-400 text-sm mb-1">{tone && `말투: ${tone}`}</p>
-                        <p className="text-gray-400 text-sm mb-1">{personality && `성격: ${personality}`}</p>
-                        <p className="text-gray-400 text-sm leading-relaxed mb-2">{description || '여기에 성격, 말투, 설명 등이 표시됩니다.'}</p>
+                        {/* 미리보기 설명 영역 */}
+                        {!(tone || personality || description) && (
+                          <p className="text-gray-400 text-sm leading-relaxed mb-2">여기에 성격, 말투, 설명 등이 표시됩니다.</p>
+                        )}
+                        {tone && <p className="text-gray-400 text-sm mb-1">말투: {tone}</p>}
+                        {personality && <p className="text-gray-400 text-sm mb-1">성격: {personality}</p>}
+                        {description && <p className="text-gray-400 text-sm leading-relaxed mb-2">{description}</p>}
                         {tags.length > 0 && (
                           <div className="flex flex-wrap gap-2 mt-3">
                             {tags.map((tag, index) => (

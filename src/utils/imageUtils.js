@@ -25,9 +25,13 @@ export const isValidImageUrl = (url) => {
   return true;
 };
 
-/**
- * 안전한 이미지 URL을 반환하는 함수
- */
 export const getSafeImageUrl = (url) => {
-  return isValidImageUrl(url) ? url : '/api/uploads/default-character.svg';
-}; 
+  if (!url) return '/api/image/default-character.svg';
+  if (url.startsWith('blob:')) return url; // blob URL은 그대로 반환
+  if (url.startsWith('http')) return url;
+  if (url.startsWith('/api/image/')) return url;
+  // 파일명만 저장된 경우
+  if (!url.startsWith('/')) return `/api/image/${url}`;
+  // 기타 케이스(상대경로 등)
+  return url;
+};
