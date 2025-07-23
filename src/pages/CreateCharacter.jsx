@@ -24,6 +24,7 @@ export default function CreateCharacter() {
   const [description, setDescription] = useState('')
   const [characterQuery, setCharacterQuery] = useState('')
   const [isCreating, setIsCreating] = useState(false)
+  const [imageFile, setImageFile] = useState(null);
 
   const { getToken } = useAuth();
   const { user } = useUser(); // username을 가져오기 위해 useUser 추가
@@ -60,26 +61,23 @@ export default function CreateCharacter() {
       setIsCreating(true);
       const token = await getToken();
       
-      const requestData = {
-        name,
-        imageUrl: "http://localhost:3001/api/uploads/default-character.svg", // 기본 이미지 사용
-        isPublic: isPublic,
-        prompt: {
-          tone,
-          personality,
-          tag: tags.join(","),
-        },
-        description,
-        creatorName: user?.username || user?.firstName || user?.fullName || '사용자',
-      };
-      
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('isPublic', isPublic ? 'true' : 'false'); // 문자열로 변환
+      formData.append('description', description);
+      formData.append('creatorName', user?.username || user?.firstName || user?.fullName || '사용자');
+      formData.append('prompt', JSON.stringify({ tone, personality, tag: tags.join(",") }));
+      if (imageFile) {
+        formData.append('image', imageFile);
+      }
+
       const response = await fetch("http://localhost:3001/api/characters/custom", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          // Content-Type은 직접 지정하지 마세요!
         },
-        body: JSON.stringify(requestData),
+        body: formData,
       });
       if (!response.ok) {
         const err = await response.json();
@@ -245,6 +243,24 @@ export default function CreateCharacter() {
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                       </div>
+                      {/* 이미지 업로드 */}
+                      <div className="flex flex-col items-center mt-2 mb-4">
+                        <label className="block text-white text-xs font-medium mb-1">캐릭터 이미지 업로드</label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={e => {
+                            const file = e.target.files[0];
+                            setImageFile(file);
+                            if (file) {
+                              setImagePreview(URL.createObjectURL(file));
+                            } else {
+                              setImagePreview(AndrewImg);
+                            }
+                          }}
+                          className="text-white text-xs text-center file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-[#413ebc] file:text-white file:text-xs hover:file:bg-[#5a4ee5] transition-colors duration-150"
+                        />
+                      </div>
                       <div className="p-6">
                         <h4 className="text-white font-bold text-xl mb-2">{name || '캐릭터 이름'}</h4>
                         <p className="text-gray-400 text-sm mb-1">{tone && `말투: ${tone}`}</p>
@@ -259,8 +275,6 @@ export default function CreateCharacter() {
                         )}
                       </div>
                     </div>
-
-
                   </div>
                 </div>
               </div>
