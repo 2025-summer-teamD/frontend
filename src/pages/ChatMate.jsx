@@ -4,6 +4,7 @@ import { useLocation, useParams } from 'react-router-dom';
 import { useSendMessageToAI } from '../data/chatMessages';
 import { useUser } from '@clerk/clerk-react';
 import { useChatMessages } from '../contexts/ChatMessagesContext';
+import { FiPaperclip } from 'react-icons/fi';
 
 const ChatMate = () => {
   const { state } = useLocation();
@@ -64,6 +65,8 @@ const ChatMate = () => {
   const scrollContainerRef = useRef(null);
   const messagesEndRef = useRef(null);
   const isInitialMount = useRef(true);
+  const [showAttachModal, setShowAttachModal] = useState(false);
+  const fileInputRef = useRef(null);
 
   // 🆕 사이드바 채팅방 전환 감지: state 변경 시 상태 업데이트
   useEffect(() => {
@@ -150,6 +153,7 @@ const ChatMate = () => {
     }
   }, [character]);
 
+  // 조건부 렌더링은 모든 Hook 선언 이후에 위치해야 함
   if (loading) return <div className="text-white p-8">캐릭터 정보를 불러오는 중...</div>;
   if (error) return <div className="text-red-500 p-8">{error}</div>;
   if (!character) return null;
@@ -239,6 +243,47 @@ const ChatMate = () => {
     if (e.key === 'Enter' && !aiLoading) sendMessage();
   };
 
+  // 1. handleImageUpload 함수 추가
+  const handleImageUpload = async (file) => {
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('image', file);
+    // 인증 필요시 토큰 추가 가능
+    // const token = await getToken();
+    const res = await fetch('/api/chat/upload-image', {
+      method: 'POST',
+      // headers: { Authorization: `Bearer ${token}` }, // 필요시
+      body: formData,
+    });
+    const data = await res.json();
+    if (data.success && data.imageUrl) {
+      addMessageToRoom(roomId, {
+        id: Date.now(),
+        text: '',
+        imageUrl: data.imageUrl,
+        sender: 'me',
+        time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
+        characterId: character.id,
+      });
+      // AI에게도 이미지 메시지 전송
+      setAiLoading(roomId, true);
+      try {
+        // 프롬프트에 이미지 URL을 명시적으로 포함
+        const aiResponse = await sendMessageToAI(roomId, `[이미지] ${data.imageUrl}`);
+        addAiResponseToRoom(roomId, aiResponse);
+      } catch (e) {
+        console.error('AI 이미지 답변 생성 에러:', e);
+        addAiResponseToRoom(roomId, '이미지에 대한 답변 생성에 실패했습니다.');
+      } finally {
+        setAiLoading(roomId, false);
+      }
+    } else {
+      alert('이미지 업로드 실패');
+    }
+  };
+
+  const BACKEND_URL = "http://localhost:3001";
+
   return (
     <div className="flex flex-col h-screen">
       {/* 헤더: sticky */}
@@ -274,14 +319,15 @@ const ChatMate = () => {
           <h3 className="text-xl sm:text-2xl font-semibold text-white mb-2 mt-3">
             {character.name}
           </h3>
-          <p className="text-white/70 text-sm sm:text-base px-2 max-w-lg mx-auto">
-            {character.description}
+          <p className="text-white/70 text-xs sm:text-sm px-2 max-w-lg mx-auto mt-1 mb-2">
+            {character.description || character.introduction || character.desc}
           </p>
         </div>
 
         {/* 메시지들 */}
         <div className="space-y-4 pb-4 max-w-3xl mx-auto">
           {messages.map((msg, idx) => {
+            console.log('채팅 메시지 객체:', msg);
             const isLast = idx === messages.length - 1;
             const nextMsg = messages[idx + 1];
             const prevMsg = messages[idx - 1];
@@ -314,7 +360,15 @@ const ChatMate = () => {
                       : 'bg-white text-black ml-10'
                   }`}
                 >
-                  <p>{msg.text}</p>
+                  {msg.imageUrl && console.log('이미지 src:', msg.imageUrl)}
+                  {msg.imageUrl
+                    ? <img
+                        src={msg.imageUrl.startsWith('http') ? msg.imageUrl : BACKEND_URL + msg.imageUrl}
+                        alt="전송된 이미지"
+                        className="max-w-xs rounded-lg"
+                      />
+                    : <p>{msg.text}</p>
+                  }
                 </div>
                 {showTime && (
                   <span
@@ -334,8 +388,45 @@ const ChatMate = () => {
 
       {/* 입력창: sticky bottom */}
       <footer className="sticky bottom-0 px-4 py-4 border-t border-white/10 bg-black/20 backdrop-blur-xl">
-        <div className="flex items-center space-x-3 max-w-4xl mx-auto">
-          <button className="text-white hover:text-white/90 p-2 text-xl">��</button>
+        <div className="flex items-center space-x-3 max-w-4xl mx-auto relative">
+          <div className="relative">
+            <button
+              className="text-white hover:text-white/90 p-2 text-xl"
+              aria-label="파일 첨부"
+              onClick={() => setShowAttachModal(v => !v)}
+            >
+              <FiPaperclip />
+            </button>
+            {/* 첨부 모달: 클립버튼 위에 작게 */}
+            {showAttachModal && (
+              <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-50 bg-white/50 rounded-xl shadow-lg p-4 flex flex-col items-center w-56 backdrop-blur-sm">
+                <button
+                  className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-4 py-2 rounded-full font-semibold transition-all"
+                  onClick={() => fileInputRef.current.click()}
+                >
+                  사진 보내기
+                </button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  ref={fileInputRef}
+                  onChange={e => {
+                    if (e.target.files[0]) {
+                      handleImageUpload(e.target.files[0]);
+                      setShowAttachModal(false);
+                    }
+                  }}
+                />
+                <button
+                  className="mt-2 text-indigo-700 hover:text-indigo-900 font-semibold text-base transition-colors"
+                  onClick={() => setShowAttachModal(false)}
+                >
+                  닫기
+                </button>
+              </div>
+            )}
+          </div>
           <div className="flex-1 flex items-center space-x-2 bg-white/10 border border-white/20 rounded-full px-4 py-2.5">
             <input
               type="text"
