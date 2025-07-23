@@ -65,6 +65,8 @@ const ChatMate = () => {
   const scrollContainerRef = useRef(null);
   const messagesEndRef = useRef(null);
   const isInitialMount = useRef(true);
+  const [showAttachModal, setShowAttachModal] = useState(false);
+  const fileInputRef = useRef(null);
 
   // 🆕 사이드바 채팅방 전환 감지: state 변경 시 상태 업데이트
   useEffect(() => {
@@ -151,6 +153,7 @@ const ChatMate = () => {
     }
   }, [character]);
 
+  // 조건부 렌더링은 모든 Hook 선언 이후에 위치해야 함
   if (loading) return <div className="text-white p-8">캐릭터 정보를 불러오는 중...</div>;
   if (error) return <div className="text-red-500 p-8">{error}</div>;
   if (!character) return null;
@@ -240,10 +243,6 @@ const ChatMate = () => {
     if (e.key === 'Enter' && !aiLoading) sendMessage();
   };
 
-  const [showAttachModal, setShowAttachModal] = useState(false);
-  const fileInputRef = useRef(null);
-  const [attachFile, setAttachFile] = useState(null);
-
   // 1. handleImageUpload 함수 추가
   const handleImageUpload = async (file) => {
     if (!file) return;
@@ -273,6 +272,7 @@ const ChatMate = () => {
         const aiResponse = await sendMessageToAI(roomId, `[이미지] ${data.imageUrl}`);
         addAiResponseToRoom(roomId, aiResponse);
       } catch (e) {
+        console.error('AI 이미지 답변 생성 에러:', e);
         addAiResponseToRoom(roomId, '이미지에 대한 답변 생성에 실패했습니다.');
       } finally {
         setAiLoading(roomId, false);
