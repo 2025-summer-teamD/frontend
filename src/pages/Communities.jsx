@@ -116,6 +116,14 @@ export default function Communities() {
               key={character.id}
               className="w-56 h-72 neon-card flex flex-col items-center font-pixel"
               onClick={() => setSelectedCharacter(character)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setSelectedCharacter(character);
+                }
+              }}
+              role="button"
+              tabIndex={0}
               style={{ cursor: 'pointer' }}
             >
               <div className="w-32 h-32 bg-gray-800 rounded-lg mb-3 overflow-hidden flex items-center justify-center">

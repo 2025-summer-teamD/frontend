@@ -25,46 +25,42 @@ function NeonBackground() {
 
 function App() {
   const location = useLocation();
-  const isHome = location.pathname === '/';
   return (
     <ChatRoomsProvider>
       <ChatMessagesProvider>
         <NeonBackground />
-        {isHome ? (
-          <AppLayout>
-            <Home />
-          </AppLayout>
-        ) : (
-          <Sidebar>
-            <Routes>
-              <Route path="/communities" element={<Communities />} />
-              <Route
-                path="/characterList"
-                element={
-                  <ProtectedRoute>
-                    <CharacterList />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/createCharacter"
-                element={
-                  <ProtectedRoute>
-                    <CreateCharacter />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/chatMate/:roomId"
-                element={
-                  <ProtectedRoute>
-                    <ChatMate />
-                  </ProtectedRoute>
-                }
-              />
-            </Routes>
-          </Sidebar>
-        )}
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<Home />} />
+          </Route>
+          <Route element={<Sidebar />}>
+            <Route path="/communities" element={<Communities />} />
+            <Route
+              path="/characterList"
+              element={
+                <ProtectedRoute>
+                  <CharacterList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/createCharacter"
+              element={
+                <ProtectedRoute>
+                  <CreateCharacter />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/chatMate/:roomId"
+              element={
+                <ProtectedRoute>
+                  <ChatMate />
+                </ProtectedRoute>
+              }
+            />
+          </Route>
+        </Routes>
       </ChatMessagesProvider>
     </ChatRoomsProvider>
   );
