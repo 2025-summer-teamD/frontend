@@ -8,7 +8,7 @@ import TabButton from '../components/TabButton';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import Textarea from '../components/Textarea';
-import Checkbox from '../components/Checkbox'; Andrew
+import Checkbox from '../components/Checkbox';
 
 export default function CreateCharacter() {
   const [activeTab, setActiveTab] = useState('custom')
