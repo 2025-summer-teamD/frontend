@@ -61,7 +61,7 @@ export default function CreateCharacter() {
       alert("모든 필드를 입력해주세요.");
       return;
     }
-    if (!imageFile) {
+    if (!imageFile && imagePreview === CAMERA) {
       alert("사진을 넣어주세요.");
       return;
     }
@@ -77,7 +77,7 @@ export default function CreateCharacter() {
       formData.append('prompt', JSON.stringify({ tone, personality, tag: tags.join(",") }));
       if (imageFile) {
         formData.append('image', imageFile);
-      } else if (imagePreview && imagePreview !== AndrewImg) {
+      } else if (imagePreview && imagePreview !== CAMERA) {
         try {
           // URL에서 이미지 다운로드
           const response = await fetch(imagePreview);
@@ -151,7 +151,7 @@ export default function CreateCharacter() {
         setPersonality(persona.personality || (persona.prompt && persona.prompt.personality) || '');
         setDescription(persona.description || '');
         setTags(persona.tag ? persona.tag.split(',') : (persona.prompt && persona.prompt.tag ? persona.prompt.tag.split(',') : []));
-        setImagePreview(persona.image || persona.imageUrl || persona.prompt.imageUrl[1] || persona.imageUrlPreview || persona.imageUrlOriginal || AndrewImg);
+        setImagePreview(persona.image || persona.imageUrl || persona.prompt.imageUrl[1] || persona.imageUrlPreview || persona.imageUrlOriginal || CAMERA);
         setImageUrls(persona.imageUrl || persona.prompt.imageUrl || []); // 이미지 URL 목록 설정
       } else {
         setFetchAiError(data.error || '캐릭터 정보를 가져오지 못했습니다.');
@@ -266,7 +266,7 @@ export default function CreateCharacter() {
                   ) : (
                     <>
                       <h3 className="text-white text-xl font-bold mb-3">실제 캐릭터 가져오기</h3>
-                      <p className="text-gray-400 text-base mb-6">존재하는 캐릭터의 이름을 입력해 검색하세요. 원하는 사진을 골라보세요 .</p>
+                      <p className="text-gray-400 text-base mb-6">실존 인물 혹은 캐릭터의 이름을 입력해 검색하세요. 원하는 사진을 골라보세요.</p>
                       <Input
                         type="text"
                         value={characterQuery}
@@ -325,6 +325,7 @@ export default function CreateCharacter() {
                         imageUrls={imageUrls}
                         getSafeImageUrl={getSafeImageUrl}
                         setImagePreview={setImagePreview}
+                        imagePreview={imagePreview}
                         />
                       )}
                       {/* 이미지 업로드 */}
@@ -340,7 +341,7 @@ export default function CreateCharacter() {
                               if (file) {
                                 setImagePreview(URL.createObjectURL(file));
                               } else {
-                                setImagePreview(AndrewImg);
+                                setImagePreview(CAMERA);
                               }
                             }}
                             className="text-white text-xs text-center file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-[#413ebc] file:text-white file:text-xs hover:file:bg-[#5a4ee5] transition-colors duration-150"

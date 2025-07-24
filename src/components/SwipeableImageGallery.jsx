@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-const SwipeableImageGallery = ({ imageUrls, getSafeImageUrl, setImagePreview }) => {
+const SwipeableImageGallery = ({ imageUrls, getSafeImageUrl, setImagePreview, imagePreview }) => {
   console.log('받은 imageUrls:', imageUrls);
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -72,7 +72,7 @@ const SwipeableImageGallery = ({ imageUrls, getSafeImageUrl, setImagePreview }) 
     return (
       <div className="relative p-6">
         <img
-          src="/api/uploads/default-character.svg"
+          src={getSafeImageUrl ? getSafeImageUrl(imagePreview) : imagePreview}
           alt="Default"
           className="w-full h-72 object-contain"
         />
@@ -189,6 +189,7 @@ const ImagePreviewSection = ({ activeTab, imagePreview, imageUrls, getSafeImageU
           imageUrls={imageUrls}
           getSafeImageUrl={getSafeImageUrl}
           setImagePreview={setImagePreview}
+          imagePreview={imagePreview}
         />
       )}
     </>
