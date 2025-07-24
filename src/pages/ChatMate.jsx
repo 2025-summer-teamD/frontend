@@ -286,166 +286,174 @@ const ChatMate = () => {
   const API_BASE_URL = "http://localhost:3001/api";
 
   return (
-    <div className="flex flex-col h-screen">
-      {/* 헤더: sticky */}
-      <header className="sticky top-0 py-4 px-6 z-10 bg-black/20 backdrop-blur-xl"> {/* Added background for header */}
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full overflow-hidden bg-[#a6c0c6]">
-            <img
-              src={character.imageUrl}
-              alt={character.name}
-              className="w-full h-full object-cover"
-            />
+    <div className="flex flex-col h-screen" style={{position:'relative'}}>
+      {/* 네온 네모 배경 */}
+      <div className="neon-block size1 color1" style={{left:'3vw', top:'7vh', position:'fixed', zIndex:0}}></div>
+      <div className="neon-block size2 color2" style={{right:'5vw', top:'10vh', position:'fixed', zIndex:0}}></div>
+      <div className="neon-block size3 color3" style={{left:'8vw', bottom:'10vh', position:'fixed', zIndex:0}}></div>
+      <div className="neon-block size4 color4" style={{right:'8vw', bottom:'12vh', position:'fixed', zIndex:0}}></div>
+      <div className="neon-block size5 color5" style={{left:'50vw', top:'80vh', position:'fixed', zIndex:0}}></div>
+      <div style={{position:'relative', zIndex:1, height:'100%'}}>
+        {/* 헤더: sticky */}
+        <header className="sticky top-0 py-4 px-6 z-10 bg-black/20 backdrop-blur-xl">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full overflow-hidden bg-[#a6c0c6]">
+              <img
+                src={character.imageUrl}
+                alt={character.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <span className="text-white text-lg font-bold">
+              {character.name}
+            </span>
           </div>
-          <span className="text-white text-lg font-bold">
-            {character.name}
-          </span>
-        </div>
-      </header>
+        </header>
 
-      {/* 스크롤 영역: 프로필 + 메시지 */}
-      <div
-        ref={scrollContainerRef}
-        className="flex-1 px-4 overflow-y-auto no-scrollbar sm:px-6 md:px-8 lg:px-12"
-      >
-        {/* 프로필 */}
-        <div className="flex flex-col items-center my-6 text-center">
-          <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden">
-            <img
-              src={character.imageUrl  }
-              alt={character.name}
-              className="w-full h-full object-cover"
-            />
+        {/* 스크롤 영역: 프로필 + 메시지 */}
+        <div
+          ref={scrollContainerRef}
+          className="flex-1 px-4 overflow-y-auto no-scrollbar sm:px-6 md:px-8 lg:px-12"
+        >
+          {/* 프로필 */}
+          <div className="flex flex-col items-center my-6 text-center">
+            <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden">
+              <img
+                src={character.imageUrl  }
+                alt={character.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <h3 className="text-xl sm:text-2xl font-semibold text-white mb-2 mt-3">
+              {character.name}
+            </h3>
+            <p className="text-white/70 text-xs sm:text-sm px-2 max-w-lg mx-auto mt-1 mb-2">
+              {character.description || character.introduction || character.desc}
+            </p>
           </div>
-          <h3 className="text-xl sm:text-2xl font-semibold text-white mb-2 mt-3">
-            {character.name}
-          </h3>
-          <p className="text-white/70 text-xs sm:text-sm px-2 max-w-lg mx-auto mt-1 mb-2">
-            {character.description || character.introduction || character.desc}
-          </p>
-        </div>
 
-        {/* 메시지들 */}
-        <div className="space-y-4 pb-4 max-w-3xl mx-auto">
-          {messages.map((msg, idx) => {
-            console.log('채팅 메시지 객체:', msg);
-            const isLast = idx === messages.length - 1;
-            const nextMsg = messages[idx + 1];
-            const prevMsg = messages[idx - 1];
-            const showTime = isLast || msg.time !== nextMsg?.time || msg.sender !== "prevMsg?.sender";
-            const showProfile = idx === 0 || msg.time !== prevMsg?.time || msg.sender !== "prevMsg?.sender";
+          {/* 메시지들 */}
+          <div className="space-y-4 pb-4 max-w-3xl mx-auto">
+            {messages.map((msg, idx) => {
+              console.log('채팅 메시지 객체:', msg);
+              const isLast = idx === messages.length - 1;
+              const nextMsg = messages[idx + 1];
+              const prevMsg = messages[idx - 1];
+              const showTime = isLast || msg.time !== nextMsg?.time || msg.sender !== "prevMsg?.sender";
+              const showProfile = idx === 0 || msg.time !== prevMsg?.time || msg.sender !== "prevMsg?.sender";
 
-            return (
-              <div
-                key={msg.id}
-                className={`flex flex-col w-full ${msg.sender === 'me' ? 'items-end' : 'items-start'}`}
-              >
-                {showProfile && (
-                  <div className={`flex items-center mb-1 ${msg.sender === 'me' ? 'flex-row-reverse' : 'flex-row'}`}>
-                    <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-gradient-to-br from-green-300 to-teal-400">
-                      <img
-                        src={msg.sender === 'me' ? user?.imageUrl || '/assets/icon-character.png' : character.imageUrl}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <span className={`text-white font-medium text-sm ${msg.sender === 'me' ? 'mr-2' : 'ml-2'}`}>
-                      {msg.sender === 'me' ? user?.username || user?.firstName || 'You' : character.name}
-                    </span>
-                  </div>
-                )}
+              return (
                 <div
-                  className={`max-w-[80%] sm:max-w-[70%] lg:max-w-[60%] px-4 py-3 rounded-2xl break-words ${
-                    msg.sender === 'me'
-                      ? 'bg-[#413ebc] text-white mr-10'
-                      : 'bg-white text-black ml-10'
-                  }`}
+                  key={msg.id}
+                  className={`flex flex-col w-full ${msg.sender === 'me' ? 'items-end' : 'items-start'}`}
                 >
-                  {msg.imageUrl && console.log('이미지 src:', msg.imageUrl)}
-                  {msg.imageUrl
-                    ? <img
-                        src={msg.imageUrl.startsWith('http') ? msg.imageUrl : API_BASE_URL + msg.imageUrl}
-                        alt="전송된 이미지"
-                        className="max-w-xs rounded-lg"
-                      />
-                    : <p>{msg.text}</p>
-                  }
-                </div>
-                {showTime && (
-                  <span
-                    className={`text-xs text-white/60 mt-1 block text-right ${
-                      msg.sender === 'me' ? 'mr-10' : 'ml-10'
+                  {showProfile && (
+                    <div className={`flex items-center mb-1 ${msg.sender === 'me' ? 'flex-row-reverse' : 'flex-row'}`}>
+                      <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-gradient-to-br from-green-300 to-teal-400">
+                        <img
+                          src={msg.sender === 'me' ? user?.imageUrl || '/assets/icon-character.png' : character.imageUrl}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <span className={`text-white font-medium text-sm ${msg.sender === 'me' ? 'mr-2' : 'ml-2'}`}>
+                        {msg.sender === 'me' ? user?.username || user?.firstName || 'You' : character.name}
+                      </span>
+                    </div>
+                  )}
+                  <div
+                    className={`max-w-[80%] sm:max-w-[70%] lg:max-w-[60%] px-4 py-3 rounded-2xl break-words ${
+                      msg.sender === 'me'
+                        ? 'bg-[#413ebc] text-white mr-10'
+                        : 'bg-white text-black ml-10'
                     }`}
                   >
-                    {msg.time}
-                  </span>
-                )}
-              </div>
-            );
-          })}
-          <div ref={messagesEndRef} />
-        </div>
-      </div>
-
-      {/* 입력창: sticky bottom */}
-      <footer className="sticky bottom-0 px-4 py-4 border-t border-white/10 bg-black/20 backdrop-blur-xl">
-        <div className="flex items-center space-x-3 max-w-4xl mx-auto relative">
-          <div className="relative">
-            <button
-              className="text-white hover:text-white/90 p-2 text-xl"
-              aria-label="파일 첨부"
-              onClick={() => setShowAttachModal(v => !v)}
-            >
-              <FiPaperclip />
-            </button>
-            {/* 첨부 모달: 클립버튼 위에 작게 */}
-            {showAttachModal && (
-              <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-50 bg-white/50 rounded-xl shadow-lg p-4 flex flex-col items-center w-56 backdrop-blur-sm">
-                <button
-                  className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-4 py-2 rounded-full font-semibold transition-all"
-                  onClick={() => fileInputRef.current.click()}
-                >
-                  사진 보내기
-                </button>
-                <input
-                  type="file"
-                  accept="image/*"
-                  style={{ display: 'none' }}
-                  ref={fileInputRef}
-                  onChange={e => {
-                    if (e.target.files[0]) {
-                      handleImageUpload(e.target.files[0]);
-                      setShowAttachModal(false);
+                    {msg.imageUrl && console.log('이미지 src:', msg.imageUrl)}
+                    {msg.imageUrl
+                      ? <img
+                          src={msg.imageUrl.startsWith('http') ? msg.imageUrl : API_BASE_URL + msg.imageUrl}
+                          alt="전송된 이미지"
+                          className="max-w-xs rounded-lg"
+                        />
+                      : <p>{msg.text}</p>
                     }
-                  }}
-                />
-                <button
-                  className="mt-2 text-indigo-700 hover:text-indigo-900 font-semibold text-base transition-colors"
-                  onClick={() => setShowAttachModal(false)}
-                >
-                  닫기
-                </button>
-              </div>
-            )}
+                  </div>
+                  {showTime && (
+                    <span
+                      className={`text-xs text-white/60 mt-1 block text-right ${
+                        msg.sender === 'me' ? 'mr-10' : 'ml-10'
+                      }`}
+                    >
+                      {msg.time}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+            <div ref={messagesEndRef} />
           </div>
-          <div className="flex-1 flex items-center space-x-2 bg-white/10 border border-white/20 rounded-full px-4 py-2.5">
-            <input
-              type="text"
-              value={newMessage}
-              onChange={e => setNewMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="메시지를 입력하세요..."
-              className="w-full bg-white/10 border border-white/20 rounded-full px-4 py-2.5 text-white placeholder-white/60 focus:outline-none focus:border-blue-400 focus:bg-white/15"
-            />
-          </div>
-          <button
-            onClick={sendMessage}
-            className="bg-blue-500 hover:bg-blue-600 text-white w-10 h-10 flex items-center justify-center rounded-full transition-colors text-xl"
-          >
-            ➤
-          </button>
         </div>
-      </footer>
+
+        {/* 입력창: sticky bottom */}
+        <footer className="sticky bottom-0 px-4 py-4 border-t border-white/10 bg-black/20 backdrop-blur-xl">
+          <div className="flex items-center space-x-3 max-w-4xl mx-auto relative">
+            <div className="relative">
+              <button
+                className="text-white hover:text-white/90 p-2 text-xl"
+                aria-label="파일 첨부"
+                onClick={() => setShowAttachModal(v => !v)}
+              >
+                <FiPaperclip />
+              </button>
+              {/* 첨부 모달: 클립버튼 위에 작게 */}
+              {showAttachModal && (
+                <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-50 bg-white/50 rounded-xl shadow-lg p-4 flex flex-col items-center w-56 backdrop-blur-sm">
+                  <button
+                    className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-4 py-2 rounded-full font-semibold transition-all"
+                    onClick={() => fileInputRef.current.click()}
+                  >
+                    사진 보내기
+                  </button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    ref={fileInputRef}
+                    onChange={e => {
+                      if (e.target.files[0]) {
+                        handleImageUpload(e.target.files[0]);
+                        setShowAttachModal(false);
+                      }
+                    }}
+                  />
+                  <button
+                    className="mt-2 text-indigo-700 hover:text-indigo-900 font-semibold text-base transition-colors"
+                    onClick={() => setShowAttachModal(false)}
+                  >
+                    닫기
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="flex-1 flex items-center space-x-2 bg-white/10 border border-white/20 rounded-full px-4 py-2.5">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={e => setNewMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="메시지를 입력하세요..."
+                className="w-full bg-white/10 border border-white/20 rounded-full px-4 py-2.5 text-white placeholder-white/60 focus:outline-none focus:border-blue-400 focus:bg-white/15"
+              />
+            </div>
+            <button
+              onClick={sendMessage}
+              className="bg-blue-500 hover:bg-blue-600 text-white w-10 h-10 flex items-center justify-center rounded-full transition-colors text-xl"
+            >
+              ➤
+            </button>
+          </div>
+        </footer>
+      </div>
     </div>
   );
 };

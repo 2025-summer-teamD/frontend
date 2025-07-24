@@ -26,7 +26,7 @@ const features = [
 
 export default function Features() {
   return (
-    <section id="features" className="py-6 md:py-12 px-4 md:px-6">
+    <section id="features" className="py-6 md:py-12 px-4 md:px-6" style={{position:'relative', zIndex:1}}>
       <h2 className="text-2xl md:text-3xl lg:text-4xl xl:text-[48px] font-bold text-center text-white mb-4 md:mb-6">
         주요 기능
       </h2>
@@ -40,6 +40,7 @@ export default function Features() {
       <div
         key={title}
         className="w-full max-w-[320px] min-h-[100px] md:min-h-[100px] bg-[linear-gradient(to_top,_#0C0F2B_40%,_#040438_59%)] p-6 flex flex-col items-center text-center hover:bg-[#1F2937] transition-all rounded-lg"
+        style={{position:'relative', zIndex:1}}
       >
         <img src={icon} alt={title} className="h-[50px] md:h-[70px] w-[50px] md:w-[70px] mb-4 flex-shrink-0" />
         <h3 className="text-xl md:text-2xl xl:text-[20px] font-semibold text-white mb-4 flex-shrink-0">

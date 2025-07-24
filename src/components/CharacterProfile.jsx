@@ -105,55 +105,45 @@ CharacterStats.propTypes = {
 };
 
 // 재사용 가능한 캐릭터 정보 섹션 컴포넌트
-export const CharacterInfo = ({ character }) => (
-  <div className="mb-8">
-    <div className="space-y-8">
-      {character.prompt?.personality && (
-        <div>
-          <div className="text-gray-400 text-sm mb-2">성격</div>
-          <div className="text-white">{character.prompt.personality}</div>
-        </div>
-      )}
-      {character.prompt?.tone && (
-        <div>
-          <div className="text-gray-400 text-sm mb-2">말투</div>
-          <div className="text-white">{character.prompt.tone}</div>
-        </div>
-      )}
-      {(character.introduction || character.description) && (
-        <div>
-          <div className="text-gray-400 text-sm mb-2">설명</div>
-          <div className="text-white">{character.introduction || character.description}</div>
-        </div>
-      )}
-      <div>
-        <div className="text-gray-400 text-sm mb-3">태그</div>
-        <div className="flex flex-wrap gap-2">
+export const CharacterInfo = ({ character }) => {
+  // 태그 리스트 추출 (쉼표로 구분)
+  const tagList = character.prompt?.tag ? character.prompt.tag.split(',').map(tag => tag.trim()).filter(Boolean) : [];
+  return (
+    <div className="mb-8">
+      <div className="space-y-8">
+        {character.prompt?.personality && (
+          <div>
+            <div className="text-gray-400 text-sm mb-2">성격</div>
+            <div className="text-white">{character.prompt.personality}</div>
+          </div>
+        )}
+        {character.prompt?.tone && (
+          <div>
+            <div className="text-gray-400 text-sm mb-2">말투</div>
+            <div className="text-white">{character.prompt.tone}</div>
+          </div>
+        )}
+        {(character.introduction || character.description) && (
+          <div>
+            <div className="text-gray-400 text-sm mb-2">설명</div>
+            <div className="text-white">{character.introduction || character.description}</div>
+          </div>
+        )}
+        {/* 태그 네모 박스 (내 캐릭터 모달과 동일하게) */}
+        <div className="flex flex-wrap gap-2 mt-3">
           <span className="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-xs">
             #{character.id || '캐릭터'}번째로 생성된 캐릭터
           </span>
-          {character.prompt?.tag && character.prompt.tag.split(',').filter(tag => tag.trim()).map((tag, idx) => (
-            <span key={`tag-${idx}-${tag.trim()}`} className="bg-purple-700 text-white px-3 py-1 rounded-full text-xs">
-              #{tag.trim()}
+          {tagList.map((tag, index) => (
+            <span key={index} className="bg-indigo-600 text-white px-3 py-1 rounded-full text-xs">
+              #{tag}
             </span>
           ))}
         </div>
       </div>
-      {character.aliases && character.aliases.length > 0 && (
-        <div className="pb-6 border-b border-gray-700">
-          <div className="text-gray-400 text-sm mb-3">추가 태그</div>
-          <div className="flex flex-wrap gap-2">
-            {character.aliases.map((alias, idx) => (
-              <span key={`alias-${idx}-${alias}`} className="bg-purple-700 text-white px-3 py-1 rounded-full text-xs">
-                #{alias}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
-  </div>
-);
+  );
+};
 
 CharacterInfo.propTypes = {
   character: PropTypes.shape({
@@ -213,7 +203,7 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onC
 
   return (
     <div className="fixed inset-0 flex justify-center items-center z-50 p-5" onClick={handleBackdropClick}>
-      <div className="bg-gray-800 rounded-3xl p-8 w-140 shadow-2xl max-h-[90vh]">
+      <div className="bg-gray-800 rounded-3xl p-8 w-140 shadow-2xl max-h-[80vh] overflow-y-auto">
         {/* 캐릭터 헤더 */}
         <CharacterHeader 
           character={character} 

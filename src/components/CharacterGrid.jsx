@@ -21,67 +21,25 @@ export const CharacterCard = ({
       tabIndex={0}
       onClick={() => onSelect(character)}
       onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && onSelect(character)}
-      className="group relative aspect-[3/4] bg-gray-700 rounded-2xl overflow-hidden cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-indigo-500/30"
+      className="w-56 h-72 neon-card flex flex-col items-center justify-start cursor-pointer transition-transform duration-300 hover:scale-105"
     >
-      <img
-        src={getSafeImageUrl(character.image)}
-        alt={character.name}
-        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-        onError={(e) => {
-          e.target.src = '/api/uploads/default-character.svg';
-        }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-      <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
-        <h3 className="font-bold truncate">{character.name}</h3>
-        <p className="text-xs text-gray-300 truncate">{character.introduction || character.description}</p>
-        <div className="flex justify-between items-center mt-2 text-xs">
-          <div className="flex items-center gap-1">
-            <span>👁️ {character.usesCount || character.messageCount || 0}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={e => {
-                e.stopPropagation();
-                onLikeToggle(characterId, !isLiked);
-              }}
-              className="flex items-center focus:outline-none"
-              aria-label="좋아요 토글"
-            >
-              {isLiked ? (
-                <span className="text-red-500">❤️</span>
-              ) : (
-                <OutlineHeart className="w-4 h-4 text-gray-400 hover:text-red-500 transition-colors" />
-              )}
-            </button>
-            <span className="text-xs text-gray-300">{character.likes || 0}</span>
-          </div>
+      <div className="w-32 h-32 bg-gray-700 rounded-lg mb-4 flex items-center justify-center overflow-hidden">
+        <img
+          src={character.imageUrl || getSafeImageUrl(character.image)}
+          alt={character.name}
+          className="w-full h-full object-cover rounded-lg"
+          onError={e => { e.target.src = '/api/image/default-character.svg'; }}
+        />
+      </div>
+      <div className="neon-text text-lg font-bold mb-1">{character.name}</div>
+      <div className="text-xs text-[#ffe066] font-bold mb-1">EXP: {character.exp || 0}</div>
+      <div className="flex flex-row items-center gap-2 text-xs font-bold mt-auto">
+        <div className="border border-[#00f0ff] bg-white/10 px-2 py-1 text-[#00f0ff] min-w-[64px] text-center shadow-neon">
+          VIEWS: {character.views || character.usesCount || character.messageCount || 0}
         </div>
-        {/* 수정/삭제 버튼 */}
-        {showEditButtons && (
-          <div className="flex gap-2 mt-2">
-            {isMine && (
-              <button
-                onClick={e => {
-                  e.stopPropagation();
-                  onEdit(character);
-                }}
-                className="p-1 rounded bg-blue-500 bg-opacity-20 border border-blue-400 border-opacity-30 text-blue-300 hover:bg-blue-500 hover:bg-opacity-40 hover:text-white transition-all duration-200"
-                title="캐릭터 수정"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                  />
-                </svg>
-              </button>
-            )}
-            
-          </div>
-        )}
+        <div className="border border-[#ff00c8] bg-white/10 px-2 py-1 text-[#ff00c8] min-w-[64px] text-center shadow-neon">
+          LIKES: {character.likes || 0}
+        </div>
       </div>
     </div>
   );
@@ -108,12 +66,12 @@ export default function CharacterGrid({
   onSelect,
 }) {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 mb-8 justify-items-start">
       {characters.map(character => {
         const characterId = character.characterId || character.id;
         const isMine = character.creator === myId;
         const isLiked = likedIds.includes(characterId);
-        const showEditButtons = tab === 'created'; // 내 캐릭터일 때만 수정/삭제 버튼 표시
+        const showEditButtons = tab === 'created';
 
         return (
           <CharacterCard

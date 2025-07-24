@@ -10,16 +10,31 @@ html {
 }
 
 body {
-  background-color: #1a1a1a;
+  background: linear-gradient(135deg, #0a0a23 0%, #1a1a40 50%, #2d0b4e 100%);
   color: #e5e7eb;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  font-family: 'Orbitron', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
   margin: 0;
-  padding: 0; /* 혹시 모를 패딩도 함께 제거 */
+  padding: 0;
+}
+
+@font-face {
+  font-family: 'Galmuri14';
+  src: url('/fonts/Galmuri14.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Cafe24PROUP';
+  src: url('/fonts/Cafe24PROUP.ttf') format('truetype');
+  font-display: swap;
+}
+
+body, .font-pixel {
+  font-family: 'Galmuri14', 'Press Start 2P', monospace;
 }
 
 /* Scrollbar Styles */
@@ -131,3 +146,76 @@ body {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
+
+/* 네온 카드 */
+.neon-card {
+  background: rgba(24, 24, 48, 0.8);
+  border: 2px solid #00f0ff;
+  border-radius: 1rem;
+  box-shadow: 0 0 8px #00f0ff, 0 0 16px #a259ff;
+  padding: 1.5rem;
+}
+
+/* 네온 버튼 */
+.neon-btn {
+  border: 2px solid #a259ff;
+  color: #00f0ff;
+  background: transparent;
+  border-radius: 0.75rem;
+  font-weight: bold;
+  box-shadow: 0 0 8px #00f0ff, 0 0 16px #a259ff;
+  transition: background 0.2s, color 0.2s;
+}
+.neon-btn:hover {
+  background: #00f0ff;
+  color: #0a0a23;
+}
+
+/* 네온 입력창 */
+.neon-input {
+  background: transparent;
+  border-bottom: 2px solid #00f0ff;
+  color: #00f0ff;
+  outline: none;
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  transition: border 0.2s;
+}
+.neon-input:focus {
+  border-bottom: 2px solid #a259ff;
+}
+
+/* 네온 텍스트 */
+.neon-text {
+  color: #00f0ff;
+  text-shadow: 0 0 8px #00f0ff, 0 0 16px #a259ff;
+}
+
+/* 네온 라벨 */
+.neon-label {
+  color: #a259ff;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+/* 상단바 ChatMate 로고는 기본 폰트로 고정 */
+.header-logo, .header-logo * {
+  font-family: 'Cafe24PROUP', sans-serif !important;
+}
+
+/* 네온 배경 네모 (커스텀) */
+.neon-bg-box {
+  position: absolute;
+  border-radius: 1.5rem;
+  border: 2.5px solid #00f6ff;
+  box-shadow: 0 0 32px 8px #00f6ff, 0 0 64px 16px #a6a6ff;
+  background: rgba(0,246,255,0.08);
+  z-index: 0;
+}
+
+/* 밝은 네온 박스 여러 개 배치용 */
+.neon-bg-1 { left: 3vw; top: 7vh; width: 120px; height: 120px; }
+.neon-bg-2 { right: 5vw; top: 10vh; width: 100px; height: 100px; }
+.neon-bg-3 { left: 8vw; bottom: 10vh; width: 140px; height: 140px; }
+.neon-bg-4 { right: 8vw; bottom: 12vh; width: 110px; height: 110px; }
+.neon-bg-5 { left: 50vw; top: 80vh; width: 80px; height: 80px; }

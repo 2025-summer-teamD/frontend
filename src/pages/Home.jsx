@@ -6,7 +6,6 @@ import Features from "../components/features";
 import ChatPreview from "../components/chatPreview";
 
 function Home() {
-  // useAuth 훅은 반드시 함수 컴포넌트 내부의 최상위에서 호출되어야 합니다.
   const { getToken, userId, isLoaded, isSignedIn } = useAuth();
 
   useEffect(() => {
@@ -18,7 +17,7 @@ function Home() {
       };
       getClerkToken();
     }
-  }, [isLoaded, isSignedIn, getToken, userId]); // 의존성 배열에 필요한 값들을 포함합니다.
+  }, [isLoaded, isSignedIn, getToken, userId]);
 
   return (
     <div className="text-white no-scrollbar">

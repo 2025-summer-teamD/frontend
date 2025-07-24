@@ -170,39 +170,34 @@ export default function CharacterList() {
   }
 
   return (
-    <PageLayout 
-      title="내 캐릭터 목록"
-      subtitle="내가 만들거나 저장한 캐릭터 목록이에요"
-    >
-      {/* Search and Filter */}
-      <SearchBar 
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-      />
-
-      {/* 버튼 3개: 왼쪽 2개, 오른쪽 1개 */}
-      <div className="flex items-center justify-between mb-4 max-w-2xl mx-auto">
-        <div className="flex gap-2">
-          <TabButton
-            isActive={tab === 'created'}
-            onClick={() => setTab('created') }
-          >
-            내 캐릭터
-          </TabButton>
-          <TabButton
-            isActive={tab === 'liked'}
-            onClick={() => setTab('liked')}
-          >
-            찜한 캐릭터
-          </TabButton>
-        </div>
+    <PageLayout className="bg-gradient-to-br from-darkBg via-[#1a1a40] to-[#2d0b4e] min-h-screen flex flex-col items-center justify-center" style={{position:'relative', overflow:'hidden'}}>
+      {/* 네온 네모 배경 */}
+      <div className="neon-block size1 color1" style={{left:'3vw', top:'7vh', position:'absolute', zIndex:0}}></div>
+      <div className="neon-block size2 color2" style={{right:'5vw', top:'10vh', position:'absolute', zIndex:0}}></div>
+      <div className="neon-block size3 color3" style={{left:'8vw', bottom:'10vh', position:'absolute', zIndex:0}}></div>
+      <div className="neon-block size4 color4" style={{right:'8vw', bottom:'12vh', position:'absolute', zIndex:0}}></div>
+      <div className="neon-block size5 color5" style={{left:'50vw', top:'80vh', position:'absolute', zIndex:0}}></div>
+      <div style={{position:'relative', zIndex:1}}>
+      <div className="text-center mt-12 mb-8">
+        <h1 className="text-3xl font-bold neon-text mb-2">내 캐릭터 목록</h1>
+        <p className="neon-label">[내가 만들거나 저장한 캐릭터 목록이에요]</p>
+      </div>
+      <div className="flex justify-center mb-12">
+        <input
+          type="text"
+          placeholder=">> SEARCH TARGET [CHARACTER_NAME] OR [DESCRIPTION] <<"
+          className="neon-input w-96"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+        />
+      </div>
+      <div className="flex justify-center gap-4 mb-11">
+        <button className={`neon-btn px-6 py-2 ${tab === 'created' ? 'bg-neonBlue text-darkBg' : ''}`} onClick={() => setTab('created')}>내 캐릭터</button>
+        <button className={`neon-btn px-6 py-2 ${tab === 'liked' ? 'bg-neonPurple text-darkBg' : ''}`} onClick={() => setTab('liked')}>찜한 캐릭터</button>
         <Link to="/createCharacter">
-          <Button>
-            캐릭터 생성
-          </Button>
+          <button className="neon-btn px-6 py-2 ml-4">캐릭터 생성</button>
         </Link>
       </div>
-
       {/* 캐릭터 카드 그리드 */}
       {showCharacters.length === 0 ? (
         <EmptyState />
@@ -220,9 +215,7 @@ export default function CharacterList() {
           onSelect={handleEditCharacter}
         />
       )}
-
-      {/* 캐릭터 상세 모달 제거됨 - 이제 캐릭터 클릭시 바로 수정 모달이 열림 */}
-
+      {/* 캐릭터 상세 모달 */}
       {editingCharacter && tab === 'created' && (
         <CharacterEditModal
           character={editingCharacter}
@@ -235,7 +228,6 @@ export default function CharacterList() {
           onLikeToggle={handleLikeToggle}
         />
       )}
-
       {editingCharacter && tab === 'liked' && (
         <CharacterProfile
           character={editingCharacter}
@@ -247,6 +239,7 @@ export default function CharacterList() {
           onLikeToggle={handleLikeToggle}
         />
       )}
+      </div>
     </PageLayout>
   );
 }

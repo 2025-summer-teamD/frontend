@@ -1,17 +1,12 @@
 // src/pages/Communities.jsx
 import React, { useState } from 'react';
-import { useCommunityCharacters, toggleLike, incrementViewCount } from '../data/characters';
+import { useCommunityCharacters, toggleLike } from '../data/characters';
 import { useChatRooms } from '../contexts/ChatRoomsContext';
-import CharacterProfile from '../components/CharacterProfile';
-import CharacterEditModal from '../components/CharacterEditModal';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorDisplay from '../components/ErrorDisplay';
-import SearchBar from '../components/SearchBar';
-import EmptyState from '../components/EmptyState';
 import PageLayout from '../components/PageLayout';
-import TabButton from '../components/TabButton';
-import { Heart as OutlineHeart, Heart as SolidHeart } from 'lucide-react';
 import { useAuth } from "@clerk/clerk-react";
+import CharacterProfile from '../components/CharacterProfile';
 
 export default function Communities() {
   const { getToken } = useAuth();
@@ -21,9 +16,8 @@ export default function Communities() {
   );
   const [activeTab, setActiveTab] = useState('인기순');
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('likes');
   const [selectedCharacter, setSelectedCharacter] = useState(null);
-  const [editingCharacter, setEditingCharacter] = useState(null);
-  const [sortBy, setSortBy] = useState('likes'); // 정렬 기준 추가
 
   const { characters, loading, error, setCharacters } = useCommunityCharacters(sortBy);
   const { refetch: refetchMyChatCharacters } = useChatRooms();
@@ -32,188 +26,131 @@ export default function Communities() {
     localStorage.setItem('likedIds', JSON.stringify(likedIds));
   }, [likedIds]);
 
-  // 정렬 버튼 클릭 핸들러
   const handleSortChange = (newSort) => {
     setActiveTab(newSort);
     setSortBy(newSort === '인기순' ? 'likes' : 'usesCount');
   };
 
-  const handleLikeToggle = async (id, newLiked) => {
+  const handleLikeToggle = async (id) => {
     try {
-      if (!id) {
-        console.error('캐릭터 ID가 없습니다.');
-        return;
-      }
-      
+      if (!id) return;
       const token = await getToken();
       const result = await toggleLike(id, token);
-      
-      // API 응답에 따라 로컬 상태 업데이트
+
       if (result.data.isLiked) {
         setLikedIds(prev => [...prev, id]);
       } else {
         setLikedIds(prev => prev.filter(x => x !== id));
       }
-      
-      // 해당 캐릭터의 좋아요 수와 상태 업데이트
+
       const character = characters.find(c => c.id === id);
       if (character) {
         character.likes = result.data.likesCount;
-        character.liked = result.data.isLiked; // character.liked 속성도 업데이트
-        // 상태 강제 업데이트를 위해 배열을 새로 생성
+        character.liked = result.data.isLiked;
         setCharacters(prev => [...prev]);
       }
     } catch (error) {
-      console.error('좋아요 토글 실패:', error);
       alert('내가 만든 캐릭터는 찜할 수 없습니다.');
     }
   };
 
-  const handleSaveCharacter = (id, formData) => {
-    console.log('Saving character:', id, formData);
-    // 실제 저장 로직 구현
-  };
-
-  // 검색 필터링 (API 데이터 구조에 맞게 수정)
   const filteredCharacters = characters.filter(char => {
     const keyword = searchQuery.toLowerCase();
     return (
       char.name.toLowerCase().includes(keyword) ||
       char.introduction.toLowerCase().includes(keyword)
     );
-  });  
+  });
 
-  // 정렬 (API 데이터 구조에 맞게 수정)
   const sortedCharacters = [...filteredCharacters].sort((a, b) => {
     const valA = parseFloat(activeTab === '조회수순' ? a.usesCount : a.likes);
     const valB = parseFloat(activeTab === '조회수순' ? b.usesCount : b.likes);
     return valB - valA;
   });
 
-  if (loading) {
-    return <LoadingSpinner />;
-  }
-
-  if (error) {
-    return <ErrorDisplay error={error} />;
-  }
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorDisplay error={error} />;
 
   return (
-    <PageLayout 
-      title="캐릭터 커뮤니티"
-      subtitle="당신이 좋아하는 캐릭터를 찾아보세요"
-    >
-      {/* Search and Filter */}
-      <SearchBar 
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-      />
-      <div className="flex justify-center gap-2 sm:gap-4 mt-4 mb-3">
-        {['인기순', '조회수순'].map(tab => (
-          <TabButton
-            key={tab}
-            isActive={activeTab === tab}
-            onClick={() => handleSortChange(tab)}
+    <PageLayout className="bg-gradient-to-br from-darkBg via-[#1a1a40] to-[#2d0b4e] min-h-screen flex flex-col items-center justify-center" style={{position:'relative', overflow:'hidden'}}>
+      {/* 네온 네모 배경 */}
+      <div className="neon-block size1 color1" style={{left:'3vw', top:'7vh'}}></div>
+      <div className="neon-block size2 color2" style={{right:'5vw', top:'10vh'}}></div>
+      <div className="neon-block size3 color3" style={{left:'8vw', bottom:'10vh'}}></div>
+      <div className="neon-block size4 color4" style={{right:'8vw', bottom:'12vh'}}></div>
+      <div className="neon-block size5 color5" style={{left:'50vw', top:'80vh'}}></div>
+      <div style={{position:'relative', zIndex:1}}>
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold neon-text mb-2">캐릭터 커뮤니티</h1>
+          <p className="neon-label">[당신이 좋아하는 캐릭터를 찾아보세요]</p>
+        </div>
+
+        <div className="flex justify-center mb-12">
+          <input
+            type="text"
+            placeholder=">> SEARCH TARGET [CHARACTER_NAME] OR [DESCRIPTION] <<"
+            className="neon-input w-96"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+          />
+        </div>
+
+        <div className="flex justify-center gap-4 mb-11">
+          <button
+            className={`neon-btn px-6 py-2 font-pixel ${activeTab === '인기순' ? 'bg-neonBlue text-darkBg' : ''}`}
+            onClick={() => handleSortChange('인기순')}
           >
-            {tab}
-          </TabButton>
-        ))}
-      </div>
+            인기순
+          </button>
+          <button
+            className={`neon-btn px-6 py-2 font-pixel ${activeTab === '조회수순' ? 'bg-neonPurple text-darkBg' : ''}`}
+            onClick={() => handleSortChange('조회수순')}
+          >
+            조회수순
+          </button>
+        </div>
 
-      {/* Character Grid */}
-      {sortedCharacters.length === 0 ? (
-        <EmptyState />
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
-          {sortedCharacters.map(character => {
-            const isLiked = character.liked || likedIds.includes(character.id);
-            
-            const handleSelect = async () => {
-              try {
-                // 조회수 증가 - id가 있을 때만
-                if (character.id) {
-                  const token = await getToken();
-                  await incrementViewCount(character.id, token);
-                  // 조회수 증가 성공 시 해당 캐릭터의 조회수만 업데이트
-                  character.usesCount = (character.usesCount || 0) + 1;
-                  // 상태 강제 업데이트를 위해 배열을 새로 생성
-                  setCharacters(prev => [...prev]);
-                }
-              } catch (error) {
-                console.error('조회수 증가 실패:', error);
-                // 조회수 증가 실패해도 상세보기는 열기
-              }
-              // 상세보기 모달 열기
-              setSelectedCharacter(character);
-            };
-
-            return (
-              <div
-                key={character.id}
-                role="button"
-                tabIndex={0}
-                onClick={handleSelect}
-                onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && handleSelect()}
-                className="group relative aspect-[3/4] bg-gray-700 rounded-2xl overflow-hidden cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-indigo-500/30"
-              >
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 justify-items-center">
+          {sortedCharacters.map(character => (
+            <div
+              key={character.id}
+              className="w-56 h-72 neon-card flex flex-col items-center font-pixel"
+              onClick={() => setSelectedCharacter(character)}
+              style={{ cursor: 'pointer' }}
+            >
+              <div className="w-32 h-32 bg-gray-800 rounded-lg mb-3 overflow-hidden flex items-center justify-center">
                 <img
                   src={character.imageUrl}
-                  alt={character.name}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                  alt={character.name || 'Character'}
+                  className="w-full h-full object-cover rounded-lg"
+                  onError={e => { e.target.src = '/api/image/default-character.svg'; }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
-                  <h3 className="font-bold truncate">{character.name}</h3>
-                  <p className="text-xs text-gray-300 truncate">{character.introduction}</p>
-                  <div className="flex justify-between items-center mt-2 text-xs">
-                    <div className="flex items-center gap-1">
-                      <span>👁️ {character.usesCount || 0}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={e => {
-                          e.stopPropagation();
-                          handleLikeToggle(character.id, !isLiked);
-                        }}
-                        className="flex items-center focus:outline-none"
-                        aria-label="좋아요 토글"
-                      >
-                        {isLiked ? (
-                          <span className="text-red-500">❤️</span>
-                        ) : (
-                          <OutlineHeart className="w-4 h-4 text-gray-400 hover:text-red-500 transition-colors" />
-                        )}
-                      </button>
-                      <span className="text-xs text-gray-300">{character.likes || 0}</span>
-                    </div>
-                  </div>
+              </div>
+              <div className="neon-text text-lg font-bold mb-1 font-pixel">{character.name}</div>
+              {/* 만든이 */}
+              <div className="text-xs text-gray-400 mb-1 font-pixel">by. {character.creatorName}</div>
+              <div className="flex flex-row items-center gap-2 text-xs font-bold mt-auto">
+                <div className="border border-[#00f0ff] bg-white/10 px-2 py-1 text-[#00f0ff] min-w-[64px] text-center shadow-neon font-pixel">
+                  VIEWS: {character.views || character.usesCount || character.messageCount || 0}
+                </div>
+                <div className="border border-[#ff00c8] bg-white/10 px-2 py-1 text-[#ff00c8] min-w-[64px] text-center shadow-neon font-pixel">
+                  LIKES: {character.likes || 0}
                 </div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
-      )}
-
-      {selectedCharacter && (
-        <CharacterProfile
-          character={{ ...selectedCharacter, id: selectedCharacter.id }}
-          liked={likedIds.includes(selectedCharacter.id)}
-          origin="communities"
-          onClose={() => setSelectedCharacter(null)}
-          onLikeToggle={handleLikeToggle}
-          onChatRoomCreated={refetchMyChatCharacters}
-        />
-      )}
-
-      {editingCharacter && (
-        <CharacterEditModal
-          character={{ ...editingCharacter, id: editingCharacter.id }}
-          liked={likedIds.includes(editingCharacter.id)}
-          onClose={() => setEditingCharacter(null)}
-          onSave={handleSaveCharacter}
-          onLikeToggle={handleLikeToggle}
-        />
-      )}
+        {/* 캐릭터 상세 모달 (수정/삭제 버튼 없이) */}
+        {selectedCharacter && (
+          <CharacterProfile
+            character={selectedCharacter}
+            liked={likedIds.includes(selectedCharacter.id)}
+            origin={"community"}
+            onClose={() => setSelectedCharacter(null)}
+            onLikeToggle={handleLikeToggle}
+          />
+        )}
+      </div>
     </PageLayout>
   );
 }

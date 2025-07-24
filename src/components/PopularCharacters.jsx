@@ -167,7 +167,7 @@ export default function PopularCharacters() {
               }}
             />
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-              <h3 className="text-2xl font-bold text-white">{character.name}</h3>
+              <h3 className="text-2xl font-bold text-white" style={{textShadow:'0 2px 8px #000, 0 0 2px #000'}}> {character.name}</h3>
               <p className="text-sm font-medium text-white mt-1">{character.description}</p>
               <div className="flex items-center justify-between mt-2">
                 <span className="text-xs text-white/80">👁️ {character.usesCount || 0}</span>

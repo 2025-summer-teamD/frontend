@@ -153,8 +153,8 @@ const Sidebar = ({ children }) => {
           {/* logo + close */}
           <div className="flex items-center justify-between p-4.5">
             <Link to="/" className="flex items-center">
-              <img src={logo} alt="Logo" className="w-10 h-10" />
-              <span className="text-white font-bold text-lg ml-2">ChatMate</span>
+              <img src={logo} alt="Logo" className="w-10 h-10 header-logo" />
+              <span className="text-white font-bold text-[20px] ml-2 header-logo">ChatMate</span>
             </Link>
           </div>
 
@@ -266,8 +266,8 @@ const Sidebar = ({ children }) => {
             </button>
             {!sidebarOpen && (
               <Link to="/" className="flex items-center">
-                <img src={logo} alt="Logo" className="w-8 h-8" />
-                <span className="text-white font-bold text-lg ml-2">ChatMate</span>
+                <img src={logo} alt="Logo" className="w-8 h-8 header-logo" />
+                <span className="text-white font-bold text-[20px] ml-2 header-logo">ChatMate</span>
               </Link>
             )}
           </div>

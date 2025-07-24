@@ -1,0 +1,255 @@
+@import 'tailwindcss';
+
+/* ------------------------ 기본 스타일 ------------------------ */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: radial-gradient(ellipse at center, #b8aaff 0%, #6f7cff 100%);
+  background-attachment: fixed;
+  color: #e5e7eb;
+  font-family: 'Orbitron', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  padding: 0;
+}
+
+/* ------------------------ 폰트 ------------------------ */
+@font-face {
+  font-family: 'Galmuri14';
+  src: url('/fonts/Galmuri14.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Cafe24PROUP';
+  src: url('/fonts/Cafe24PROUP.ttf') format('truetype');
+  font-display: swap;
+}
+
+body, .font-pixel {
+  font-family: 'Galmuri14', 'Press Start 2P', monospace;
+}
+
+/* ------------------------ 스크롤바 ------------------------ */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4a4a4a;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #5a5a5a;
+}
+
+/* ------------------------ 애니메이션 ------------------------ */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slideIn {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* ------------------------ 글로우 네온 애니메이션 ------------------------ */
+@keyframes glowPulse {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(1);
+    box-shadow: 0 0 10px #00f0ff, 0 0 20px #a259ff, inset 0 0 10px #00f0ff;
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+    box-shadow: 0 0 15px #00f0ff, 0 0 30px #a259ff, inset 0 0 12px #00f0ff;
+  }
+}
+
+/* 네온 블록 */
+.neon-block {
+  position: absolute;
+  border: 2px solid #00f0ff;
+  box-shadow:
+    0 0 10px #00f0ff,
+    0 0 20px #a259ff,
+    inset 0 0 10px #00f0ff;
+  animation: glowPulse 3s ease-in-out infinite;
+  border-radius: 0;
+  z-index: 0 !important;
+  opacity: 0.3;
+}
+.neon-block.size1 { width: 120px; height: 120px; }
+.neon-block.size2 { width: 100px; height: 100px; }
+.neon-block.size3 { width: 90px; height: 90px; }
+.neon-block.size4 { width: 80px; height: 80px; }
+.neon-block.size5 { width: 70px; height: 70px; }
+.neon-block.color1 {
+  border-color: #00f0ff;
+  box-shadow: 0 0 10px #00f0ff, 0 0 20px #a259ff, inset 0 0 10px #00f0ff;
+  background: rgba(0,240,255,0.08);
+}
+.neon-block.color2 {
+  border-color: #a259ff;
+  box-shadow: 0 0 10px #a259ff, 0 0 20px #7f5fff, inset 0 0 10px #a259ff;
+  background: rgba(162,89,255,0.10);
+}
+.neon-block.color3 {
+  border-color: #ff00c8;
+  box-shadow: 0 0 10px #ff00c8, 0 0 20px #ff7ce5, inset 0 0 10px #ff00c8;
+  background: rgba(255,0,200,0.10);
+}
+.neon-block.color4 {
+  border-color: #b388ff;
+  box-shadow: 0 0 10px #b388ff, 0 0 20px #e0b3ff, inset 0 0 10px #b388ff;
+  background: rgba(179,136,255,0.10);
+}
+.neon-block.color5 {
+  border-color: #ff7ce5;
+  box-shadow: 0 0 10px #ff7ce5, 0 0 20px #ffb3e6, inset 0 0 10px #ff7ce5;
+  background: rgba(255,124,229,0.10);
+}
+
+/* ------------------------ 유틸리티 ------------------------ */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+::selection {
+  background-color: #3b82f6;
+  color: white;
+}
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.transition-smooth {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+/* ------------------------ 컴포넌트 ------------------------ */
+.neon-card {
+  background: rgba(24, 24, 48, 0.8);
+  border: 2px solid #00f0ff;
+  border-radius: 1rem;
+  box-shadow: 0 0 8px #00f0ff, 0 0 16px #a259ff;
+  padding: 1.5rem;
+}
+
+.neon-btn {
+  border: 2px solid #a259ff;
+  color: #00f0ff;
+  background: transparent;
+  border-radius: 0.75rem;
+  font-weight: bold;
+  box-shadow: 0 0 8px #00f0ff, 0 0 16px #a259ff;
+  transition: background 0.2s, color 0.2s;
+}
+.neon-btn:hover {
+  background: #00f0ff;
+  color: #0a0a23;
+}
+
+.neon-input {
+  background: transparent;
+  border-bottom: 2px solid #00f0ff;
+  color: #00f0ff;
+  outline: none;
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  transition: border 0.2s;
+}
+.neon-input:focus {
+  border-bottom: 2px solid #a259ff;
+}
+
+.neon-text {
+  color: #00f0ff;
+  text-shadow: 0 0 8px #00f0ff, 0 0 16px #a259ff;
+}
+
+.neon-label {
+  color: #a259ff;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+/* ChatMate 전용 로고 폰트 */
+.header-logo, .header-logo * {
+  font-family: 'Cafe24PROUP', sans-serif !important;
+}

@@ -7,10 +7,10 @@ export default function Header({ onMenuClick }) {
   return (
     <div className="w-full h-[80px] z-50 bg-[linear-gradient(40deg,_#040438_17.08%,_#3C3C56_73.2%)] flex items-center px-5">
       {/* 왼쪽 로고 */}
-      <Link to="/">
+      <Link to="/" className="flex items-center">
         <div className="flex items-center">
-          <img src="/assets/logo.png" alt="Logo" className="h-[40px] w-[40px]" />
-          <span className="text-white font-bold text-[28px] ml-3">ChatMate</span>
+          <img src="/assets/logo.png" alt="Logo" className="h-[40px] w-[40px] header-logo" />
+          <span className="text-white font-bold text-[20px] ml-3 header-logo">ChatMate</span>
         </div>
       </Link>
 
