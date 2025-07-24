@@ -11,7 +11,7 @@ export const CharacterCard = ({
   onLikeToggle, 
   onEdit, 
   onSelect,
-  showEditButtons = false 
+  showEditButtons = false
 }) => {
   const characterId = character.id;
 

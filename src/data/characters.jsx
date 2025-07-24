@@ -3,6 +3,8 @@ import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from "@clerk/clerk-react";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 // 공통 API 호출 함수
 const apiCall = async (url, options = {}) => {
   try {
@@ -45,19 +47,17 @@ const authenticatedApiCall = async (url, getToken, options = {}) => {
 // 에러 메시지 처리 함수
 const handleApiError = (error, defaultMessage) => {
   console.error('API 에러:', error);
-  
+
   if (error.code === 'ERR_NETWORK' || error.code === 'ERR_CONNECTION_REFUSED' || error.code === 'ERR_EMPTY_RESPONSE') {
     return '서버에 연결할 수 없습니다. 백엔드 서버가 실행 중인지 확인해주세요.';
   }
-  
+
   if (error.name === 'TypeError' && error.message.includes('fetch')) {
     return '서버에 연결할 수 없습니다. 백엔드 서버가 실행 중인지 확인해주세요.';
   }
-  
+
   return error.message || defaultMessage;
 };
-
-const API_BASE_URL = "http://localhost:3001/api";
 
 // 커뮤니티 캐릭터 목록을 가져오는 커스텀 훅
 export function useCommunityCharacters(sortBy = 'likes') {
@@ -159,7 +159,7 @@ export function useCharacterDetail() {
 
   const fetchCharacterDetail = useCallback(async (characterId) => {
     if (!characterId) return;
-    
+
     try {
       setLoading(true);
       setError(null);
@@ -197,11 +197,11 @@ export function useUpdateCharacter() {
     if (!characterId) {
       throw new Error('캐릭터 ID가 필요합니다.');
     }
-    
+
     try {
       setLoading(true);
       setError(null);
-      
+
       // API 요청에 맞는 형태로 데이터 구성
       const requestData = {
         introduction: updateData.introduction || updateData.description,
@@ -209,9 +209,9 @@ export function useUpdateCharacter() {
         tone: updateData.tone,
         tag: updateData.tag || updateData.tags
       };
-      
+
       console.log('Updating character with data:', requestData);
-      
+
       const data = await authenticatedApiCall(
         `${API_BASE_URL}/my/characters/${characterId}`,
         getToken,
@@ -220,7 +220,7 @@ export function useUpdateCharacter() {
           body: JSON.stringify(requestData),
         }
       );
-      
+
       return data.data;
     } catch (err) {
       const errorMessage = handleApiError(err, '캐릭터 수정에 실패했습니다.');
@@ -244,13 +244,13 @@ export function useDeleteCharacter() {
     if (!characterId) {
       throw new Error('캐릭터 ID가 필요합니다.');
     }
-    
+
     try {
       setLoading(true);
       setError(null);
-      
+
       console.log('Deleting character with ID:', characterId);
-      
+
       const data = await authenticatedApiCall(
         `${API_BASE_URL}/my/characters/${characterId}`,
         getToken,
@@ -258,7 +258,7 @@ export function useDeleteCharacter() {
           method: 'DELETE',
         }
       );
-      
+
       return data.data;
     } catch (err) {
       const errorMessage = handleApiError(err, '캐릭터 삭제에 실패했습니다.');
@@ -275,7 +275,7 @@ export function useDeleteCharacter() {
 // 좋아요 토글 API 호출 함수
 export const toggleLike = async (characterId, token) => {
   console.log('좋아요 토글 요청:', characterId, token);
-  
+
   return apiCall(`${API_BASE_URL}/characters/${characterId}/like`, {
     method: 'POST',
     headers: {
@@ -287,13 +287,12 @@ export const toggleLike = async (characterId, token) => {
 // 조회수 증가 API 호출 함수
 export const incrementViewCount = async (characterId, token) => {
   console.log('조회수 증가 요청:', characterId);
-  
+
   return apiCall(`${API_BASE_URL}/characters/${characterId}/view`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
-};  
+};
 
-  

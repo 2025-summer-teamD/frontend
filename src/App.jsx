@@ -25,10 +25,7 @@ function NeonBackground() {
 
 function App() {
   const location = useLocation();
-  const path = location.pathname;
-
-  const isHome = path === '/';
-
+  const isHome = location.pathname === '/';
   return (
     <ChatRoomsProvider>
       <ChatMessagesProvider>

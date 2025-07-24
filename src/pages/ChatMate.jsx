@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
-// import chatMessages from '../data/chatMessages'; // 더미 데이터 삭제
+import chatMessages from '../data/chatMessages'; // 더미 데이터 삭제
 import { useSendMessageToAI } from '../data/chatMessages';
 import { useUser } from '@clerk/clerk-react';
 import { useChatMessages } from '../contexts/ChatMessagesContext';
@@ -12,13 +12,13 @@ const ChatMate = () => {
   const { user } = useUser();
 
   // AI 응답 훅 추가
-  const { sendMessage: sendMessageToAI } = useSendMessageToAI();
-  
+  const { sendMessage: sendMessageToAI, error: aiError } = useSendMessageToAI();
+
   // 전역 메시지 Context 사용
-  const { 
-    getMessages, 
-    setMessagesForRoom, 
-    addMessageToRoom, 
+  const {
+    getMessages,
+    setMessagesForRoom,
+    addMessageToRoom,
     addAiResponseToRoom,
     getAiLoading,
     setAiLoading
@@ -27,12 +27,12 @@ const ChatMate = () => {
   // 이전 대화기록을 메시지 형식으로 변환하는 함수
   const convertChatHistoryToMessages = (chatHistory, characterData) => {
     console.log('📜 채팅 히스토리 변환 시작:', { chatHistory, characterData });
-    
+
     if (!chatHistory || !Array.isArray(chatHistory)) {
       console.log('❌ 채팅 히스토리가 없거나 배열이 아님');
       return [];
     }
-    
+
     return chatHistory.map(item => {
       const convertedMessage = {
         id: item.id,
@@ -57,11 +57,11 @@ const ChatMate = () => {
 
   // 메시지 상태 (전역 Context에서 관리)
   const [newMessage, setNewMessage] = useState('');
-  
+
   // 현재 채팅방의 메시지와 AI 로딩 상태
   const messages = getMessages(roomId);
   const aiLoading = getAiLoading(roomId);
-  
+
   const scrollContainerRef = useRef(null);
   const messagesEndRef = useRef(null);
   const isInitialMount = useRef(true);
@@ -73,15 +73,15 @@ const ChatMate = () => {
     console.log('🔄 [채팅방 전환 감지] state 변경됨');
     console.log('🔍 새로운 state?.character:', state?.character);
     console.log('🔍 새로운 state?.chatHistory 길이:', state?.chatHistory?.length || 0);
-    
+
     if (state?.character) {
       console.log('✅ 새로운 채팅방 데이터로 상태 업데이트');
-      
+
       // 캐릭터 정보 업데이트
       setCharacter(state.character);
       setError(null);
       setLoading(false);
-      
+
       // 메시지 히스토리를 전역 Context에 저장
       const newChatHistory = state.chatHistory || [];
       if (newChatHistory.length > 0) {
@@ -99,20 +99,20 @@ const ChatMate = () => {
   // roomId로 백엔드에서 캐릭터 정보 fetch (state가 없을 때만)
   useEffect(() => {
     console.log('🔄 [API 호출 체크] useEffect 실행 - roomId:', roomId, 'state?.character:', !!state?.character);
-    
+
     // state에서 캐릭터 정보가 있으면 API 호출하지 않음 (위의 useEffect에서 처리됨)
     if (state?.character) {
       console.log('✅ state에서 캐릭터 정보 있음, API 호출 생략 (이미 위에서 처리됨)');
       return;
     }
-    
+
     console.log('🌐 state에 캐릭터 정보 없음, API 호출 시작');
     setCharacter(null);
     setMessagesForRoom(roomId, []); // 전역 Context에서 메시지 초기화
     setError(null);
     if (roomId) {
       setLoading(true);
-      const API_BASE_URL = "http://localhost:3001/api";
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
       fetch(`${API_BASE_URL}/chat/room-info?room_id=${roomId}`)
         .then(res => res.json())
         .then(data => {
@@ -164,16 +164,16 @@ const ChatMate = () => {
     console.log('🚀 ChatMate sendMessage 시작');
     console.log('🔍 newMessage.trim():', newMessage.trim());
     console.log('🔍 aiLoading:', aiLoading);
-    
+
     if (!newMessage.trim() || aiLoading) {
       console.log('❌ 조건 체크 실패 - 메시지 전송 중단');
       return;
     }
-    
+
     console.log('✅ 조건 체크 통과');
     const messageText = newMessage.trim();
     setNewMessage(''); // 입력창 즉시 비우기
-    
+
     console.log('⏰ 시간 생성 시작');
     const now = new Date().toLocaleTimeString('ko-KR', {
       hour: 'numeric',
@@ -200,14 +200,14 @@ const ChatMate = () => {
     try {
       // AI 로딩 상태 시작
       setAiLoading(roomId, true);
-      
+
       // AI API 호출
       console.log('🤖 AI API 호출 시작');
       console.log('💬 AI에게 메시지 전송:', { roomId, message: messageText });
       const aiResponse = await sendMessageToAI(roomId, messageText);
       console.log('✅ AI API 호출 성공, 응답:', aiResponse);
       console.log('🔍 AI 응답 타입:', typeof aiResponse);
-      
+
       // AI 응답을 해당 roomId에 추가 (채팅방이 바뀌어도 올바른 곳에 저장됨)
       console.log('🤖 AI 응답을 전역 상태에 추가');
       const finalResponse = typeof aiResponse === 'string' ? aiResponse : '응답을 받지 못했습니다.';
@@ -219,7 +219,7 @@ const ChatMate = () => {
       console.error('💥 에러 message:', error.message);
       console.error('💥 에러 stack:', error.stack);
       console.error('AI 응답 실패:', error);
-      
+
       // 에러 메시지 추가
       console.log('❌ 에러 메시지 객체 생성 시작');
       const errorMsg = {
@@ -236,7 +236,7 @@ const ChatMate = () => {
       // AI 로딩 상태 종료
       setAiLoading(roomId, false);
     }
-    
+
     console.log('🏁 ChatMate sendMessage 완료');
   };
 
@@ -282,8 +282,6 @@ const ChatMate = () => {
       alert('이미지 업로드 실패');
     }
   };
-
-  const API_BASE_URL = "http://localhost:3001/api";
 
   return (
     <div className="flex flex-col h-screen" style={{position:'relative'}}>

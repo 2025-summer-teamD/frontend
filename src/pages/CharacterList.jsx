@@ -50,13 +50,13 @@ export default function CharacterList() {
 
   // useMyCharacters 훅은 이제 'tab' 파라미터를 받지 않고 모든 'created' 캐릭터를 가져옵니다.
   const { characters, loading, error, fetchMyCharacters, setCharacters } = useMyCharacters(tab);
-  
+
   // 캐릭터 상세 정보를 가져오는 훅
-  const { resetCharacter } = useCharacterDetail();
-  
+  const { character: detailCharacter, loading: detailLoading, fetchCharacterDetail, resetCharacter } = useCharacterDetail();
+
   // 캐릭터 수정을 위한 훅
-  const { updateCharacter } = useUpdateCharacter();
-  
+  const { updateCharacter, loading: updateLoading } = useUpdateCharacter();
+
   // 캐릭터 삭제를 위한 훅
   const { deleteCharacter } = useDeleteCharacter();
   // 사이드바 채팅방 목록 갱신용
@@ -91,12 +91,12 @@ export default function CharacterList() {
     try {
       const token = await getToken();
       const result = await toggleLike(id, token);
-      
+
       // API 호출 성공 시 로컬 상태 업데이트
       setLikedIds(prev =>
         newLiked ? [...prev, id] : prev.filter(x => x !== id)
       );
-      
+
       // 목록 새로고침하여 좋아요 수 업데이트
       await fetchMyCharacters();
     } catch (error) {
@@ -108,12 +108,12 @@ export default function CharacterList() {
   const handleEditCharacter = async (character) => {
     try {
       console.log('Editing character:', character);
-      
+
       // 이미 업데이트된 데이터가 있는지 확인
-      const updatedCharacter = characters.find(char => 
+      const updatedCharacter = characters.find(char =>
         (char.id) === (character.id)
       );
-      
+
       if (updatedCharacter && updatedCharacter !== character) {
         // 업데이트된 데이터가 있으면 그것을 사용
         console.log('Using updated character data:', updatedCharacter);
@@ -135,23 +135,23 @@ export default function CharacterList() {
         // 삭제된 경우
         console.log('Character deleted successfully');
         alert('캐릭터가 성공적으로 삭제되었습니다.');
-        
+
         // 목록 새로고침
         await fetchMyCharacters();
       } else {
         // 수정된 경우
         console.log('Character updated successfully:', updatedCharacter);
         alert('캐릭터 정보가 성공적으로 업데이트되었습니다!');
-        
+
         // 로컬 상태에서 해당 캐릭터 업데이트
-        setCharacters(prevCharacters => 
-          prevCharacters.map(char => 
-            (char.id) === (updatedCharacter.id) 
-              ? updatedCharacter 
+        setCharacters(prevCharacters =>
+          prevCharacters.map(char =>
+            (char.id) === (updatedCharacter.id)
+              ? updatedCharacter
               : char
           )
         );
-        
+
         // editingCharacter 상태를 업데이트된 데이터로 설정
         setEditingCharacter(updatedCharacter);
       }
@@ -205,7 +205,7 @@ export default function CharacterList() {
         <CharacterGrid
           characters={showCharacters.map(char => ({
             ...char,
-            imageUrl: getSafeImageUrl(char.imageUrl || char.image)
+            imageUrl: getSafeImageUrl(char.imageUrl || char.image || '')
           }))}
           myId={userId}
           tab={tab}
