@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 
 const ChatMessagesContext = createContext();
 
-export const useChatMessages = () => {
+const useChatMessages = () => {
   const context = useContext(ChatMessagesContext);
   if (!context) {
     throw new Error('useChatMessages must be used within a ChatMessagesProvider');
@@ -10,7 +10,7 @@ export const useChatMessages = () => {
   return context;
 };
 
-export const ChatMessagesProvider = ({ children }) => {
+const ChatMessagesProvider = ({ children }) => {
   // roomId별 메시지를 저장: { [roomId]: messages[] }
   const [allMessages, setAllMessages] = useState({});
   
@@ -87,4 +87,6 @@ export const ChatMessagesProvider = ({ children }) => {
       {children}
     </ChatMessagesContext.Provider>
   );
-}; 
+};
+
+export { useChatMessages, ChatMessagesProvider }; 

@@ -57,6 +57,8 @@ const handleApiError = (error, defaultMessage) => {
   return error.message || defaultMessage;
 };
 
+const API_BASE_URL = "http://localhost:3001/api";
+
 // 커뮤니티 캐릭터 목록을 가져오는 커스텀 훅
 export function useCommunityCharacters(sortBy = 'likes') {
   const [characters, setCharacters] = useState([]);
@@ -67,7 +69,7 @@ export function useCommunityCharacters(sortBy = 'likes') {
     const fetchCharacters = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`http://localhost:3001/api/communities/characters?sort=${sortBy}`);
+        const response = await axios.get(`${API_BASE_URL}/communities/characters?sort=${sortBy}`);
         setCharacters(response.data.data || []);
       } catch (err) {
         const errorMessage = handleApiError(err, '캐릭터 목록을 불러오는데 실패했습니다.');
@@ -96,7 +98,7 @@ export function useMyChatCharacters() {
     try {
       setLoading(true);
       const data = await authenticatedApiCall(
-        "http://localhost:3001/api/my/chat-characters",
+        `${API_BASE_URL}/my/chat-characters`,
         getToken,
         {}
       );
@@ -128,7 +130,7 @@ export function useMyCharacters(type = 'created') {
       setLoading(true);
       setError(null);
       const data = await authenticatedApiCall(
-        `http://localhost:3001/api/my/characters?type=${characterType}`,
+        `${API_BASE_URL}/my/characters?type=${characterType}`,
         getToken,
         {}
       );
@@ -162,7 +164,7 @@ export function useCharacterDetail() {
       setLoading(true);
       setError(null);
       const data = await authenticatedApiCall(
-        `http://localhost:3001/api/my/characters/${characterId}`,
+        `${API_BASE_URL}/my/characters/${characterId}`,
         getToken,
         {}
       );
@@ -211,7 +213,7 @@ export function useUpdateCharacter() {
       console.log('Updating character with data:', requestData);
       
       const data = await authenticatedApiCall(
-        `http://localhost:3001/api/my/characters/${characterId}`,
+        `${API_BASE_URL}/my/characters/${characterId}`,
         getToken,
         {
           method: 'PATCH',
@@ -250,7 +252,7 @@ export function useDeleteCharacter() {
       console.log('Deleting character with ID:', characterId);
       
       const data = await authenticatedApiCall(
-        `http://localhost:3001/api/my/characters/${characterId}`,
+        `${API_BASE_URL}/my/characters/${characterId}`,
         getToken,
         {
           method: 'DELETE',
@@ -274,7 +276,7 @@ export function useDeleteCharacter() {
 export const toggleLike = async (characterId, token) => {
   console.log('좋아요 토글 요청:', characterId, token);
   
-  return apiCall(`http://localhost:3001/api/characters/${characterId}/like`, {
+  return apiCall(`${API_BASE_URL}/characters/${characterId}/like`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -286,7 +288,7 @@ export const toggleLike = async (characterId, token) => {
 export const incrementViewCount = async (characterId, token) => {
   console.log('조회수 증가 요청:', characterId);
   
-  return apiCall(`http://localhost:3001/api/characters/${characterId}/view`, {
+  return apiCall(`${API_BASE_URL}/characters/${characterId}/view`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,

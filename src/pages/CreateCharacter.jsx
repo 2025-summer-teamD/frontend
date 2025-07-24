@@ -31,7 +31,7 @@ export default function CreateCharacter() {
   const { getToken } = useAuth();
   const { user } = useUser(); // username을 가져오기 위해 useUser 추가
 
-
+  const API_BASE_URL = "http://localhost:3001/api";
 
 
   const handleTagKeyDown = (e) => {
@@ -49,7 +49,7 @@ export default function CreateCharacter() {
   }
 
   const removeTag = (indexToRemove) => {
-    setTags(tags.filter((_, index) => index !== indexToRemove))
+    setTags(tags.filter((_, i) => i !== indexToRemove))
   }
 
   // 캐릭터 생성 API 연동 함수
@@ -73,7 +73,7 @@ export default function CreateCharacter() {
         formData.append('image', imageFile);
       }
 
-      const response = await fetch("http://localhost:3001/api/characters/custom", {
+      const response = await fetch(`${API_BASE_URL}/characters/custom`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -98,8 +98,8 @@ export default function CreateCharacter() {
       
       window.location.href = '/characterList';
       
-    } catch (err) {
-      alert(err.message || "에러가 발생했습니다.");
+    } catch (error) {
+      alert(error.message || "에러가 발생했습니다.");
     } finally {
       setIsCreating(false);
     }

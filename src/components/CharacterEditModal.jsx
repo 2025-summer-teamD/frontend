@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Heart as OutlineHeart, Heart as SolidHeart } from 'lucide-react';
 import { useUpdateCharacter, useDeleteCharacter } from '../data/characters';
-import { useUser, useAuth } from '@clerk/clerk-react';
+import { useUser } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 import { useEnterOrCreateChatRoom } from '../data/chatMessages';
 
@@ -11,7 +11,6 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
   const { updateCharacter, loading: updateLoading } = useUpdateCharacter();
   const { deleteCharacter, loading: deleteLoading } = useDeleteCharacter();
   const { user } = useUser(); // username을 가져오기 위해 useUser 추가
-  const { getToken } = useAuth();
   const navigate = useNavigate();
   const { enterOrCreateChatRoom } = useEnterOrCreateChatRoom();
   const [loading, setLoading] = useState(false);

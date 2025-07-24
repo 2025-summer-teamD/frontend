@@ -1,15 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { Heart as OutlineHeart } from 'lucide-react';
 import { getSafeImageUrl } from '../utils/imageUtils';
-import { useUser, useAuth } from '@clerk/clerk-react';
 import { useEnterOrCreateChatRoom } from '../data/chatMessages';
 
 // 재사용 가능한 캐릭터 헤더 컴포넌트
 export const CharacterHeader = ({ character, liked, onLikeToggle, showLikeButton = true }) => {
   const characterId = character.id;
-  const { user } = useUser(); // username을 가져오기 위해 useUser 추가
   
 
 
@@ -171,7 +169,6 @@ CharacterInfo.propTypes = {
 const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onChatRoomCreated }) => {
   const isMyCharacter = origin === 'my';
   const navigate = useNavigate();
-  const { getToken } = useAuth();
   const [loading, setLoading] = useState(false);
 
 

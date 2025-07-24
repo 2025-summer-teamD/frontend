@@ -1,5 +1,5 @@
 // src/pages/Communities.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useCommunityCharacters, toggleLike, incrementViewCount } from '../data/characters';
 import { useChatRooms } from '../contexts/ChatRoomsContext';
 import CharacterProfile from '../components/CharacterProfile';
@@ -14,7 +14,6 @@ import { Heart as OutlineHeart, Heart as SolidHeart } from 'lucide-react';
 import { useAuth } from "@clerk/clerk-react";
 
 export default function Communities() {
-  const myId = 'me'; // 실제 로그인 정보로 대체
   const { getToken } = useAuth();
 
   const [likedIds, setLikedIds] = useState(() =>
@@ -70,19 +69,9 @@ export default function Communities() {
     }
   };
 
-  const handleEditCharacter = character => {
-    setEditingCharacter(character);
-  };
-
   const handleSaveCharacter = (id, formData) => {
     console.log('Saving character:', id, formData);
     // 실제 저장 로직 구현
-  };
-
-  const handleDeleteCharacter = character => {
-    if (window.confirm(`${character.name} 캐릭터를 삭제하시겠습니까?`)) {
-      // 삭제 로직 구현
-    }
   };
 
   // 검색 필터링 (API 데이터 구조에 맞게 수정)
