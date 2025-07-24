@@ -8,7 +8,7 @@ import TabButton from '../components/TabButton';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import Textarea from '../components/Textarea';
-import Checkbox from '../components/Checkbox';
+import Checkbox from '../components/Checkbox'; Andrew
 
 export default function CreateCharacter() {
   const [activeTab, setActiveTab] = useState('custom')
@@ -309,7 +309,7 @@ export default function CreateCharacter() {
                           if (file) {
                             setImagePreview(URL.createObjectURL(file));
                           } else {
-                            setImagePreview(AndrewImg);
+                            setImagePreview(imagePreview);
                           }
                         }}
                         className="text-white text-xs text-center file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-[#413ebc] file:text-white file:text-xs hover:file:bg-[#5a4ee5] transition-colors duration-150"
