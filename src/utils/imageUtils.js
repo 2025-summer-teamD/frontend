@@ -16,12 +16,12 @@ export const handleImageError = (event) => {
  */
 export const isValidImageUrl = (url) => {
   if (!url) return false;
-  
+
   // placeholder 이미지 URL인지 확인
   if (url.includes('placeholder.com') || url.includes('via.placeholder.com')) {
     return false;
   }
-  
+
   return true;
 };
 
@@ -29,9 +29,9 @@ export const getSafeImageUrl = (url) => {
   if (!url) return '/api/image/default-character.svg';
   if (url.startsWith('blob:')) return url; // blob URL은 그대로 반환
   if (url.startsWith('http')) return url;
-  if (url.startsWith('/api/image/')) return url;
+  if (url.startsWith('/api/uploads/')) return url;
   // 파일명만 저장된 경우
-  if (!url.startsWith('/')) return `/api/image/${url}`;
+  if (!url.startsWith('/')) return `/api/uploads/${url}`;
   // 기타 케이스(상대경로 등)
   return url;
 };

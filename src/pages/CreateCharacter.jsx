@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import Sidebar from '../components/SideBar'
-import AndrewImg from '/assets/andrew.png'
+import CAMERA from '/assets/image-preview.png'
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { getSafeImageUrl } from '../utils/imageUtils';
 import PageLayout from '../components/PageLayout';
@@ -13,7 +13,7 @@ import Checkbox from '../components/Checkbox';
 export default function CreateCharacter() {
   const [activeTab, setActiveTab] = useState('custom')
   const [isPublic, setIsPublic] = useState(true)
-  const [imagePreview, setImagePreview] = useState(AndrewImg)
+  const [imagePreview, setImagePreview] = useState(CAMERA)
   const [tags, setTags] = useState([])
   const [tagInput, setTagInput] = useState('')
   const [isComposing, setIsComposing] = useState(false)
@@ -59,10 +59,14 @@ export default function CreateCharacter() {
       alert("모든 필드를 입력해주세요.");
       return;
     }
+    if (!imageFile) {
+      alert("사진을 넣어주세요.");
+      return;
+    }
     try {
       setIsCreating(true);
       const token = await getToken();
-      
+
       const formData = new FormData();
       formData.append('name', name);
       formData.append('isPublic', isPublic ? 'true' : 'false'); // 문자열로 변환
@@ -86,7 +90,7 @@ export default function CreateCharacter() {
         console.error('서버 응답:', err); // 서버 응답 전체 로그
         throw new Error(err.message || "캐릭터 생성 실패");
       }
-      
+
       // 폼 초기화
       setName('');
       setTone('');
@@ -95,9 +99,9 @@ export default function CreateCharacter() {
       setTags([]);
       setImagePreview(AndrewImg);
       setIsPublic(true);
-      
+
       window.location.href = '/characterList';
-      
+
     } catch (err) {
       alert(err.message || "에러가 발생했습니다.");
     } finally {
@@ -282,59 +286,57 @@ export default function CreateCharacter() {
                 <div className="xl:sticky xl:top-4">
                   <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700">
                     <h3 className="text-white font-bold text-xl mb-6 text-center">미리보기</h3>
-
-                    <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-600 shadow-2xl">
-                      <div className="relative p-6">
-                        <img 
-                          src={getSafeImageUrl(imagePreview)} 
-                          alt="Preview" 
-                          className="w-full h-72 object-contain"
-                          onError={(e) => {
-                            e.target.src = '/api/uploads/default-character.svg';
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                      </div>
-                      {/* 이미지 업로드 */}
-                      <div className="flex flex-col items-center mt-2 mb-4">
-                        <label className="block text-white text-xs font-medium mb-1">캐릭터 이미지 업로드</label>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={e => {
-                            const file = e.target.files[0];
-                            setImageFile(file);
-                            if (file) {
-                              setImagePreview(URL.createObjectURL(file));
-                            } else {
-                              setImagePreview(AndrewImg);
-                            }
-                          }}
-                          className="text-white text-xs text-center file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-[#413ebc] file:text-white file:text-xs hover:file:bg-[#5a4ee5] transition-colors duration-150"
-                        />
-                      </div>
-                      <div className="p-6">
-                        <h4 className="text-white font-bold text-xl mb-2">{name || '캐릭터 이름'}</h4>
-                        {/* 미리보기 설명 영역 */}
-                        {!(tone || personality || description) && (
-                          <p className="text-gray-400 text-sm leading-relaxed mb-2">여기에 성격, 말투, 설명 등이 표시됩니다.</p>
-                        )}
-                        {tone && <p className="text-gray-400 text-sm mb-1">말투: {tone}</p>}
-                        {personality && <p className="text-gray-400 text-sm mb-1">성격: {personality}</p>}
-                        {description && <p className="text-gray-400 text-sm leading-relaxed mb-2">{description}</p>}
-                        {tags.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mt-3">
-                            {tags.map((tag, index) => (
-                              <span key={index} className="bg-[#413ebc] text-white px-3 py-1 rounded-full text-xs">#{tag}</span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                    <div className="relative p-6">
+                      <img
+                        src={getSafeImageUrl(imagePreview)}
+                        alt="Preview"
+                        className="w-full h-72 object-contain"
+                        onError={(e) => {
+                          e.target.src = '/api/uploads/default-character.svg';
+                        }}
+                      />
+                      <div className="absolute inset-0 from-black/50 to-transparent" />
+                    </div>
+                    {/* 이미지 업로드 */}
+                    <div className="flex flex-col items-center mt-2 mb-4">
+                      <label className="block text-white text-xs font-medium mb-1">캐릭터 이미지 업로드</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={e => {
+                          const file = e.target.files[0];
+                          setImageFile(file);
+                          if (file) {
+                            setImagePreview(URL.createObjectURL(file));
+                          } else {
+                            setImagePreview(AndrewImg);
+                          }
+                        }}
+                        className="text-white text-xs text-center file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-[#413ebc] file:text-white file:text-xs hover:file:bg-[#5a4ee5] transition-colors duration-150"
+                      />
+                    </div>
+                    <div className="p-6">
+                      <h4 className="text-white font-bold text-xl mb-2">{name || '캐릭터 이름'}</h4>
+                      {/* 미리보기 설명 영역 */}
+                      {!(tone || personality || description) && (
+                        <p className="text-gray-400 text-sm leading-relaxed mb-2">여기에 성격, 말투, 설명 등이 표시됩니다.</p>
+                      )}
+                      {tone && <p className="text-gray-400 text-sm mb-1">말투: {tone}</p>}
+                      {personality && <p className="text-gray-400 text-sm mb-1">성격: {personality}</p>}
+                      {description && <p className="text-gray-400 text-sm leading-relaxed mb-2">{description}</p>}
+                      {tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {tags.map((tag, index) => (
+                            <span key={index} className="bg-[#413ebc] text-white px-3 py-1 rounded-full text-xs">#{tag}</span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+
           </main>
         </div>
       </div>
