@@ -33,7 +33,7 @@ export default function CreateCharacter() {
   const { getToken } = useAuth();
   const { user } = useUser(); // username을 가져오기 위해 useUser 추가
 
-  const API_BASE_URL = "http://localhost:3001/api";
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 
   const handleTagKeyDown = (e) => {

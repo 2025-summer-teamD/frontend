@@ -57,11 +57,6 @@ export default function CharacterList() {
   // 캐릭터 수정을 위한 훅
   const { updateCharacter, loading: updateLoading } = useUpdateCharacter();
 
-  const { resetCharacter } = useCharacterDetail();
-  
-  // 캐릭터 수정을 위한 훅
-  const { updateCharacter } = useUpdateCharacter();
-  
   // 캐릭터 삭제를 위한 훅
   const { deleteCharacter } = useDeleteCharacter();
   // 사이드바 채팅방 목록 갱신용

@@ -27,7 +27,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
       });
     }
   }, [user]);
-  
+
   const [formData, setFormData] = useState({
     name: character?.name || '',
     description: character?.description || character?.introduction || '',
@@ -113,10 +113,10 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
       alert('캐릭터 설명을 입력해주세요.');
       return;
     }
-    
+
     try {
       const characterId = character?.characterId || character?.id;
-      
+
       // API를 통해 캐릭터 수정
       const updatedCharacter = await updateCharacter(characterId, {
         introduction: formData.description,
@@ -124,17 +124,17 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
         tone: formData.tone,
         tag: formData.tags
       });
-      
+
       console.log('Character updated successfully:', updatedCharacter);
-      
+
       // 부모 컴포넌트에 수정 완료 알림 (alert는 부모에서 처리)
       if (onSave) {
         onSave(updatedCharacter);
       }
-      
+
       // 모달 닫기
       onClose();
-      
+
     } catch (error) {
       console.error('Error updating character:', error);
       alert(`캐릭터 수정 중 오류가 발생했습니다: ${error.message}`);
@@ -146,9 +146,9 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
     try {
       const characterId = character.characterId || character.id;
       const { roomId, character: updatedCharacter, chatHistory, isNewRoom } = await enterOrCreateChatRoom(characterId);
-      
+
       console.log(isNewRoom ? '🆕 새 채팅방 생성됨' : '🔄 기존 채팅방 입장 (히스토리 ' + chatHistory.length + '개)');
-      
+
       if (onChatRoomCreated) onChatRoomCreated();
       navigate(`/chatMate/${roomId}`, {
         state: { character: updatedCharacter, chatHistory: chatHistory, roomId: roomId }
@@ -163,27 +163,27 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
   const handleDelete = async () => {
     // 삭제 확인
     const confirmDelete = window.confirm(`정말로 "${formData.name}" 캐릭터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`);
-    
+
     if (!confirmDelete) {
       return;
     }
-    
+
     try {
       const characterId = character?.characterId || character?.id;
-      
+
       // API를 통해 캐릭터 삭제
       await deleteCharacter(characterId);
-      
+
       console.log('Character deleted successfully');
-      
+
       // 부모 컴포넌트에 삭제 완료 알림 (alert는 부모에서 처리)
       if (onSave) {
         onSave(null, 'deleted'); // 삭제됨을 알림
       }
-      
+
       // 모달 닫기
       onClose();
-      
+
     } catch (error) {
       console.error('Error deleting character:', error);
       alert(`캐릭터 삭제 중 오류가 발생했습니다: ${error.message}`);
@@ -246,7 +246,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
               className="text-white text-xl font-bold bg-transparent focus:border-indigo-500 outline-none mb-2"
               placeholder="캐릭터 이름"
             />
-            
+
             {/* 작성자 표시 */}
             <div className="flex items-center mb-3">
               <span className="text-gray-400 text-sm">By. {character?.creatorName || character?.creator || user?.username || user?.firstName || formData.creator}</span>
@@ -280,7 +280,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
             <div className="text-gray-400 text-sm">친밀도</div>
           </div>
         </div>
-        
+
 
         <div className="mb-8">
           <div className="space-y-5">
@@ -413,7 +413,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
             )}
           </button>
           </div>
-          
+
           {/* 취소 버튼 */}
           <button
             onClick={onClose}
@@ -423,7 +423,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
             취소
           </button>
 
-          
+
         </div>
       </div>
     </div>
