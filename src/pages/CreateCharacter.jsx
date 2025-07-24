@@ -97,7 +97,7 @@ export default function CreateCharacter() {
       setPersonality('');
       setDescription('');
       setTags([]);
-      setImagePreview(AndrewImg);
+      setImagePreview(imagePreview);
       setIsPublic(true);
 
       window.location.href = '/characterList';
