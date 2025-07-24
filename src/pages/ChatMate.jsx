@@ -13,7 +13,7 @@ const ChatMate = () => {
 
   // AI 응답 훅 추가
   const { sendMessage: sendMessageToAI, error: aiError } = useSendMessageToAI();
-  
+
   // 전역 메시지 Context 사용
   const {
     getMessages,
@@ -112,7 +112,7 @@ const ChatMate = () => {
     setError(null);
     if (roomId) {
       setLoading(true);
-      const API_BASE_URL = "http://localhost:3001/api";
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
       fetch(`${API_BASE_URL}/chat/room-info?room_id=${roomId}`)
         .then(res => res.json())
         .then(data => {
@@ -283,8 +283,6 @@ const ChatMate = () => {
     }
   };
 
-  const API_BASE_URL = "http://localhost:3001/api";
-
   return (
     <div className="flex flex-col h-full">
       {/* 헤더: sticky */}
@@ -367,10 +365,6 @@ const ChatMate = () => {
                       alt="전송된 이미지"
                       className="max-w-xs rounded-lg"
                     />
-                        src={msg.imageUrl.startsWith('http') ? msg.imageUrl : API_BASE_URL + msg.imageUrl}
-                        alt="전송된 이미지"
-                        className="max-w-xs rounded-lg"
-                      />
                     : <p>{msg.text}</p>
                   }
                 </div>
