@@ -3,7 +3,7 @@ import { useMyChatCharacters } from '../data/characters';
 
 const ChatRoomsContext = createContext();
 
-export function ChatRoomsProvider({ children }) {
+function ChatRoomsProvider({ children }) {
   const { characters, loading, error, refetch } = useMyChatCharacters();
 
   return (
@@ -13,6 +13,8 @@ export function ChatRoomsProvider({ children }) {
   );
 }
 
-export function useChatRooms() {
+function useChatRooms() {
   return useContext(ChatRoomsContext);
-} 
+}
+
+export { ChatRoomsProvider, useChatRooms }; 

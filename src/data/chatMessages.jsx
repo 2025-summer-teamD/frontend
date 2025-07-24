@@ -24,7 +24,7 @@ export function useSendMessageToAI() {
       const token = await getToken();
       console.log('✅ 토큰 가져오기 성공');
       
-      console.log('💬 메시지 전송 API 호출:', `http://localhost:3001/api/chat/rooms/${roomId}`);
+      console.log('💬 메시지 전송 API 호출:', `${API_BASE_URL}/chat/rooms/${roomId}`);
       
       // 백엔드에서 요구하는 필드들 모두 포함
       console.log('📅 timestamp 생성 시작');
@@ -55,7 +55,7 @@ export function useSendMessageToAI() {
         controller.abort();
       }, 30000);
       
-      const response = await fetch(`http://localhost:3001/api/chat/rooms/${roomId}`, {
+      const response = await fetch(`${API_BASE_URL}/chat/rooms/${roomId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -205,7 +205,7 @@ export function useCreateChatRoom() {
       
       console.log('📤 채팅방 생성 요청 데이터:', requestData);
       
-      const response = await fetch('http://localhost:3001/api/chat/rooms', {
+      const response = await fetch(`${API_BASE_URL}/chat/rooms`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -262,7 +262,7 @@ export function useEnterOrCreateChatRoom() {
       // 1단계: 먼저 기존 채팅방 조회 시도 (GET)
       console.log('📖 1단계: 기존 채팅방 조회 시도...');
       try {
-        const getResponse = await fetch(`http://localhost:3001/api/chat/rooms?characterId=${characterId}`, {
+        const getResponse = await fetch(`${API_BASE_URL}/chat/rooms?characterId=${characterId}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -291,7 +291,7 @@ export function useEnterOrCreateChatRoom() {
         characterId: characterId
       };
       
-      const postResponse = await fetch('http://localhost:3001/api/chat/rooms', {
+      const postResponse = await fetch(`${API_BASE_URL}/chat/rooms`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

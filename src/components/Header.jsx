@@ -24,7 +24,7 @@ export default function Header({ onMenuClick }) {
         </NavLink>
         <NavLink
           to="/communities"
-          className={({ isActive }) =>
+          className={() =>
             `text-[1.2rem] px-1 text-gray-400`
           }
         >
@@ -32,7 +32,7 @@ export default function Header({ onMenuClick }) {
         </NavLink>
         <NavLink
           to="/createCharacter"
-          className={({ isActive }) =>
+          className={() =>
             `text-[1.2rem] px-1 text-gray-400`
           }
         >
@@ -40,7 +40,7 @@ export default function Header({ onMenuClick }) {
         </NavLink>
         <NavLink
           to="/characterList"
-          className={({ isActive }) =>
+          className={() =>
             `text-[1.2rem] px-1 text-gray-400`
           }
         >

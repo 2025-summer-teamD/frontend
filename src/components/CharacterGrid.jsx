@@ -10,7 +10,6 @@ export const CharacterCard = ({
   isLiked, 
   onLikeToggle, 
   onEdit, 
-  onDelete, 
   onSelect,
   showEditButtons = false 
 }) => {
@@ -106,7 +105,6 @@ export default function CharacterGrid({
   likedIds,
   onLikeToggle,
   onEdit,
-  onDelete,
   onSelect,
 }) {
   return (
@@ -125,7 +123,6 @@ export default function CharacterGrid({
             isLiked={isLiked}
             onLikeToggle={onLikeToggle}
             onEdit={onEdit}
-            onDelete={onDelete}
             onSelect={onSelect}
             showEditButtons={showEditButtons}
           />
