@@ -11,49 +11,56 @@ import { ChatRoomsProvider } from './contexts/ChatRoomsContext';
 import { ChatMessagesProvider } from './contexts/ChatMessagesContext';
 
 function App() {
-  const location = useLocation();
-  const path = location.pathname;
-
-  const isHome = path === '/';
-
   return (
     <ChatRoomsProvider>
       <ChatMessagesProvider>
-      {isHome ? (
-        <AppLayout>
-          <Home />
-        </AppLayout>
-      ) : (
-        <Sidebar>
-          <Routes>
-            <Route path="/communities" element={<Communities />} />
-            <Route
-              path="/characterList"
-              element={
-                <ProtectedRoute>
-                  <CharacterList />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/createCharacter"
-              element={
-                <ProtectedRoute>
-                  <CreateCharacter />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/chatMate/:roomId"
-              element={
-                <ProtectedRoute>
-                  <ChatMate />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </Sidebar>
-      )}
+        <Routes>
+          {/* 홈만 AppLayout */}
+          <Route
+            path="/"
+            element={
+              <AppLayout>
+                <Home />
+              </AppLayout>
+            }
+          />
+
+          {/* 나머지는 Sidebar 공통 레이아웃 */}
+          <Route
+            path="*"
+            element={
+              <Sidebar>
+                <Routes>
+                  <Route path="/communities" element={<Communities />} />
+                  <Route
+                    path="/characterList"
+                    element={
+                      <ProtectedRoute>
+                        <CharacterList />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/createCharacter"
+                    element={
+                      <ProtectedRoute>
+                        <CreateCharacter />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/chatMate/:roomId"
+                    element={
+                      <ProtectedRoute>
+                        <ChatMate />
+                      </ProtectedRoute>
+                    }
+                  />
+                </Routes>
+              </Sidebar>
+            }
+          />
+        </Routes>
       </ChatMessagesProvider>
     </ChatRoomsProvider>
   );

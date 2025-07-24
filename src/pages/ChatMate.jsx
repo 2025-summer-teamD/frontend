@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
-// import chatMessages from '../data/chatMessages'; // 더미 데이터 삭제
+import chatMessages from '../data/chatMessages'; // 더미 데이터 삭제
 import { useSendMessageToAI } from '../data/chatMessages';
 import { useUser } from '@clerk/clerk-react';
 import { useChatMessages } from '../contexts/ChatMessagesContext';
@@ -12,13 +12,13 @@ const ChatMate = () => {
   const { user } = useUser();
 
   // AI 응답 훅 추가
-  const { sendMessage: sendMessageToAI } = useSendMessageToAI();
+  const { sendMessage: sendMessageToAI, error: aiError } = useSendMessageToAI();
   
   // 전역 메시지 Context 사용
-  const { 
-    getMessages, 
-    setMessagesForRoom, 
-    addMessageToRoom, 
+  const {
+    getMessages,
+    setMessagesForRoom,
+    addMessageToRoom,
     addAiResponseToRoom,
     getAiLoading,
     setAiLoading
@@ -27,12 +27,12 @@ const ChatMate = () => {
   // 이전 대화기록을 메시지 형식으로 변환하는 함수
   const convertChatHistoryToMessages = (chatHistory, characterData) => {
     console.log('📜 채팅 히스토리 변환 시작:', { chatHistory, characterData });
-    
+
     if (!chatHistory || !Array.isArray(chatHistory)) {
       console.log('❌ 채팅 히스토리가 없거나 배열이 아님');
       return [];
     }
-    
+
     return chatHistory.map(item => {
       const convertedMessage = {
         id: item.id,
@@ -57,11 +57,11 @@ const ChatMate = () => {
 
   // 메시지 상태 (전역 Context에서 관리)
   const [newMessage, setNewMessage] = useState('');
-  
+
   // 현재 채팅방의 메시지와 AI 로딩 상태
   const messages = getMessages(roomId);
   const aiLoading = getAiLoading(roomId);
-  
+
   const scrollContainerRef = useRef(null);
   const messagesEndRef = useRef(null);
   const isInitialMount = useRef(true);
@@ -73,15 +73,15 @@ const ChatMate = () => {
     console.log('🔄 [채팅방 전환 감지] state 변경됨');
     console.log('🔍 새로운 state?.character:', state?.character);
     console.log('🔍 새로운 state?.chatHistory 길이:', state?.chatHistory?.length || 0);
-    
+
     if (state?.character) {
       console.log('✅ 새로운 채팅방 데이터로 상태 업데이트');
-      
+
       // 캐릭터 정보 업데이트
       setCharacter(state.character);
       setError(null);
       setLoading(false);
-      
+
       // 메시지 히스토리를 전역 Context에 저장
       const newChatHistory = state.chatHistory || [];
       if (newChatHistory.length > 0) {
@@ -99,13 +99,13 @@ const ChatMate = () => {
   // roomId로 백엔드에서 캐릭터 정보 fetch (state가 없을 때만)
   useEffect(() => {
     console.log('🔄 [API 호출 체크] useEffect 실행 - roomId:', roomId, 'state?.character:', !!state?.character);
-    
+
     // state에서 캐릭터 정보가 있으면 API 호출하지 않음 (위의 useEffect에서 처리됨)
     if (state?.character) {
       console.log('✅ state에서 캐릭터 정보 있음, API 호출 생략 (이미 위에서 처리됨)');
       return;
     }
-    
+
     console.log('🌐 state에 캐릭터 정보 없음, API 호출 시작');
     setCharacter(null);
     setMessagesForRoom(roomId, []); // 전역 Context에서 메시지 초기화
@@ -164,16 +164,16 @@ const ChatMate = () => {
     console.log('🚀 ChatMate sendMessage 시작');
     console.log('🔍 newMessage.trim():', newMessage.trim());
     console.log('🔍 aiLoading:', aiLoading);
-    
+
     if (!newMessage.trim() || aiLoading) {
       console.log('❌ 조건 체크 실패 - 메시지 전송 중단');
       return;
     }
-    
+
     console.log('✅ 조건 체크 통과');
     const messageText = newMessage.trim();
     setNewMessage(''); // 입력창 즉시 비우기
-    
+
     console.log('⏰ 시간 생성 시작');
     const now = new Date().toLocaleTimeString('ko-KR', {
       hour: 'numeric',
@@ -200,14 +200,14 @@ const ChatMate = () => {
     try {
       // AI 로딩 상태 시작
       setAiLoading(roomId, true);
-      
+
       // AI API 호출
       console.log('🤖 AI API 호출 시작');
       console.log('💬 AI에게 메시지 전송:', { roomId, message: messageText });
       const aiResponse = await sendMessageToAI(roomId, messageText);
       console.log('✅ AI API 호출 성공, 응답:', aiResponse);
       console.log('🔍 AI 응답 타입:', typeof aiResponse);
-      
+
       // AI 응답을 해당 roomId에 추가 (채팅방이 바뀌어도 올바른 곳에 저장됨)
       console.log('🤖 AI 응답을 전역 상태에 추가');
       const finalResponse = typeof aiResponse === 'string' ? aiResponse : '응답을 받지 못했습니다.';
@@ -219,7 +219,7 @@ const ChatMate = () => {
       console.error('💥 에러 message:', error.message);
       console.error('💥 에러 stack:', error.stack);
       console.error('AI 응답 실패:', error);
-      
+
       // 에러 메시지 추가
       console.log('❌ 에러 메시지 객체 생성 시작');
       const errorMsg = {
@@ -236,7 +236,7 @@ const ChatMate = () => {
       // AI 로딩 상태 종료
       setAiLoading(roomId, false);
     }
-    
+
     console.log('🏁 ChatMate sendMessage 완료');
   };
 
@@ -286,15 +286,15 @@ const ChatMate = () => {
   const API_BASE_URL = "http://localhost:3001/api";
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-full">
       {/* 헤더: sticky */}
       <header className="sticky top-0 py-4 px-6 z-10 bg-black/20 backdrop-blur-xl"> {/* Added background for header */}
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full overflow-hidden bg-[#a6c0c6]">
+          <div className="w-9 h-9 rounded-full bg-[#a6c0c6]">
             <img
               src={character.imageUrl}
               alt={character.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover rounded-full"
             />
           </div>
           <span className="text-white text-lg font-bold">
@@ -306,15 +306,15 @@ const ChatMate = () => {
       {/* 스크롤 영역: 프로필 + 메시지 */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 px-4 overflow-y-auto no-scrollbar sm:px-6 md:px-8 lg:px-12"
+        className="flex-1 px-4 overflow-y-auto no-scrollbar sm:px-6 md:px-8 lg:px-12 pb-28"
       >
         {/* 프로필 */}
         <div className="flex flex-col items-center my-6 text-center">
-          <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden">
+          <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full">
             <img
-              src={character.imageUrl  }
+              src={character.imageUrl}
               alt={character.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover rounded-full"
             />
           </div>
           <h3 className="text-xl sm:text-2xl font-semibold text-white mb-2 mt-3">
@@ -342,11 +342,11 @@ const ChatMate = () => {
               >
                 {showProfile && (
                   <div className={`flex items-center mb-1 ${msg.sender === 'me' ? 'flex-row-reverse' : 'flex-row'}`}>
-                    <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-gradient-to-br from-green-300 to-teal-400">
+                    <div className="w-8 h-8 rounded-full flex-shrink-0 bg-gradient-to-br from-green-300 to-teal-400">
                       <img
                         src={msg.sender === 'me' ? user?.imageUrl || '/assets/icon-character.png' : character.imageUrl}
                         alt=""
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover rounded-full"
                       />
                     </div>
                     <span className={`text-white font-medium text-sm ${msg.sender === 'me' ? 'mr-2' : 'ml-2'}`}>
@@ -355,15 +355,18 @@ const ChatMate = () => {
                   </div>
                 )}
                 <div
-                  className={`max-w-[80%] sm:max-w-[70%] lg:max-w-[60%] px-4 py-3 rounded-2xl break-words ${
-                    msg.sender === 'me'
-                      ? 'bg-[#413ebc] text-white mr-10'
-                      : 'bg-white text-black ml-10'
-                  }`}
+                  className={`max-w-[80%] sm:max-w-[70%] lg:max-w-[60%] px-4 py-3 rounded-2xl break-words ${msg.sender === 'me'
+                    ? 'bg-[#413ebc] text-white mr-10'
+                    : 'bg-white text-black ml-10'
+                    }`}
                 >
                   {msg.imageUrl && console.log('이미지 src:', msg.imageUrl)}
                   {msg.imageUrl
                     ? <img
+                      src={msg.imageUrl.startsWith('http') ? msg.imageUrl : BACKEND_URL + msg.imageUrl}
+                      alt="전송된 이미지"
+                      className="max-w-xs rounded-lg"
+                    />
                         src={msg.imageUrl.startsWith('http') ? msg.imageUrl : API_BASE_URL + msg.imageUrl}
                         alt="전송된 이미지"
                         className="max-w-xs rounded-lg"
@@ -373,9 +376,8 @@ const ChatMate = () => {
                 </div>
                 {showTime && (
                   <span
-                    className={`text-xs text-white/60 mt-1 block text-right ${
-                      msg.sender === 'me' ? 'mr-10' : 'ml-10'
-                    }`}
+                    className={`text-xs text-white/60 mt-1 block text-right ${msg.sender === 'me' ? 'mr-10' : 'ml-10'
+                      }`}
                   >
                     {msg.time}
                   </span>
@@ -388,7 +390,7 @@ const ChatMate = () => {
       </div>
 
       {/* 입력창: sticky bottom */}
-      <footer className="sticky bottom-0 px-4 py-4 border-t border-white/10 bg-black/20 backdrop-blur-xl">
+      <footer className="fixed right-0 left-0 bottom-0 px-4 py-4 border-t border-white/10 bg-black/20 backdrop-blur-xl">
         <div className="flex items-center space-x-3 max-w-4xl mx-auto relative">
           <div className="relative">
             <button
