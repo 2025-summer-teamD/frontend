@@ -1,4 +1,4 @@
-import ChatDemo from '/assets/chatDemo.png'
+import ChatDemo from '/assets/chat-preview.png'
 
 export default function ChatPreview() {
   return (
@@ -8,10 +8,10 @@ export default function ChatPreview() {
       </h2>
       <div className="max-w-[100rem] mx-auto">
         <div className="w-full max-w-[1000px] flex items-center justify-center mx-auto">
-          <img 
-            src={ChatDemo} 
-            alt="Chat Demo" 
-            className="max-w-full max-h-[500px] object-contain" 
+          <img
+            src={ChatDemo}
+            alt="Chat Demo"
+            className="max-w-full max-h-[500px] object-contain"
           />
         </div>
       </div>

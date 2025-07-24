@@ -4,7 +4,7 @@ import { useAuth } from "@clerk/clerk-react";
 import { useNavigate } from 'react-router-dom';
 import { useEnterOrCreateChatRoom } from '../data/chatMessages';
 
-export default function PopularCharacters() {
+const PopularCharacters = ({ onChatRoomCreated }) => {
   const containerRef = useRef(null);
   const scrollInterval = useRef(null);
   const { characters, loading, error } = useCommunityCharacters();
@@ -32,11 +32,12 @@ export default function PopularCharacters() {
   const handleStartChat = async (character) => {
     setChatLoading(true);
     try {
-      const characterId = character.characterId || characterId;
+      const characterId = character.characterId || character.id;
       const { roomId, character: updatedCharacter, chatHistory, isNewRoom } = await enterOrCreateChatRoom(characterId);
-      
+
       console.log(isNewRoom ? '🆕 새 채팅방 생성됨' : '🔄 기존 채팅방 입장 (히스토리 ' + chatHistory.length + '개)');
-      
+
+      if (onChatRoomCreated) onChatRoomCreated();
       navigate(`/chatMate/${roomId}`, {
         state: { character: updatedCharacter, chatHistory: chatHistory, roomId: roomId }
       });
@@ -183,3 +184,5 @@ export default function PopularCharacters() {
     </section>
   );
 }
+
+export default PopularCharacters;

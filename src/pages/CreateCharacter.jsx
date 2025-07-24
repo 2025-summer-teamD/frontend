@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import Sidebar from '../components/SideBar'
-import AndrewImg from '/assets/andrew.png'
+import CAMERA from '/assets/image-preview.png'
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { getSafeImageUrl } from '../utils/imageUtils';
 import PageLayout from '../components/PageLayout';
@@ -14,7 +14,7 @@ import SwipeableImageGallery from '../components/SwipeableImageGallery';
 export default function CreateCharacter() {
   const [activeTab, setActiveTab] = useState('custom')
   const [isPublic, setIsPublic] = useState(true)
-  const [imagePreview, setImagePreview] = useState(AndrewImg)
+  const [imagePreview, setImagePreview] = useState(CAMERA)
   const [tags, setTags] = useState([])
   const [tagInput, setTagInput] = useState('')
   const [isComposing, setIsComposing] = useState(false)
@@ -59,6 +59,10 @@ export default function CreateCharacter() {
     e.preventDefault();
     if (!name || !tone || !personality || !description) {
       alert("모든 필드를 입력해주세요.");
+      return;
+    }
+    if (!imageFile) {
+      alert("사진을 넣어주세요.");
       return;
     }
     try {
@@ -112,7 +116,7 @@ export default function CreateCharacter() {
       setPersonality('');
       setDescription('');
       setTags([]);
-      setImagePreview(AndrewImg);
+      setImagePreview(imagePreview);
       setIsPublic(true);
 
       window.location.href = '/characterList';
@@ -303,7 +307,6 @@ export default function CreateCharacter() {
                 <div className="xl:sticky xl:top-4">
                   <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700">
                     <h3 className="text-white font-bold text-xl mb-6 text-center">미리보기</h3>
-
                     <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-600 shadow-2xl">
                       {activeTab === 'custom' ? (
                         <div className="relative p-6">
@@ -369,6 +372,7 @@ export default function CreateCharacter() {
                 </div>
               </div>
             </div>
+
           </main>
         </div>
       </div>
