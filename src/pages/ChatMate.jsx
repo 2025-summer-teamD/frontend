@@ -285,7 +285,7 @@ const ChatMate = () => {
   const BACKEND_URL = "http://localhost:3001";
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col h-full">
       {/* 헤더: sticky */}
       <header className="sticky top-0 py-4 px-6 z-10 bg-black/20 backdrop-blur-xl"> {/* Added background for header */}
         <div className="flex items-center gap-3">
@@ -305,7 +305,7 @@ const ChatMate = () => {
       {/* 스크롤 영역: 프로필 + 메시지 */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 px-4 overflow-y-auto no-scrollbar sm:px-6 md:px-8 lg:px-12"
+        className="flex-1 px-4 overflow-y-auto no-scrollbar sm:px-6 md:px-8 lg:px-12 pb-28"
       >
         {/* 프로필 */}
         <div className="flex flex-col items-center my-6 text-center">
@@ -385,7 +385,7 @@ const ChatMate = () => {
       </div>
 
       {/* 입력창: sticky bottom */}
-      <footer className="sticky bottom-0 px-4 py-4 border-t border-white/10 bg-black/20 backdrop-blur-xl">
+      <footer className="fixed right-0 left-0 bottom-0 px-4 py-4 border-t border-white/10 bg-black/20 backdrop-blur-xl">
         <div className="flex items-center space-x-3 max-w-4xl mx-auto relative">
           <div className="relative">
             <button

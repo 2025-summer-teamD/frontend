@@ -55,7 +55,7 @@ const Sidebar = ({ children }) => {
   // 채팅방 입장 API 호출 함수
   const enterChatRoom = async (characterId) => {
     console.log('🚪 [Sidebar] 채팅방 입장 시도 - characterId:', characterId);
-    
+
     try {
       const token = await getToken();
       const response = await fetch(`http://localhost:3001/api/chat/rooms?characterId=${characterId}`, {
@@ -74,7 +74,7 @@ const Sidebar = ({ children }) => {
 
       const result = await response.json();
       console.log('✅ [Sidebar] 채팅방 입장 성공:', result);
-      
+
       return {
         roomId: result.data?.roomId,
         character: result.data?.character,
@@ -90,28 +90,28 @@ const Sidebar = ({ children }) => {
   const handleChatRoomClick = async (e, chat) => {
     e.preventDefault();
     console.log('🖱️ [Sidebar] 채팅방 클릭:', chat);
-    
+
     try {
       setSidebarOpen(false);
-      
+
       const characterId = chat.characterId || chat.id;
       console.log('🔍 [Sidebar] 사용할 characterId:', characterId);
-      
+
       const { roomId, character: updatedCharacter, chatHistory } = await enterChatRoom(characterId);
-      
-      console.log('✅ [Sidebar] 채팅방 입장 완료:', { 
-        roomId, 
-        updatedCharacter, 
-        chatHistoryLength: chatHistory.length 
+
+      console.log('✅ [Sidebar] 채팅방 입장 완료:', {
+        roomId,
+        updatedCharacter,
+        chatHistoryLength: chatHistory.length
       });
-      
+
       // ChatMate로 이동 (채팅 히스토리 포함)
-      navigate(`/chatMate/${roomId}`, { 
-        state: { 
-          character: updatedCharacter, 
+      navigate(`/chatMate/${roomId}`, {
+        state: {
+          character: updatedCharacter,
           chatHistory: chatHistory,
-          roomId: roomId 
-        } 
+          roomId: roomId
+        }
       });
     } catch (error) {
       console.error('💥 [Sidebar] 채팅방 입장 실패:', error);
@@ -122,11 +122,11 @@ const Sidebar = ({ children }) => {
   // 마지막 메시지 시간 포맷팅 함수
   const formatLastMessageTime = (timeString) => {
     if (!timeString) return '방금';
-    
+
     const now = new Date();
     const messageTime = new Date(timeString);
     const diffInMinutes = Math.floor((now - messageTime) / (1000 * 60));
-    
+
     if (diffInMinutes < 1) return '방금';
     if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
     if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}시간 전`;
@@ -286,32 +286,32 @@ const Sidebar = ({ children }) => {
             )}
           </div>
           <nav className="hidden md:flex items-center space-x-4 ml-auto">
-        <NavLink
-          to="/"
-          className={({ isActive }) => isActive ? "text-white hover:text-white  text-[1.2rem] rounded hover:bg-white/10" : "text-[1.2rem] px-1 text-gray-400"}
-        >
-          홈
-        </NavLink>
-        <NavLink
-          to="/communities"
-          className={({ isActive }) => isActive ? "text-white hover:text-white  text-[1.2rem] rounded hover:bg-white/10" : "text-[1.2rem] px-1 text-gray-400"}
-        >
-          커뮤니티
-        </NavLink>
-        <NavLink
-          to="/createCharacter"
-          className={({ isActive }) => isActive ? "text-white hover:text-white  text-[1.2rem] rounded hover:bg-white/10" : "text-[1.2rem] px-1 text-gray-400"}
-        >
-          만들기
-        </NavLink>
-        <NavLink
-          to="/characterList"
-          className={({ isActive }) => isActive ? "text-white hover:text-white  text-[1.2rem] rounded hover:bg-white/10" : "text-[1.2rem] px-1 text-gray-400"}
-        >
-          내 캐릭터
-        </NavLink>
-        <AnimatedAuthHeader />
-      </nav>
+            <NavLink
+              to="/"
+              className={({ isActive }) => isActive ? "text-white hover:text-white  text-[1.2rem] rounded hover:bg-white/10" : "text-[1.2rem] px-1 text-gray-400"}
+            >
+              홈
+            </NavLink>
+            <NavLink
+              to="/communities"
+              className={({ isActive }) => isActive ? "text-white hover:text-white  text-[1.2rem] rounded hover:bg-white/10" : "text-[1.2rem] px-1 text-gray-400"}
+            >
+              커뮤니티
+            </NavLink>
+            <NavLink
+              to="/createCharacter"
+              className={({ isActive }) => isActive ? "text-white hover:text-white  text-[1.2rem] rounded hover:bg-white/10" : "text-[1.2rem] px-1 text-gray-400"}
+            >
+              만들기
+            </NavLink>
+            <NavLink
+              to="/characterList"
+              className={({ isActive }) => isActive ? "text-white hover:text-white  text-[1.2rem] rounded hover:bg-white/10" : "text-[1.2rem] px-1 text-gray-400"}
+            >
+              내 캐릭터
+            </NavLink>
+            <AnimatedAuthHeader />
+          </nav>
         </div>
 
         {/* Main children */}
