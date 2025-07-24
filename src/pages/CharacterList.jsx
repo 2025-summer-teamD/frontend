@@ -47,7 +47,6 @@ export default function CharacterList() {
   // const [activeSort, setActiveSort] = useState('인기순'); // 정렬 상태 - 제거됨
   // const [selectedCharacter, setSelectedCharacter] = useState(null); // 더 이상 사용하지 않음
   const [editingCharacter, setEditingCharacter] = useState(null);
-  const [refreshKey, setRefreshKey] = useState(0); // 목록 새로고침을 위한 키
 
   // useMyCharacters 훅은 이제 'tab' 파라미터를 받지 않고 모든 'created' 캐릭터를 가져옵니다.
   const { characters, loading, error, fetchMyCharacters, setCharacters } = useMyCharacters(tab);
@@ -58,8 +57,13 @@ export default function CharacterList() {
   // 캐릭터 수정을 위한 훅
   const { updateCharacter, loading: updateLoading } = useUpdateCharacter();
 
+  const { resetCharacter } = useCharacterDetail();
+  
+  // 캐릭터 수정을 위한 훅
+  const { updateCharacter } = useUpdateCharacter();
+  
   // 캐릭터 삭제를 위한 훅
-  const { deleteCharacter, loading: deleteLoading } = useDeleteCharacter();
+  const { deleteCharacter } = useDeleteCharacter();
   // 사이드바 채팅방 목록 갱신용
   const { refetch: refetchMyChatRooms } = useChatRooms();
 

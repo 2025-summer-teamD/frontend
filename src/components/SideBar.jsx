@@ -1,29 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 
 import { useChatRooms } from '../contexts/ChatRoomsContext';
-import { chatMessages } from '../data/chatMessages';
 import { useAuth } from '@clerk/clerk-react';
 import logo from '/assets/logo.png';
 import AnimatedAuthHeader from './AnimatedAuthHeader';
 
-// 캐릭터별 마지막 메시지 시간
-function getLastMsgTime(character) {
-  const msgs = chatMessages.filter(msg => msg.characterId === character.id);
-  if (msgs.length === 0) return null;
-  return msgs[msgs.length - 1].time;
-}
-
-function getLastMsgText(character) {
-  const msgs = chatMessages.filter(msg => msg.characterId === character.id);
-  if (msgs.length === 0) return character.description;
-  return msgs[msgs.length - 1].text;
-}
-
 const Sidebar = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { pathname } = useLocation();
   const navigate = useNavigate();
   const { getToken } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
@@ -58,7 +43,8 @@ const Sidebar = ({ children }) => {
 
     try {
       const token = await getToken();
-      const response = await fetch(`http://localhost:3001/api/chat/rooms?characterId=${characterId}`, {
+      const API_BASE_URL = "http://localhost:3001/api";
+      const response = await fetch(`${API_BASE_URL}/chat/rooms?characterId=${characterId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

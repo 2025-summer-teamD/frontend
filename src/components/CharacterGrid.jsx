@@ -4,13 +4,12 @@ import { Heart as OutlineHeart } from 'lucide-react';
 import PropTypes from 'prop-types';
 
 // 재사용 가능한 캐릭터 카드 컴포넌트
-export const CharacterCard = ({
-  character,
-  isMine,
-  isLiked,
-  onLikeToggle,
-  onEdit,
-  onDelete,
+export const CharacterCard = ({ 
+  character, 
+  isMine, 
+  isLiked, 
+  onLikeToggle, 
+  onEdit, 
   onSelect,
   showEditButtons = false
 }) => {
@@ -106,7 +105,6 @@ export default function CharacterGrid({
   likedIds,
   onLikeToggle,
   onEdit,
-  onDelete,
   onSelect,
 }) {
   return (
@@ -125,7 +123,6 @@ export default function CharacterGrid({
             isLiked={isLiked}
             onLikeToggle={onLikeToggle}
             onEdit={onEdit}
-            onDelete={onDelete}
             onSelect={onSelect}
             showEditButtons={showEditButtons}
           />
