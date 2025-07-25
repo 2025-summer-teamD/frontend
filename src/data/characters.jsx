@@ -134,7 +134,7 @@ export function useMyCharacters(type = 'created') {
         getToken,
         {}
       );
-      setCharacters(data.data);
+      setCharacters(data.data || []);
     } catch (err) {
       const errorMessage = handleApiError(err, '캐릭터 목록을 불러오는데 실패했습니다.');
       setError(errorMessage);
