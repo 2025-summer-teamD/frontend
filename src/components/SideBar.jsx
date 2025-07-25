@@ -24,10 +24,15 @@ const Sidebar = ({ children }) => {
   // searchQuery 값 로그
   console.log('[SideBar] searchQuery:', searchQuery);
 
-  const filteredCharacters = characters.filter(room =>
-    room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (room.lastChat && room.lastChat.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  // name, characterId, roomId 없는 방은 아예 제외
+  const filteredCharacters = characters
+    .filter(room => !!room.name && (room.characterId || room.id) && !!room.roomId)
+    .filter(room => {
+      const name = room.name ?? '';
+      const lastChat = room.lastChat ?? '';
+      return name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+             lastChat.toLowerCase().includes(searchQuery.toLowerCase());
+    });
 
   // filteredCharacters가 바뀔 때마다 로그 출력
   useEffect(() => {
@@ -75,23 +80,15 @@ const Sidebar = ({ children }) => {
   // 채팅방 클릭 핸들러
   const handleChatRoomClick = async (e, chat) => {
     e.preventDefault();
-    console.log('🖱️ [Sidebar] 채팅방 클릭:', chat);
-
+    // characterId 없는 방 클릭 방지
+    const characterId = chat.characterId || chat.id;
+    if (!characterId) {
+      alert('올바르지 않은 채팅방입니다.');
+      return;
+    }
     try {
       setSidebarOpen(false);
-
-      const characterId = chat.characterId || chat.id;
-      console.log('🔍 [Sidebar] 사용할 characterId:', characterId);
-
       const { roomId, character: updatedCharacter, chatHistory } = await enterChatRoom(characterId);
-
-      console.log('✅ [Sidebar] 채팅방 입장 완료:', {
-        roomId,
-        updatedCharacter,
-        chatHistoryLength: chatHistory.length
-      });
-
-      // ChatMate로 이동 (채팅 히스토리 포함)
       navigate(`/chatMate/${roomId}`, {
         state: {
           character: updatedCharacter,
@@ -100,7 +97,6 @@ const Sidebar = ({ children }) => {
         }
       });
     } catch (error) {
-      console.error('💥 [Sidebar] 채팅방 입장 실패:', error);
       alert('채팅방 입장에 실패했습니다: ' + error.message);
     }
   };

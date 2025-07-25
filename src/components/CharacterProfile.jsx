@@ -195,11 +195,19 @@ CharacterInfo.propTypes = {
   }).isRequired,
 };
 
-const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onChatRoomCreated }) => {
-  const isMyCharacter = origin === 'my';
+const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onChatRoomCreated, isMyCharacter = false }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
+  // 디버깅을 위한 콘솔 로그 추가
+  console.log('CharacterProfile Debug:', {
+    characterId: character.id,
+    characterName: character.name,
+    characterClerkId: character.clerkId,
+    isMyCharacter,
+    origin,
+    liked
+  });
 
   // 채팅방 입장/생성 (기존 방이 있으면 입장, 없으면 생성)
   const { enterOrCreateChatRoom } = useEnterOrCreateChatRoom();
@@ -257,26 +265,49 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onC
         </div>
         {/* 버튼 영역: 항상 하단 고정 */}
         <div className="space-y-3 pt-4">
-          <button
-            onClick={handleStartChat}
-            className="w-full bg-gradient-to-r from-cyan-700 to-fuchsia-700 hover:from-cyan-600 hover:to-fuchsia-600 text-cyan-100 font-bold py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2 shadow-[0_0_8px_#0ff,0_0_16px_#f0f] animate-neonPulse"
-            disabled={loading}
-            style={{textShadow:'0 0 4px #0ff, 0 0 8px #f0f', boxShadow:'0 0 8px #0ff, 0 0 16px #f0f'}}>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03
-                8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512
-                15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-              />
-            </svg>
-            {loading ? '채팅방 입장 중...' : '대화하기'}
-          </button>
-          <button
-            onClick={onClose}
-            className="w-full bg-black/40 glass border-2 border-fuchsia-700 hover:border-cyan-700 text-cyan-100 font-bold py-3 px-6 rounded-2xl transition-colors duration-200 shadow-[0_0_4px_#f0f,0_0_8px_#0ff]"
-            style={{textShadow:'0 0 3px #f0f', boxShadow:'0 0 4px #f0f, 0 0 8px #0ff', border:'2px solid #707'}}>
-            닫기
-          </button>
+          {/* 내가 만든 캐릭터면 "내가 만든 캐릭터" 버튼, 다른 사람이 만든 캐릭터면 "장바구니에서 제거" 버튼 */}
+          {isMyCharacter ? (
+            <>
+              <button
+                disabled
+                className="w-full bg-gradient-to-r from-cyan-700 to-fuchsia-700 text-cyan-300 font-bold py-4 px-6 rounded-2xl text-lg flex items-center justify-center gap-2 shadow-[0_0_8px_#0ff,0_0_16px_#f0f] animate-neonPulse opacity-70 cursor-not-allowed"
+                aria-label="내가 만든 캐릭터"
+                style={{textShadow:'0 0 4px #0ff, 0 0 8px #f0f', boxShadow:'0 0 8px #0ff, 0 0 16px #f0f'}}>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
+                </svg>
+                내가 만든 캐릭터
+              </button>
+              <button
+                onClick={onClose}
+                className="w-full bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 text-gray-200 font-bold py-3 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2 shadow-[0_0_8px_#666,0_0_16px_#888]"
+                aria-label="닫기"
+                style={{textShadow:'0 0 4px #666, 0 0 8px #888', boxShadow:'0 0 8px #666, 0 0 16px #888'}}>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                닫기
+              </button>
+            </>
+          ) : (
+            <>
+              {/* 다른 사람이 만든 캐릭터일 때 "장바구니에서 제거" 버튼 */}
+              <button
+                onClick={() => onLikeToggle(character.id)}
+                className="w-full bg-gradient-to-r from-red-700 to-pink-700 hover:from-red-600 hover:to-pink-600 text-red-100 font-bold py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2 shadow-[0_0_8px_#f00,0_0_16px_#f00] animate-neonPulse"
+                aria-label="장바구니에서 제거"
+                style={{textShadow:'0 0 4px #f00, 0 0 8px #f00', boxShadow:'0 0 8px #f00, 0 0 16px #f00'}}>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+                장바구니에서 제거
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -289,6 +320,8 @@ CharacterProfile.propTypes = {
   origin: PropTypes.string,
   onClose: PropTypes.func.isRequired,
   onLikeToggle: PropTypes.func,
+  onChatRoomCreated: PropTypes.func,
+  isMyCharacter: PropTypes.bool,
 };
 
 export default CharacterProfile;

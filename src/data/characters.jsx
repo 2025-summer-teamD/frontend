@@ -3,7 +3,9 @@ import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from "@clerk/clerk-react";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+
 
 // 공통 API 호출 함수
 const apiCall = async (url, options = {}) => {

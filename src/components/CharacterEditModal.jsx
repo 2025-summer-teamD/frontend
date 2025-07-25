@@ -1,9 +1,9 @@
 // src/components/CharacterEditModal.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Heart as OutlineHeart, Heart as SolidHeart } from 'lucide-react';
 import { useUpdateCharacter, useDeleteCharacter } from '../data/characters';
-import { useUser } from '@clerk/clerk-react';
+import { useUser, useAuth } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 import { useEnterOrCreateChatRoom } from '../data/chatMessages';
 
@@ -14,6 +14,8 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
   const navigate = useNavigate();
   const { enterOrCreateChatRoom } = useEnterOrCreateChatRoom();
   const [loading, setLoading] = useState(false);
+  const [exp, setExp] = useState(character?.exp ?? 0);
+  const { getToken } = useAuth();
 
   // username 디버깅
   useEffect(() => {
@@ -27,6 +29,20 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
       });
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!character?.id) return;
+    (async () => {
+      const token = await getToken();
+      const res = await fetch(`/api/my/characters/${character.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success && data.data && typeof data.data.exp === 'number') {
+        setExp(data.data.exp);
+      }
+    })();
+  }, [character?.id, getToken]);
 
   const [formData, setFormData] = useState({
     name: character?.name || '',
@@ -202,6 +218,12 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
     }
   };
 
+  // roomInfoParticipants 관련 코드/참조 완전히 삭제
+  // exp는 exp 상태만 사용
+  const myExp = useMemo(() => {
+    return exp;
+  }, [exp]);
+
   return (
     <div
       className="fixed inset-0 flex justify-center items-center z-[500] p-5"
@@ -282,7 +304,9 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
             <div className="text-cyan-400 text-sm font-mono">좋아요</div>
           </div>
           <div className="text-center">
-            <div className="text-[28px] font-bold text-cyan-200 mb-1 drop-shadow-[0_0_4px_#0ff]">{character?.exp || 0}</div>
+            {/* exp(친밀도) 표시 부분에서, character.id와 roomInfoParticipants의 personaId가 일치하는 참가자의 exp를 찾아 표시 */}
+            {/* exp 표시 UI에서 <LevelExpGauge exp={myExp} /> 또는 exp:{myExp} 등으로 사용 */}
+            <div className="text-[28px] font-bold text-cyan-200 mb-1 drop-shadow-[0_0_4px_#0ff]">{exp}</div>
             <div className="text-cyan-400 text-sm font-mono">친밀도</div>
           </div>
         </div>
@@ -365,58 +389,6 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
             </svg>
             {loading ? '채팅방 입장 중...' : '대화하기'}
           </button>
-          <div className="flex justify-between space-x-4">
-          {/* 수정하기 버튼 */}
-          <button
-            onClick={handleSave}
-            disabled={updateLoading || deleteLoading}
-            className={`w-full ${updateLoading || deleteLoading ? 'bg-gray-500 cursor-not-allowed' : 'bg-cyan-700 hover:bg-fuchsia-700'} text-cyan-100 font-mono font-bold py-3 px-6 rounded-2xl transition-all duration-200 text-lg transform flex items-center justify-center gap-2`}
-          >
-            {updateLoading ? (
-              <>
-                <svg className="animate-spin h-5 w-5 text-cyan-100" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                수정 중...
-              </>
-            ) : (
-              <>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                  />
-                </svg>
-                수정하기
-              </>
-            )}
-          </button>
-          {/* 삭제하기 버튼 */}
-          <button
-            onClick={handleDelete}
-            disabled={updateLoading || deleteLoading}
-            className={`w-full ${deleteLoading ? 'bg-gray-500 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'} text-cyan-100 font-mono font-bold py-3 px-6 rounded-2xl text-lg transition-all duration-200 flex items-center justify-center gap-2`}
-          >
-            {deleteLoading ? (
-              <>
-                <svg className="animate-spin h-5 w-5 text-cyan-100" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                삭제 중...
-              </>
-            ) : (
-              <>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
-                삭제하기
-              </>
-            )}
-          </button>
-          </div>
           {/* 취소 버튼 */}
           <button
             onClick={onClose}

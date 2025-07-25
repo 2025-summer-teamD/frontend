@@ -1,48 +1,50 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
-import chatMessages from '../data/chatMessages'; // 더미 데이터 삭제
-import { useSendMessageToAI } from '../data/chatMessages';
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { useChatMessages } from '../contexts/ChatMessagesContext';
 import { FiPaperclip } from 'react-icons/fi';
+import { io } from 'socket.io-client';
+import { useMyCharacters } from '../data/characters';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // 레벨/게이지 계산 및 네온 게이지 컴포넌트
 function getLevel(exp) {
-  if (exp >= 7) return 5;
-  if (exp >= 4) return 4;
-  if (exp >= 2) return 3;
-  if (exp >= 1) return 2;
-  return 1;
+  // 친밀도 1,2,3,4,5 쌓일 때마다 레벨업
+  if (exp >= 20) return 5;
+  if (exp >= 15) return 4;
+  if (exp >= 10) return 3;
+  if (exp >= 5) return 2;
+  if (exp >= 1) return 1;
+  return 0;
 }
 function getExpForNextLevel(level) {
-  // 1→2:1, 2→3:2, 3→4:3, 4→5:4
-  return [0, 1, 2, 3, 4][level] || 0;
+  // 각 레벨별 필요 친밀도: 1레벨(1), 2레벨(5), 3레벨(10), 4레벨(15), 5레벨(20)
+  return [0, 1, 5, 10, 15, 20][level] || 0;
 }
 function getExpBase(level) {
   // 누적 기준 exp
-  return [0, 0, 1, 2, 4][level] || 0;
+  return [0, 0, 1, 5, 10, 15][level] || 0;
 }
 function LevelExpGauge({ exp }) {
   const level = getLevel(exp);
   const expBase = getExpBase(level);
-  const expNext = getExpForNextLevel(level);
+  const expNext = getExpForNextLevel(level + 1);
   const expInLevel = exp - expBase;
-  const expMax = expNext;
+  const expMax = expNext - expBase;
   const percent = expMax ? Math.min(100, Math.round((expInLevel / expMax) * 100)) : 100;
   return (
     <>
-      <div className="flex gap-4 items-center text-cyan-200 font-bold font-cyberpunk text-sm tracking-widest">
-        <span>레벨: {level}</span>
-        <span>친밀도: {exp}</span>
+      <div className="flex gap-2 items-center text-cyan-200 font-bold font-cyberpunk text-xs tracking-widest">
+        <span>Lv.{level}</span>
+        <span>친밀도:{exp}</span>
       </div>
-      <div className="w-48 h-5 bg-black/60 border-2 border-cyan-700 rounded-full shadow-[0_0_8px_#0ff] relative overflow-hidden">
+      <div className="w-32 h-3 bg-black/60 border border-cyan-700 rounded-full shadow-[0_0_4px_#0ff] relative overflow-hidden">
         <div
           className="h-full bg-cyan-400"
           style={{
             width: `${percent}%`,
-            boxShadow: '0 0 8px #0ff, 0 0 16px #0ff',
+            boxShadow: '0 0 4px #0ff, 0 0 8px #0ff',
             transition: 'width 0.4s cubic-bezier(.4,2,.6,1)'
           }}
         />
@@ -54,14 +56,27 @@ function LevelExpGauge({ exp }) {
   );
 }
 
+const SOCKET_URL = 'http://localhost:3001'; // 포트 3002로 명시적으로 지정
+
+// AI별 네온 컬러 팔레트 (고정 or 랜덤)
+const AI_NEON_COLORS = [
+  { bg: 'bg-fuchsia-100/80', border: 'border-fuchsia-200', shadow: 'shadow-[0_0_4px_#f0f]', text: 'text-fuchsia-900' },
+  { bg: 'bg-cyan-100/80', border: 'border-cyan-200', shadow: 'shadow-[0_0_4px_#0ff]', text: 'text-cyan-900' },
+  { bg: 'bg-green-100/80', border: 'border-green-200', shadow: 'shadow-[0_0_4px_#0f0]', text: 'text-green-900' },
+  { bg: 'bg-pink-100/80', border: 'border-pink-200', shadow: 'shadow-[0_0_4px_#f0c]', text: 'text-pink-900' },
+  { bg: 'bg-blue-100/80', border: 'border-blue-200', shadow: 'shadow-[0_0_4px_#0cf]', text: 'text-blue-900' },
+];
+// AI id별로 고정된 색상 인덱스 반환
+function getAiColorIdx(aiId) {
+  if (!aiId) return 0;
+  return Math.abs(parseInt(aiId, 10)) % AI_NEON_COLORS.length;
+}
+
 const ChatMate = () => {
   const { state } = useLocation();
   const { roomId } = useParams();
   const { user } = useUser();
   const { getToken } = useAuth();
-
-  // AI 응답 훅 추가
-  const { sendMessage: sendMessageToAI, error: aiError } = useSendMessageToAI();
 
   // 전역 메시지 Context 사용
   const {
@@ -73,6 +88,13 @@ const ChatMate = () => {
     setAiLoading
   } = useChatMessages();
 
+  // 소켓 상태
+  const socketRef = useRef(null);
+  const [participants, setParticipants] = useState([]);
+  const { characters: myAIs, loading: aiLoading } = useMyCharacters('created');
+  const [roomInfoParticipants, setRoomInfoParticipants] = useState([]);
+  const hasSentInitialGreeting = useRef(false);
+
   // 이전 대화기록을 메시지 형식으로 변환하는 함수
   const convertChatHistoryToMessages = (chatHistory, characterData) => {
     console.log('📜 채팅 히스토리 변환 시작:', { chatHistory, characterData });
@@ -82,21 +104,15 @@ const ChatMate = () => {
       return [];
     }
 
-    return chatHistory.map(item => {
-      const convertedMessage = {
-        id: item.id,
-        text: item.text,
-        sender: item.speaker === 'user' ? 'me' : 'other',
-        time: new Date(item.time).toLocaleTimeString('ko-KR', {
-          hour: 'numeric',
-          minute: '2-digit',
-          hour12: true,
-        }),
-        characterId: characterData?.characterId || characterData?.id
-      };
-      console.log('💬 변환된 메시지:', convertedMessage);
-      return convertedMessage;
-    });
+    return chatHistory.map(item => ({
+      id: item.id,
+      text: item.text,
+      sender: item.senderType === 'user' && item.senderId === user.id ? 'me' : (item.senderType === 'ai' ? 'ai' : 'other'),
+      aiId: item.aiId ?? (item.senderType === 'ai' ? item.senderId : undefined),
+      aiName: item.aiName ?? undefined,
+      time: new Date(item.time).toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
+      characterId: item.characterId ?? undefined,
+    }));
   };
 
   // 캐릭터 정보 상태
@@ -109,7 +125,8 @@ const ChatMate = () => {
 
   // 현재 채팅방의 메시지와 AI 로딩 상태
   const messages = getMessages(roomId);
-  const aiLoading = getAiLoading(roomId);
+  // 기존 aiLoading 변수명 변경 (AI 응답 로딩)
+  const aiResponseLoading = getAiLoading(roomId);
 
   const scrollContainerRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -142,36 +159,145 @@ const ChatMate = () => {
         console.log('❌ 새로운 채팅방에 히스토리 없음, 메시지 초기화');
         setMessagesForRoom(roomId, []);
       }
+      // 참여자 목록 동기화
+      if (state.participants && Array.isArray(state.participants)) {
+        setParticipants(state.participants);
+      }
     }
   }, [state?.character, state?.chatHistory, roomId]); // roomId도 의존성에 추가
 
-  // 채팅방 입장 시 캐릭터 정보 fetch (state가 있든 없든 항상 최신값으로)
+  // room-info API 호출 (채팅방 정보 및 참여자 목록 조회)
   useEffect(() => {
-    if (roomId) {
-      setLoading(true);
-      (async () => {
+    if (!roomId || !getToken) return;
+    
+    // roomId가 변경되면 초기 인사 플래그 리셋
+    hasSentInitialGreeting.current = false;
+    
+    (async () => {
+      try {
         const token = await getToken();
-        fetch(`${API_BASE_URL}/chat/room-info?roomId=${roomId}`, {
+        const response = await fetch(`${API_BASE_URL}/chat/room-info?roomId=${roomId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
-        })
-          .then(res => res.json())
-          .then(data => {
-            console.log('[room-info] API 응답:', data);
-            if (data.success && data.data && data.data.character) {
-              console.log('[room-info] setCharacter 호출: exp:', data.data.character.exp, 'friendship:', data.data.character.friendship, '전체:', data.data.character);
-              setCharacter(data.data.character);
-            } else {
-              setError('존재하지 않거나 삭제된 채팅방입니다.');
-            }
-          })
-          .catch(() => setError('존재하지 않거나 삭제된 채팅방입니다.'))
-          .finally(() => setLoading(false));
-      })();
-    }
+        });
+        const data = await response.json();
+        console.log('[room-info] API 응답:', data);
+        if (data.success && data.data && data.data.character) {
+          console.log('[room-info] setCharacter 호출: exp:', data.data.character.exp, 'friendship:', data.data.character.friendship, '전체:', data.data.character);
+          setCharacter(data.data.character);
+          setRoomInfoParticipants(data.data.participants || []);
+          setParticipants(data.data.participants || []); // 참여자 목록도 동기화
+          
+          // 채팅방에 처음 들어왔을 때 AI들이 자동으로 인사
+          const currentMessages = getMessages(roomId);
+          if (currentMessages.length === 0 && data.data.participants && data.data.participants.length > 1 && !hasSentInitialGreeting.current) {
+            console.log('🎉 새로운 그룹 채팅방 입장 - AI들이 자동으로 인사할 예정');
+            hasSentInitialGreeting.current = true;
+            
+            // AI 자동 인사 요청
+            setTimeout(async () => {
+              try {
+                const token = await getToken();
+                const response = await fetch(`${API_BASE_URL}/chat/rooms/${roomId}/greetings`, {
+                  method: 'POST',
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  }
+                });
+                
+                const greetingData = await response.json();
+                
+                if (greetingData.success && greetingData.data.greetings) {
+                  console.log('🤖 AI 자동 인사 응답:', greetingData.data.greetings);
+                  
+                  // 각 AI의 인사 메시지를 소켓으로 전송
+                  greetingData.data.greetings.forEach((greeting, index) => {
+                    setTimeout(() => {
+                      if (socketRef.current) {
+                        console.log(`🚀 ${greeting.personaName} 인사 메시지 전송:`, greeting.message);
+                        socketRef.current.emit('sendMessage', {
+                          roomId,
+                          message: greeting.message,
+                          senderType: 'ai',
+                          senderId: greeting.personaId, // 수정: senderId 명확히 전달
+                          aiName: greeting.personaName,
+                          aiId: greeting.personaId, // 추가: aiId 명확히 전달
+                          timestamp: greeting.timestamp
+                        });
+                      }
+                    }, index * 2000); // 각 AI가 2초 간격으로 인사
+                  });
+                }
+              } catch (error) {
+                console.error('❌ AI 자동 인사 요청 실패:', error);
+              }
+            }, 2000); // 2초 후 AI 인사 시작
+          }
+        } else {
+          setError('존재하지 않거나 삭제된 채팅방입니다.');
+        }
+      } catch (error) {
+        console.error('❌ room-info API 호출 실패:', error);
+        setError('존재하지 않거나 삭제된 채팅방입니다.');
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [roomId, getToken]);
+
+  // 소켓 연결 및 이벤트 등록 (단 하나만 남김)
+  useEffect(() => {
+    if (!roomId || !user) return;
+    const socket = io(SOCKET_URL, { transports: ['websocket'] });
+    socketRef.current = socket;
+    socket.emit('joinRoom', { roomId, userId: user.id });
+    socket.on('receiveMessage', async (msg) => {
+      console.log('📨 수신된 메시지:', JSON.stringify(msg));
+      console.log('📨 aiId:', msg.aiId, '타입:', typeof msg.aiId);
+      console.log('📨 aiName:', msg.aiName, '타입:', typeof msg.aiName);
+      
+      addMessageToRoom(roomId, {
+        id: Date.now() + Math.random(),
+        text: msg.message,
+        sender: msg.senderType === 'user' && msg.senderId === user.id ? 'me' : (msg.senderType === 'ai' ? 'ai' : 'other'),
+        aiId: msg.aiId ? String(msg.aiId) : undefined,
+        aiName: msg.aiName ? String(msg.aiName) : undefined,
+        time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
+        characterId: msg.senderType === 'ai' ? msg.aiId : character?.id,
+      });
+      
+
+    });
+    
+    // EXP 업데이트 이벤트 수신
+    socket.on('expUpdated', (data) => {
+      console.log('📊 EXP 업데이트 수신:', data);
+      setRoomInfoParticipants(prev => {
+        return prev.map(participant => {
+          if (String(participant.personaId) === String(data.personaId)) {
+            return {
+              ...participant,
+              exp: data.newExp
+            };
+          }
+          return participant;
+        });
+      });
+    });
+    
+    socket.on('participants', (data) => {
+      if (Array.isArray(data.participants)) {
+        setParticipants(data.participants);
+      }
+    });
+    return () => {
+      socket.emit('leaveRoom', { roomId, userId: user.id });
+      socket.disconnect();
+    };
+  }, [roomId, user]);
 
   // 더미 데이터 삭제: character가 바뀌어도 messages는 빈 배열 유지
 
@@ -205,100 +331,25 @@ const ChatMate = () => {
   if (error) return <div className="text-red-500 p-8">{error}</div>;
   if (!character) return null;
 
-  // AI 응답 포함한 메시지 전송
+  // 메시지 전송은 소켓 emit만 사용
   const sendMessage = async () => {
-    console.log('🚀 ChatMate sendMessage 시작');
-    console.log('🔍 newMessage.trim():', newMessage.trim());
-    console.log('🔍 aiLoading:', aiLoading);
-
-    if (!newMessage.trim() || aiLoading) {
-      console.log('❌ 조건 체크 실패 - 메시지 전송 중단');
-      return;
-    }
-
-    console.log('✅ 조건 체크 통과');
+    if (!newMessage.trim() || aiResponseLoading) return;
     const messageText = newMessage.trim();
-    setNewMessage(''); // 입력창 즉시 비우기
-
-    console.log('⏰ 시간 생성 시작');
-    const now = new Date().toLocaleTimeString('ko-KR', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
-    console.log('✅ 시간 생성 성공:', now);
-
-    // 사용자 메시지 추가
-    console.log('👤 사용자 메시지 객체 생성 시작');
-    const userMsg = {
-      id: Date.now(), // 고유 ID 생성
-      text: messageText,
-      sender: 'me',
-      time: now,
-      characterId: character.id,
-    };
-    console.log('✅ 사용자 메시지 객체 생성 성공:', userMsg);
-
-    // 전역 상태에 사용자 메시지 즉시 추가
-    console.log('📝 전역 상태에 사용자 메시지 추가');
-    addMessageToRoom(roomId, userMsg);
-
-    try {
-      // AI 응답까지 받기
-      setAiLoading(roomId, true);
-      const aiResponse = await sendMessageToAI(roomId, messageText);
-      setAiLoading(roomId, false);
-      // AI 응답 메시지 전역 상태에 추가
-      addAiResponseToRoom(roomId, aiResponse);
-
-      // 메시지 전송 후 exp/레벨/게이지 실시간 갱신
-      (async () => {
-        const token = await getToken();
-        fetch(`${API_BASE_URL}/chat/room-info?roomId=${roomId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        })
-          .then(res => res.json())
-          .then(data => {
-            console.log('[room-info] (sendMessage 후) API 응답:', data);
-            if (data.success && data.data && data.data.character) {
-              console.log('[room-info] (sendMessage 후) setCharacter 호출: exp:', data.data.character.exp, 'friendship:', data.data.character.friendship, '전체:', data.data.character);
-              setCharacter(data.data.character);
-            }
-          });
-      })();
-
-    } catch (error) {
-      console.error('💥 ChatMate sendMessage에서 에러 발생:', error);
-      console.error('💥 에러 타입:', typeof error);
-      console.error('💥 에러 message:', error.message);
-      console.error('💥 에러 stack:', error.stack);
-      console.error('AI 응답 실패:', error);
-
-      // 에러 메시지 추가
-      console.log('❌ 에러 메시지 객체 생성 시작');
-      const errorMsg = {
-        id: Date.now() + 2,
-        text: '죄송합니다. 응답을 생성하는데 문제가 발생했습니다.',
-        sender: 'other',
-        time: now,
-        characterId: character.id,
-      };
-      console.log('✅ 에러 메시지 객체 생성 성공:', errorMsg);
-
-      addMessageToRoom(roomId, errorMsg);
-    } finally {
-      // AI 로딩 상태 종료
-      setAiLoading(roomId, false);
+    setNewMessage('');
+    // addMessageToRoom(roomId, { ... }) // 이 부분 삭제!
+    if (socketRef.current) {
+      socketRef.current.emit('sendMessage', {
+        roomId,
+        message: messageText,
+        senderType: 'user',
+        senderId: user.id,
+        timestamp: new Date().toISOString()
+      });
     }
-
-    console.log('🏁 ChatMate sendMessage 완료');
   };
 
   const handleKeyPress = e => {
-    if (e.key === 'Enter' && !aiLoading) sendMessage();
+    if (e.key === 'Enter' && !aiResponseLoading) sendMessage();
   };
 
   // 1. handleImageUpload 함수 추가
@@ -327,7 +378,15 @@ const ChatMate = () => {
       setAiLoading(roomId, true);
       try {
         // 프롬프트에 이미지 URL을 명시적으로 포함
-        const aiResponse = await sendMessageToAI(roomId, `[이미지] ${data.imageUrl}`);
+        const aiResponse = await fetch(`${API_BASE_URL}/chat/ai-response?roomId=${roomId}&message=[이미지] ${data.imageUrl}`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${await getToken()}`,
+            'Content-Type': 'application/json'
+          }
+        })
+          .then(res => res.json())
+          .then(data => data.content);
         addAiResponseToRoom(roomId, aiResponse);
       } catch (e) {
         console.error('AI 이미지 답변 생성 에러:', e);
@@ -345,24 +404,42 @@ const ChatMate = () => {
       {/* 헤더: sticky */}
       <header className="sticky top-0 py-4 px-6 z-10">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full border-2 border-cyan-300 shadow-[0_0_4px_#0ff]">
-            <img
-              src={character.imageUrl}
-              alt={character.name}
-              className="w-full h-full object-cover rounded-full"
-            />
+          {/* 여러 캐릭터 프로필 이미지 */}
+          <div className="flex -space-x-2">
+            {roomInfoParticipants.map((participant, index) => {
+              const ai = myAIs.find(ai => String(ai.id) === String(participant.personaId));
+              return (
+                <div 
+                  key={participant.personaId} 
+                  className="w-9 h-9 rounded-full border-2 border-cyan-300 shadow-[0_0_4px_#0ff] relative"
+                  style={{ zIndex: roomInfoParticipants.length - index }}
+                >
+                  <img
+                    src={ai?.imageUrl || '/assets/icon-character.png'}
+                    alt={ai?.name || `AI#${participant.personaId}`}
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                </div>
+              );
+            })}
           </div>
-          <span className="text-cyan-100 text-lg font-bold drop-shadow-[0_0_2px_#0ff] tracking-widest font-cyberpunk">
-            {character.name}
-          </span>
+          <div className="flex flex-col">
+            <span className="text-cyan-100 text-lg font-bold drop-shadow-[0_0_2px_#0ff] tracking-widest font-cyberpunk">
+              {roomInfoParticipants.length > 1 
+                ? `${roomInfoParticipants.length}명의 AI와 대화` 
+                : roomInfoParticipants[0] 
+                  ? myAIs.find(ai => String(ai.id) === String(roomInfoParticipants[0].personaId))?.name || 'AI'
+                  : '채팅방'
+              }
+            </span>
+            <span className="text-cyan-300 text-xs drop-shadow-[0_0_1px_#0ff]">
+              {roomInfoParticipants.map((p, index) => {
+                const ai = myAIs.find(ai => String(ai.id) === String(p.personaId));
+                return ai?.name || `AI#${p.personaId}`;
+              }).join(', ')}
+            </span>
+          </div>
         </div>
-        {/* 레벨/친밀도/게이지 UI 추가 */}
-        {character && (
-          <div className="mt-2 flex flex-col items-start gap-1">
-            {/* 레벨/친밀도 */}
-            <LevelExpGauge exp={character.exp || 0} />
-          </div>
-        )}
       </header>
       {/* 스크롤 영역: 프로필 + 메시지 */}
       <div
@@ -371,23 +448,103 @@ const ChatMate = () => {
       >
         {/* 프로필 */}
         <div className="flex flex-col items-center my-6 text-center font-cyberpunk">
-          <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-cyan-300 shadow-[0_0_6px_#0ff]">
-            <img
-              src={character.imageUrl}
-              alt={character.name}
-              className="w-full h-full object-cover rounded-full"
-            />
+          {/* 참여자 목록 제목 */}
+          <div className="mb-6">
+            <span className="text-lg text-cyan-300 font-bold drop-shadow-[0_0_2px_#0ff] tracking-widest">참여자 목록</span>
           </div>
-          <h3 className="text-2xl font-bold text-cyan-100 mb-2 mt-3 drop-shadow-[0_0_2px_#0ff] tracking-widest font-cyberpunk">
-            {character.name}
-          </h3>
-          <p className="text-cyan-100/80 text-xs sm:text-sm px-2 max-w-lg mx-auto mt-1 mb-2 drop-shadow-[0_0_1px_#0ff] font-cyberpunk">
-            {character.description || character.introduction || character.desc}
-          </p>
+          {/* 여러 캐릭터 카드 + 내 프로필 */}
+          <div className="flex flex-wrap justify-center gap-6 w-full max-w-4xl">
+            {/* 내 프로필 */}
+            <div className="flex flex-col items-center">
+              <div className="relative">
+                <div className="w-20 h-20 rounded-full border-2 border-cyan-300 shadow-[0_0_6px_#0ff] mb-2">
+                  <img
+                    src={user?.imageUrl || '/assets/icon-character.png'}
+                    alt="나"
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                </div>
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center border border-cyan-300 shadow-[0_0_4px_#0ff]">
+                  <span className="text-sm font-bold text-cyan-900">나</span>
+                </div>
+              </div>
+              <span className="text-sm font-bold text-cyan-100 mb-1 drop-shadow-[0_0_2px_#0ff] tracking-widest font-cyberpunk">
+                {user?.username || user?.firstName || '사용자'}
+              </span>
+            </div>
+            
+            {/* AI 참여자들 */}
+            {roomInfoParticipants.map((participant, index) => {
+              // 프롬포트 정보와 exp를 participant에서 직접 사용
+              const ai = {
+                ...participant,
+                ...myAIs.find(ai => String(ai.id) === String(participant.personaId))
+              };
+              const level = getLevel(ai.exp || 0);
+              const expBase = getExpBase(level);
+              const expNext = getExpForNextLevel(level + 1);
+              const expInLevel = (ai.exp || 0) - expBase;
+              const expMax = expNext - expBase;
+              const percent = expMax ? Math.min(100, Math.round((expInLevel / expMax) * 100)) : 100;
+              return (
+                <div key={ai.personaId} className="flex flex-col items-center">
+                  <div className="relative">
+                    <div className="w-20 h-20 rounded-full border-2 border-cyan-300 shadow-[0_0_6px_#0ff] mb-2">
+                      <img
+                        src={ai.imageUrl}
+                        alt={ai.name}
+                        className="w-full h-full object-cover rounded-full"
+                      />
+                    </div>
+                    <div className="absolute -top-2 -right-2 w-8 h-8 bg-fuchsia-500 rounded-full flex items-center justify-center border border-fuchsia-300 shadow-[0_0_4px_#f0f]">
+                      <span className="text-sm font-bold text-fuchsia-900">Lv.{level}</span>
+                    </div>
+                  </div>
+                  <span className="text-sm font-bold text-cyan-100 mb-2 drop-shadow-[0_0_2px_#0ff] tracking-widest font-cyberpunk">
+                    {ai.name}
+                  </span>
+                  <div className="w-20 h-2 bg-black/60 border border-cyan-700 rounded-full shadow-[0_0_4px_#0ff] relative overflow-hidden">
+                    <div
+                      className="h-full bg-cyan-400"
+                      style={{
+                        width: `${percent}%`,
+                        boxShadow: '0 0 4px #0ff, 0 0 8px #0ff',
+                        transition: 'width 0.4s cubic-bezier(.4,2,.6,1)'
+                      }}
+                    />
+                  </div>
+                                     <span className="text-xs text-cyan-300 mt-1 font-bold">
+                     {ai.exp || 0}
+                   </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
         {/* 메시지들 */}
         <div className="space-y-4 pb-4 max-w-3xl mx-auto font-cyberpunk">
           {messages.map((msg, idx) => {
+            // 디버그 로그 추가
+            console.log('msg:', msg);
+            console.log('myAIs:', myAIs);
+            const isAI = msg.sender === 'ai';
+            // 메시지 렌더링 시에도 aiObj를 myAIs가 아니라 roomInfoParticipants에서 찾아 exp, personality 등 활용
+            const aiObj = isAI ? roomInfoParticipants.find(ai => String(ai.personaId) === String(msg.aiId)) : null;
+            console.log('aiObj:', aiObj);
+            console.log('roomInfoParticipants:', roomInfoParticipants);
+            console.log('AI exp:', roomInfoParticipants.find(p => String(p.personaId) === String(msg.aiId))?.exp);
+            const profileImg = msg.sender === 'me'
+              ? user?.imageUrl || '/assets/icon-character.png'
+              : isAI
+                ? (aiObj?.imageUrl || '/assets/icon-character.png')
+                : '/assets/icon-character.png';
+            const displayName = msg.sender === 'me'
+              ? user?.username || user?.firstName || 'You'
+              : isAI
+                ? (msg.aiName || aiObj?.name || `AI#${msg.aiId}`)
+                : 'AI';
+            const aiColorIdx = isAI ? getAiColorIdx(msg.aiId) : 0;
+            const aiColor = isAI ? AI_NEON_COLORS[aiColorIdx] : null;
             const isLast = idx === messages.length - 1;
             const nextMsg = messages[idx + 1];
             const prevMsg = messages[idx - 1];
@@ -402,22 +559,29 @@ const ChatMate = () => {
                   <div className={`flex items-center mb-1 ${msg.sender === 'me' ? 'flex-row-reverse' : 'flex-row'} font-cyberpunk`}>
                     <div className="w-8 h-8 rounded-full border-2 border-cyan-300 shadow-[0_0_3px_#0ff] flex-shrink-0 bg-gradient-to-br from-cyan-200/60 to-fuchsia-200/40">
                       <img
-                        src={msg.sender === 'me' ? user?.imageUrl || '/assets/icon-character.png' : character.imageUrl}
+                        src={profileImg}
                         alt=""
                         className="w-full h-full object-cover rounded-full"
                       />
                     </div>
                     <span className={`text-cyan-100 font-bold text-sm tracking-widest drop-shadow-[0_0_1px_#0ff] font-cyberpunk ${msg.sender === 'me' ? 'mr-2' : 'ml-2'}`}>
-                      {msg.sender === 'me' ? user?.username || user?.firstName || 'You' : character.name}
+                      {displayName}
+                      {isAI && aiObj && (
+                        <span className="ml-2 text-xs text-cyan-300 font-bold">
+                          Lv.{getLevel(roomInfoParticipants.find(p => String(p.personaId) === String(msg.aiId))?.exp || 0)}
+                        </span>
+                      )}
                     </span>
                   </div>
                 )}
                 <div
                   className={`max-w-[80%] sm:max-w-[70%] lg:max-w-[60%] px-4 py-3 rounded-xl break-words tracking-widest font-cyberpunk ${msg.sender === 'me'
                     ? 'bg-cyan-100/80 border-2 border-cyan-200 text-[#1a1a2e] shadow-[0_0_4px_#0ff]'
-                    : 'bg-fuchsia-100/80 border-2 border-fuchsia-200 text-[#1a1a2e] shadow-[0_0_4px_#f0f]'
+                    : isAI
+                      ? `${aiColor.bg} border-2 ${aiColor.border} ${aiColor.text} ${aiColor.shadow}`
+                      : 'bg-fuchsia-100/80 border-2 border-fuchsia-200 text-[#1a1a2e] shadow-[0_0_4px_#f0f]'
                     }`}
-                  style={{boxShadow: msg.sender==='me'?'0 0 4px #0ff':'0 0 4px #f0f', border: msg.sender==='me'?'2px solid #7ff':'2px solid #e7e'}}
+                  style={isAI ? { boxShadow: aiColor.shadow.replace('shadow-', '').replace('[', '').replace(']', '') } : {}}
                 >
                   {msg.imageUrl
                     ? <img

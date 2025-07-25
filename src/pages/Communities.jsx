@@ -15,7 +15,7 @@ import { useAuth } from "@clerk/clerk-react";
 import { CharacterCard } from '../components/CharacterGrid';
 
 export default function Communities() {
-  const { getToken } = useAuth();
+  const { getToken, userId } = useAuth();
 
   const [likedIds, setLikedIds] = useState(() =>
     JSON.parse(localStorage.getItem('likedIds')) || []
@@ -162,12 +162,22 @@ export default function Communities() {
           character={{ ...selectedCharacter, id: selectedCharacter.id }}
           liked={likedIds.includes(selectedCharacter.id)}
           origin="communities"
+          isMyCharacter={selectedCharacter.clerkId === userId}
           onClose={() => setSelectedCharacter(null)}
           onLikeToggle={handleLikeToggle}
           onChatRoomCreated={refetchMyChatCharacters}
           style={{ zIndex: 100 }}
         />
       )}
+
+      {/* 디버깅 로그 추가 */}
+      {selectedCharacter && console.log('Communities CharacterProfile Debug:', {
+        selectedCharacterId: selectedCharacter.id,
+        selectedCharacterName: selectedCharacter.name,
+        selectedCharacterClerkId: selectedCharacter.clerkId,
+        userId,
+        isMyCharacter: selectedCharacter.clerkId === userId
+      })}
 
       {editingCharacter && (
         <CharacterEditModal

@@ -1,4 +1,4 @@
-import RobotVideo from '/assets/robotVideo.mp4'; 
+import pokemon from '/assets/gif/pokemon.gif';
 import { useNavigate } from 'react-router-dom';
 
 // 메인화면 컴포넌트
@@ -7,8 +7,8 @@ export default function Hero() {
 
     return (
         <section id="home" className="relative w-full h-screen overflow-hidden">
-            <video 
-                src={RobotVideo} 
+            <img
+                src={pokemon} 
                 autoPlay 
                 loop 
                 muted 
