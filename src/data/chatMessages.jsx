@@ -4,12 +4,15 @@ import { useAuth } from "@clerk/clerk-react";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // AI 메시지 전송 커스텀 훅
+// onNewChunk: 새 텍스트 청크가 도착할 때마다 호출될 콜백 함수 (인자로 청크 텍스트와 전체 누적 텍스트 전달)
+// onVideoUrl: 영상 URL이 도착할 때 호출될 콜백 함수 (인자로 영상 URL 전달)
 export function useSendMessageToAI() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { getToken } = useAuth();
 
-  const sendMessage = useCallback(async (roomId, message) => {
+  // sendMessage 함수에 onNewChunk 및 onVideoUrl 콜백 추가
+  const sendMessage = useCallback(async (roomId, message, onNewChunk, onVideoUrl) => {
     console.log('🔥 sendMessage 시작 - roomId:', roomId, 'message:', message);
 
     if (!roomId || !message.trim()) {
@@ -28,34 +31,20 @@ export function useSendMessageToAI() {
 
       console.log('💬 메시지 전송 API 호출:', `${API_BASE_URL}/chat/rooms/${roomId}`);
 
-      // 백엔드에서 요구하는 필드들 모두 포함
-      console.log('📅 timestamp 생성 시작');
       const timestamp = new Date().toISOString();
-      console.log('✅ timestamp 생성 성공:', timestamp);
-
-      console.log('📦 requestData 객체 생성 시작');
       const requestData = {
         message: message.trim(),
-        sender: 'user', // 또는 'me'
-        timestamp: timestamp // ISO 형식의 timestamp
+        sender: 'user',
+        timestamp: timestamp
       };
-      console.log('✅ requestData 객체 생성 성공:', requestData);
 
-      console.log('📤 전송할 데이터 (객체):', requestData);
-      console.log('📤 전송할 데이터 (JSON):', JSON.stringify(requestData, null, 2));
-      console.log('🔍 각 필드 확인:');
-      console.log('  - message:', requestData.message);
-      console.log('  - sender:', requestData.sender);
-      console.log('  - timestamp:', requestData.timestamp);
+      console.log('📤 전송할 데이터:', requestData);
 
-      console.log('🌐 fetch 요청 시작');
-
-      // 타임아웃 설정 (30초)
       const controller = new AbortController();
       const timeoutId = setTimeout(() => {
         console.log('⏰ 요청 타임아웃 발생');
         controller.abort();
-      }, 30000);
+      }, 30000); // 30초 타임아웃
 
       const response = await fetch(`${API_BASE_URL}/chat/rooms/${roomId}`, {
         method: 'POST',
@@ -64,7 +53,7 @@ export function useSendMessageToAI() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(requestData),
-        signal: controller.signal, // 타임아웃 시그널 추가
+        signal: controller.signal,
       });
 
       clearTimeout(timeoutId); // 성공시 타임아웃 해제
@@ -74,114 +63,116 @@ export function useSendMessageToAI() {
         console.log('❌ 응답 상태 에러');
         const errorText = await response.text();
         console.error('AI 메시지 API 에러:', errorText);
-        throw new Error(`AI 메시지 전송 실패: ${response.status} ${response.statusText}`);
+        throw new Error(`AI 메시지 전송 실패: ${response.status} ${response.statusText}. Error: ${errorText}`);
       }
-
-      console.log('📥 응답 JSON 파싱 시작');
-
-      // 응답 헤더 확인
-      console.log('🔍 응답 헤더 확인:');
-      console.log('  - Content-Type:', response.headers.get('content-type'));
-      console.log('  - Content-Length:', response.headers.get('content-length'));
 
       const contentType = response.headers.get('content-type');
 
-      // SSE 스트리밍 응답 처리 (백엔드가 text/event-stream으로 응답)
       if (contentType && contentType.includes('text/event-stream')) {
         console.log('🌊 SSE 스트리밍 응답 감지');
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
-        let result = '';
+        let buffer = ''; // 부분적으로 수신된 이벤트 라인을 위한 버퍼
+        let fullResponseAccumulated = ''; // 전체 AI 응답 누적
 
         try {
           while (true) {
             const { done, value } = await reader.read();
-            if (done) break;
+            if (done) {
+              console.log('✅ 스트리밍 종료 감지');
+              break;
+            }
 
             const chunk = decoder.decode(value, { stream: true });
-            console.log('📦 스트리밍 청크:', chunk);
-            result += chunk;
-          }
+            buffer += chunk;
 
-          console.log('✅ 스트리밍 완료, 전체 결과:', result);
+            // 라인별로 처리
+            const lines = buffer.split('\n');
+            buffer = lines.pop(); // 마지막 불완전한 라인은 버퍼에 남김
 
-          // SSE 형식에서 실제 JSON 추출
-          const lines = result.split('\n');
-          let aiResponseText = '';
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const eventData = line.substring(6); // 'data: ' 제거
 
-          for (const line of lines) {
-            if (line.startsWith('data: ') && !line.includes('[DONE]')) {
-              const jsonData = line.substring(6); // 'data: ' 제거
-              try {
-                const parsedData = JSON.parse(jsonData);
-                console.log('✅ SSE JSON 파싱 성공:', parsedData);
-                aiResponseText = parsedData.content || parsedData.message || parsedData;
-                break; // 첫 번째 데이터만 사용
-              } catch (parseError) {
-                console.error('💥 SSE JSON 파싱 에러:', parseError);
+                if (eventData === '[DONE]') {
+                  console.log('⭐ [DONE] 이벤트 수신');
+                  // 스트림이 완전히 종료됨을 의미하므로 반복문 종료
+                  // 여기서는 이미 done=true로 루프가 종료될 것이므로 명시적으로 break는 필요 없을 수 있지만
+                  // 파싱 로직의 명확성을 위해 포함
+                  return fullResponseAccumulated; // 전체 누적된 텍스트 반환
+                }
+
+                try {
+                  const parsedData = JSON.parse(eventData);
+                  console.log('✅ SSE JSON 파싱 성공:', parsedData);
+
+                  if (parsedData.type === 'text_chunk') {
+                    // 한 글자씩 스트리밍 처리 (콜백 호출)
+                    fullResponseAccumulated += parsedData.content;
+                    if (onNewChunk) {
+                      onNewChunk(parsedData.content, fullResponseAccumulated);
+                    }
+                  } else if (parsedData.type === 'video_url') {
+                    // 영상 URL 처리 (콜백 호출)
+                    if (onVideoUrl) {
+                      onVideoUrl(parsedData.url);
+                    }
+                  } else if (parsedData.type === 'error') {
+                    // 서버에서 발생한 에러 처리
+                    setError(parsedData.message || '스트리밍 중 서버 오류가 발생했습니다.');
+                    console.error('💥 서버 스트리밍 오류:', parsedData.message);
+                    // 에러 발생 시 스트림 중단 가능
+                    return fullResponseAccumulated; // 현재까지 누적된 텍스트 반환
+                  }
+                } catch (parseError) {
+                  console.error('💥 SSE JSON 파싱 에러 (invalid JSON):', parseError, '데이터:', eventData);
+                  // JSON 파싱 실패 시, 데이터는 무시하고 계속 진행
+                }
               }
             }
           }
+          return fullResponseAccumulated; // 스트림이 종료된 후 최종 누적된 텍스트 반환
 
-          if (aiResponseText) {
-            return aiResponseText;
-          } else {
-            console.warn('⚠️ SSE에서 유효한 데이터를 찾지 못함');
-            return '응답을 받지 못했습니다.';
-          }
         } finally {
           reader.releaseLock();
         }
       } else {
-        console.log('📄 일반 JSON 응답 처리');
-        // 일반 JSON 응답 처리 (혹시 백엔드가 일반 응답을 보낼 경우)
-        const responseText = await Promise.race([
-          response.text(),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('응답 텍스트 읽기 타임아웃')), 10000)
-          )
-        ]);
+        console.log('📄 일반 JSON 또는 비-SSE 응답 처리 (예상치 못한 경우)');
+        // 이 경로는 백엔드가 SSE를 보내지 않을 경우에만 도달
+        // 만약 SSE가 항상 기대된다면 이 else 블록은 에러 처리로 간주할 수 있습니다.
+        const responseText = await response.text();
         console.log('📄 백엔드 원시 응답 텍스트:', responseText);
 
         let result;
         try {
           result = JSON.parse(responseText);
-          console.log('✅ 응답 JSON 파싱 성공:', result);
-          return result.data || result.message || result;
+          console.log('✅ 일반 응답 JSON 파싱 성공:', result);
+          return result.data || result.message || JSON.stringify(result); // 예상치 못한 응답 처리
         } catch (parseError) {
-          console.error('💥 JSON 파싱 에러:', parseError);
-          throw new Error(`응답 JSON 파싱 실패: ${parseError.message}`);
+          console.error('💥 일반 응답 JSON 파싱 에러:', parseError);
+          throw new Error(`응답 JSON 파싱 실패: ${parseError.message}. 원시 텍스트: ${responseText.substring(0, 100)}`);
         }
       }
     } catch (err) {
       console.error('💥 useSendMessageToAI에서 에러 발생:', err);
-      console.error('💥 에러 타입:', typeof err);
-      console.error('💥 에러 name:', err.name);
-      console.error('💥 에러 message:', err.message);
-      console.error('💥 에러 stack:', err.stack);
-
       // 타임아웃 에러 구분
       if (err.name === 'AbortError') {
         setError('요청 시간이 초과되었습니다. 다시 시도해주세요.');
-        throw new Error('요청 시간이 초과되었습니다. 다시 시도해주세요.');
-      } else if (err.message.includes('타임아웃')) {
-        setError('응답을 읽는데 시간이 너무 오래 걸립니다.');
-        throw new Error('응답을 읽는데 시간이 너무 오래 걸립니다.');
       } else {
         setError(err.message || 'AI 응답을 받는데 실패했습니다.');
-        throw err;
       }
+      throw err; // 에러를 호출자에게 다시 던져 상위 컴포넌트에서 catch하도록 함
     } finally {
       console.log('🏁 setLoading(false) 호출');
       setLoading(false);
     }
-  }, [getToken]);
+  }, [getToken]); // useCallback 의존성 배열에 getToken 추가
 
   return { sendMessage, loading, error };
 }
 
-// 새 채팅방 생성 커스텀 훅 (POST 전용)
+// 기존의 다른 훅들은 변경 없음
 export function useCreateChatRoom() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -242,7 +233,6 @@ export function useCreateChatRoom() {
   return { createChatRoom, loading, error };
 }
 
-// 채팅방 입장/생성 통합 커스텀 훅 (기존 방이 있으면 입장, 없으면 생성)
 export function useEnterOrCreateChatRoom() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -313,7 +303,7 @@ export function useEnterOrCreateChatRoom() {
 
       return {
         roomId: postData.data.id,
-        character: postData.data.character, // 백엔드에서 이제 character 정보를 포함해서 반환함
+        character: postData.data.character,
         chatHistory: postData.data.chatHistory || [],
         isNewRoom: true
       };
@@ -329,12 +319,9 @@ export function useEnterOrCreateChatRoom() {
   return { enterOrCreateChatRoom, loading, error };
 }
 
-// 레거시 메시지 데이터 (임시로 유지)
 const chatMessages = [
   { id: 1, text: '안녕하세요!qqqqqqqqqqq', sender: 'other', time: '오후 3:45' },
 ];
 
 export default chatMessages;
 export { chatMessages };
-
-
