@@ -32,16 +32,16 @@ export default function Features() {
       <div className="max-w-[100rem] mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 justify-items-center items-center">
           {features.map((feature, idx) => (
-            <div key={idx} className="bg-black/60 glass border-2 border-cyan-700 rounded-2xl p-6 flex flex-col items-center justify-center shadow-[0_0_16px_#0ff,0_0_32px_#a0f] hover:shadow-[0_0_32px_#0ff,0_0_64px_#a0f] transition-all duration-300 animate-fadeIn font-rounded" style={{boxShadow:'0 0 16px #0ff, 0 0 32px #a0f', border:'2px solid #0ff8', textShadow:'0 0 8px #0ff, 0 0 2px #fff'}}>
+            <div key={idx} className="bg-black/60 glass border-2 border-cyan-700 rounded-2xl p-6 flex flex-col items-center justify-center shadow-[0_0_16px_#0ff,0_0_32px_#a0f] hover:shadow-[0_0_32px_#0ff,0_0_64px_#a0f] transition-all duration-300 animate-fadeIn font-cyberpunk" style={{boxShadow:'0 0 16px #0ff, 0 0 32px #a0f', border:'2px solid #0ff8', textShadow:'0 0 8px #0ff, 0 0 2px #fff'}}>
               <button
-                className="mb-4 px-4 py-2 rounded-lg bg-black/70 border-2 border-fuchsia-400 text-fuchsia-200 font-bold shadow-[0_0_8px_#f0f,0_0_16px_#a0f] hover:bg-fuchsia-900/80 hover:text-white transition-all duration-200 tracking-widest font-rounded"
+                className="mb-4 px-4 py-2 rounded-lg bg-black/70 border-2 border-fuchsia-400 text-fuchsia-200 font-bold shadow-[0_0_8px_#f0f,0_0_16px_#a0f] hover:bg-fuchsia-900/80 hover:text-white transition-all duration-200 tracking-widest font-cyberpunk"
                 style={{boxShadow:'0 0 8px #f0f, 0 0 16px #a0f', border:'2px solid #f0f', textShadow:'0 0 4px #f0f'}}
                 onClick={() => navigate(feature.button.to)}
               >
                 {feature.button.label}
               </button>
-              <h3 className="text-xl md:text-2xl xl:text-[20px] font-bold text-cyan-200 mb-2 tracking-widest font-rounded" style={{textShadow:'0 0 8px #0ff, 0 0 2px #fff'}}>{feature.title}</h3>
-              <div className="text-cyan-100/90 text-sm md:text-base xl:text-[16px] text-center font-rounded" style={{textShadow:'0 0 4px #0ff2'}}>
+              <h3 className="text-xl md:text-2xl xl:text-[20px] font-bold text-cyan-200 mb-2 tracking-widest font-cyberpunk" style={{textShadow:'0 0 8px #0ff, 0 0 2px #fff'}}>{feature.title}</h3>
+              <div className="text-cyan-100/90 text-sm md:text-base xl:text-[16px] text-center font-cyberpunk" style={{textShadow:'0 0 4px #0ff2'}}>
                 {feature.description}
               </div>
             </div>

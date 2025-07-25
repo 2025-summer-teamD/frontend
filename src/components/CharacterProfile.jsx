@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
-import { Heart as OutlineHeart } from 'lucide-react';
+import { Heart as OutlineHeart, Heart as SolidHeart } from 'lucide-react';
 import { getSafeImageUrl } from '../utils/imageUtils';
 import { useEnterOrCreateChatRoom } from '../data/chatMessages';
 
@@ -39,13 +39,19 @@ export const CharacterHeader = ({ character, liked, onLikeToggle, showLikeButton
         <>
           <button
             onClick={handleLikeToggle}
-            className="absolute top-0 right-0 focus:outline-none"
+            className="absolute top-0 right-0 focus:outline-none flex items-center gap-1"
             aria-label={liked ? '좋아요 취소' : '좋아요'}
           >
             {liked ? (
-              <span className="text-red-500 text-xl">❤️{character.likes}</span>
+              <>
+                <SolidHeart className="w-6 h-6 text-pink-400 drop-shadow-[0_0_3px_#f0f] transition-transform transform scale-110" />
+                <span className="ml-1 text-pink-400 font-bold text-lg drop-shadow-[0_0_2px_#f0f]">{character.likes ?? 0}</span>
+              </>
             ) : (
-              <OutlineHeart className="w-6 h-6 text-gray-400 hover:text-red-500 transition-colors" />
+              <>
+                <OutlineHeart className="w-6 h-6 text-cyan-400 hover:text-pink-400 transition-colors drop-shadow-[0_0_2px_#0ff]" />
+                <span className="ml-1 text-cyan-400 font-bold text-lg drop-shadow-[0_0_2px_#0ff]">{character.likes ?? 0}</span>
+              </>
             )}
           </button>
         </>
@@ -117,7 +123,7 @@ function CollapsibleText({ text, maxLines = 2 }) {
       </div>
       {text.length > 60 && (
         <button
-          className="mt-1 text-xs text-cyan-300 underline hover:text-fuchsia-400 font-rounded"
+          className="mt-1 text-xs text-cyan-300 underline hover:text-fuchsia-400"
           onClick={() => setExpanded(v => !v)}
         >
           {expanded ? '접기' : '더보기'}
@@ -235,24 +241,25 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onC
   };
 
   return (
-    <div className="fixed inset-0 flex justify-center items-center z-50 p-5" onClick={handleBackdropClick} style={{fontFamily:'Share Tech Mono, monospace'}}>
-      <div className="bg-black/60 glass border-2 border-cyan-700 rounded-3xl p-8 w-140 shadow-[0_0_24px_#0ff,0_0_48px_#f0f] max-h-[90vh] animate-fadeIn" style={{boxShadow:'0 0 24px #0ff, 0 0 48px #f0f', border:'2px solid #099', backdropFilter:'blur(16px)'}}>
-        {/* 캐릭터 헤더 */}
-        <CharacterHeader 
-          character={character} 
-          liked={liked} 
-          onLikeToggle={onLikeToggle}
-        />
-        {/* 통계 섹션 */}
-        <CharacterStats character={character} isMyCharacter={isMyCharacter} />
-        {/* 캐릭터 정보 섹션 */}
-        <CharacterInfo character={character} />
-        {/* 태그(추가) */}
-        
-        <div className="space-y-3">
+    <div className="fixed inset-0 flex justify-center items-center z-[500] p-5" onClick={handleBackdropClick} style={{fontFamily:'Share Tech Mono, monospace', zIndex: 500, background: 'rgba(0,0,0,0.8)', alignItems: 'flex-start'}}>
+      <div className="bg-[rgba(34,34,40,0.85)] glass border-2 border-cyan-700 rounded-3xl p-8 w-140 shadow-[0_0_24px_#0ff,0_0_48px_#f0f] max-h-[90vh] animate-fadeIn flex flex-col z-[500]" style={{boxShadow:'0 0 24px #0ff, 0 0 48px #f0f', border:'2px solid #099', backdropFilter:'blur(16px)', zIndex: 500, marginTop: '80px'}}>
+        <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
+          {/* 캐릭터 헤더 */}
+          <CharacterHeader 
+            character={character} 
+            liked={liked} 
+            onLikeToggle={onLikeToggle}
+          />
+          {/* 통계 섹션 */}
+          <CharacterStats character={character} isMyCharacter={isMyCharacter} />
+          {/* 캐릭터 정보 섹션 */}
+          <CharacterInfo character={character} />
+        </div>
+        {/* 버튼 영역: 항상 하단 고정 */}
+        <div className="space-y-3 pt-4">
           <button
             onClick={handleStartChat}
-            className="w-full bg-gradient-to-r from-cyan-700 to-fuchsia-700 hover:from-cyan-600 hover:to-fuchsia-600 text-cyan-100 font-mono font-bold py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2 shadow-[0_0_8px_#0ff,0_0_16px_#f0f] animate-neonPulse"
+            className="w-full bg-gradient-to-r from-cyan-700 to-fuchsia-700 hover:from-cyan-600 hover:to-fuchsia-600 text-cyan-100 font-bold py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2 shadow-[0_0_8px_#0ff,0_0_16px_#f0f] animate-neonPulse"
             disabled={loading}
             style={{textShadow:'0 0 4px #0ff, 0 0 8px #f0f', boxShadow:'0 0 8px #0ff, 0 0 16px #f0f'}}>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -266,7 +273,7 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onC
           </button>
           <button
             onClick={onClose}
-            className="w-full bg-black/40 glass border-2 border-fuchsia-700 hover:border-cyan-700 text-cyan-100 font-mono font-bold py-3 px-6 rounded-2xl transition-colors duration-200 shadow-[0_0_4px_#f0f,0_0_8px_#0ff]"
+            className="w-full bg-black/40 glass border-2 border-fuchsia-700 hover:border-cyan-700 text-cyan-100 font-bold py-3 px-6 rounded-2xl transition-colors duration-200 shadow-[0_0_4px_#f0f,0_0_8px_#0ff]"
             style={{textShadow:'0 0 3px #f0f', boxShadow:'0 0 4px #f0f, 0 0 8px #0ff', border:'2px solid #707'}}>
             닫기
           </button>

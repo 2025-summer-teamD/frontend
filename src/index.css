@@ -12,10 +12,6 @@ html {
 body {
   background-color: #1a1a1a;
   color: #e5e7eb;
-  font-family: 'Noto Sans Rounded', 'Noto Sans KR', 'Pretendard', 'Apple SD Gothic Neo', 'NanumSquareRound', 'Quicksand', Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
   margin: 0;
   padding: 0; /* 혹시 모를 패딩도 함께 제거 */
 }

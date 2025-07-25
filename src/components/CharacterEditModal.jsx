@@ -204,16 +204,16 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
 
   return (
     <div
-      className="fixed inset-0 flex justify-center items-center z-50 p-5 bg-opacity-50"
+      className="fixed inset-0 flex justify-center items-center z-[500] p-5"
       onClick={handleBackdropClick}
       onKeyDown={handleBackdropKeyDown}
       role="dialog"
       aria-modal="true"
       aria-labelledby="edit-character-title"
       tabIndex={-1}
-      style={{fontFamily:'Share Tech Mono, monospace'}}
+      style={{fontFamily:'Share Tech Mono, monospace', zIndex: 500, background: 'rgba(0,0,0,0.8)', alignItems: 'flex-start'}}
     >
-      <div className="bg-black/60 glass border-2 border-cyan-700 rounded-3xl p-8 w-140 shadow-[0_0_24px_#0ff,0_0_48px_#f0f] max-h-[90vh] overflow-y-auto no-scrollbar" style={{boxShadow:'0 0 24px #0ff, 0 0 48px #f0f', border:'2px solid #099', backdropFilter:'blur(16px)'}}>
+      <div className="bg-black/60 glass border-2 border-cyan-700 rounded-3xl p-8 w-140 shadow-[0_0_24px_#0ff,0_0_48px_#f0f] max-h-[90vh] overflow-y-auto no-scrollbar" style={{boxShadow:'0 0 24px #0ff, 0 0 48px #f0f', border:'2px solid #099', backdropFilter:'blur(16px)', marginTop: '80px'}}>
         {/* 프로필 헤더 */}
         <div className="relative flex items-center mb-5">
           <div className="w-20 h-20 bg-gray-300 rounded-full border-4 border-cyan-700 shadow-[0_0_8px_#0ff] mr-5 overflow-hidden relative group cursor-pointer">
@@ -255,13 +255,19 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
           </div>
           <button
             onClick={toggleLike}
-            className="absolute top-0 right-0 focus:outline-none"
+            className="absolute top-0 right-0 focus:outline-none flex items-center gap-1"
             aria-label={liked ? '좋아요 취소' : '좋아요'}
           >
             {liked ? (
-              <SolidHeart className="w-6 h-6 text-pink-400 drop-shadow-[0_0_3px_#f0f] transition-transform transform scale-110" />
+              <>
+                <SolidHeart className="w-6 h-6 text-pink-400 drop-shadow-[0_0_3px_#f0f] transition-transform transform scale-110" />
+                <span className="ml-1 text-pink-400 font-bold text-lg drop-shadow-[0_0_2px_#f0f]">{character.likes ?? 0}</span>
+              </>
             ) : (
-              <OutlineHeart className="w-6 h-6 text-cyan-400 hover:text-pink-400 transition-colors drop-shadow-[0_0_2px_#0ff]" />
+              <>
+                <OutlineHeart className="w-6 h-6 text-cyan-400 hover:text-pink-400 transition-colors drop-shadow-[0_0_2px_#0ff]" />
+                <span className="ml-1 text-cyan-400 font-bold text-lg drop-shadow-[0_0_2px_#0ff]">{character.likes ?? 0}</span>
+              </>
             )}
           </button>
         </div>
@@ -288,7 +294,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
               <textarea
                 value={formData.personality}
                 onChange={(e) => handleInputChange('personality', e.target.value)}
-                className="w-full bg-transparent border border-cyan-700 focus:border-fuchsia-400 outline-none p-3 rounded text-cyan-100 resize-none font-mono tracking-widest"
+                className="w-full bg-transparent border border-cyan-700 focus:border-fuchsia-400 outline-none p-3 rounded text-cyan-100 resize-none font-mono tracking-widest no-scrollbar"
                 placeholder="캐릭터의 성격을 입력하세요 (예: 친절함, 호기심, 적극성)"
                 rows="2"
                 style={{fontFamily:'Share Tech Mono, monospace'}}
@@ -297,12 +303,12 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
             {/* 말투 입력 */}
             <div>
               <div className="text-cyan-400 text-sm mb-3 font-mono">말투</div>
-              <input
-                type="text"
+              <textarea
                 value={formData.tone}
                 onChange={(e) => handleInputChange('tone', e.target.value)}
-                className="w-full bg-transparent border border-cyan-700 focus:border-fuchsia-400 outline-none p-3 rounded text-cyan-100 font-mono tracking-widest"
+                className="w-full bg-transparent border border-cyan-700 focus:border-fuchsia-400 outline-none p-3 rounded text-cyan-100 resize-none font-mono tracking-widest no-scrollbar"
                 placeholder="캐릭터의 말투를 입력하세요 (예: 차분하고 논리적인, 활기차고 친근한)"
+                rows="2"
                 style={{fontFamily:'Share Tech Mono, monospace'}}
               />
             </div>
@@ -312,7 +318,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
               <textarea
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
-                className="w-full bg-transparent border border-cyan-700 focus:border-fuchsia-400 outline-none p-3 rounded text-cyan-100 resize-none font-mono tracking-widest"
+                className="w-full bg-transparent border border-cyan-700 focus:border-fuchsia-400 outline-none p-3 rounded text-cyan-100 resize-none font-mono tracking-widest no-scrollbar"
                 placeholder="캐릭터에 대한 설명을 입력하세요"
                 rows="2"
                 style={{fontFamily:'Share Tech Mono, monospace'}}
@@ -325,7 +331,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
                 type="text"
                 value={formData.tags}
                 onChange={(e) => handleInputChange('tags', e.target.value)}
-                className="w-full bg-transparent border border-cyan-700 focus:border-fuchsia-400 outline-none p-3 rounded text-cyan-100 font-mono tracking-widest"
+                className="w-full bg-transparent border border-cyan-700 focus:border-fuchsia-400 outline-none p-3 rounded text-cyan-100 font-mono tracking-widest no-scrollbar"
                 placeholder="태그를 쉼표로 구분하여 입력하세요 (예: 친근한, 유머러스, 도움이 되는)"
                 style={{fontFamily:'Share Tech Mono, monospace'}}
               />
