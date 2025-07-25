@@ -21,7 +21,7 @@ function Home() {
   }, [isLoaded, isSignedIn, getToken, userId]); // 의존성 배열에 필요한 값들을 포함합니다.
 
   return (
-    <div className="text-white no-scrollbar" style={{background: 'linear-gradient(to bottom, #181a2b 60%, #0f1023 100%)'}}>
+    <div className="text-white no-scrollbar" style={{background: 'linear-gradient(to bottom, #2D1B69 0%, #1A1A2E 50%, #16213E 100%)'}}>
       <Hero />
       <section className="w-full animate-fadeIn">
         <PopularCharacters />
