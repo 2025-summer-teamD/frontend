@@ -26,18 +26,22 @@ const SearchBar = ({
   placeholder = "캐릭터 이름 또는 설명으로 검색" 
 }) => {
   return (
-    <div className="mb-3 top-4 z-10 bg-[#1e2139] py-4">
+    <div className="mb-3 top-4 z-10 animate-fadeIn">
       <div className="max-w-2xl mx-auto">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="text-gray-400" />
+            <Search className="text-cyan-400 drop-shadow-[0_0_6px_#0ff]" />
           </div>
           <input
             type="text"
             placeholder={placeholder}
-            className="w-full bg-gray-700 text-white placeholder-gray-400 border border-transparent rounded-full py-3 pl-10 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+            className="w-full bg-black/60 text-cyan-100 placeholder-cyan-400 border-2 border-cyan-400 rounded-full py-3 pl-10 pr-10 focus:outline-none focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-400 transition-all shadow-[0_0_8px_#0ff] font-mono"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
+            style={{
+              textShadow: '0 0 8px #0ff',
+              boxShadow: '0 0 8px #0ff',
+            }}
           />
           {searchQuery && (
             <button
@@ -45,7 +49,7 @@ const SearchBar = ({
               className="absolute inset-y-0 right-0 pr-3 flex items-center"
               aria-label="검색어 지우기"
             >
-              <XCircle className="text-gray-400 hover:text-white" />
+              <XCircle className="text-fuchsia-400 hover:text-cyan-400 drop-shadow-[0_0_6px_#f0f]" />
             </button>
           )}
         </div>

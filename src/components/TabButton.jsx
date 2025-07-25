@@ -22,15 +22,19 @@ const TabButton = ({
   isActive, 
   onClick, 
   children, 
-  className = "px-4 py-2 text-sm sm:text-base font-semibold rounded-full transition-colors" 
+  className = "px-4 py-2 text-sm sm:text-base font-semibold rounded-full transition-colors neon-btn" 
 }) => {
-  const activeClasses = "bg-indigo-600 text-white shadow-lg";
-  const inactiveClasses = "bg-gray-700 text-gray-300 hover:bg-gray-600";
-  
+  const activeClasses = "bg-black/60 border-2 border-cyan-400 text-cyan-200 shadow-[0_0_8px_#0ff,0_0_16px_#f0f] animate-neonPulse";
+  const inactiveClasses = "bg-black/30 border-2 border-gray-700 text-gray-400 hover:border-cyan-400 hover:text-cyan-200 hover:shadow-[0_0_8px_#0ff]";
   return (
     <button
       className={`${className} ${isActive ? activeClasses : inactiveClasses}`}
       onClick={onClick}
+      style={{
+        fontFamily: 'Share Tech Mono, monospace',
+        textShadow: isActive ? '0 0 8px #0ff, 0 0 16px #f0f' : '0 0 4px #0ff',
+        boxShadow: isActive ? '0 0 8px #0ff, 0 0 16px #f0f' : '0 0 4px #0ff',
+      }}
     >
       {children}
     </button>

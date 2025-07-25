@@ -21,23 +21,32 @@ export const CharacterCard = ({
       tabIndex={0}
       onClick={() => onSelect(character)}
       onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && onSelect(character)}
-      className="group relative aspect-[3/4] bg-gray-700 rounded-2xl overflow-hidden cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-indigo-500/30"
+      className="group relative aspect-[3/4] neon-card bg-black/40 glass border-2 border-cyan-700 rounded-2xl overflow-hidden cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-[0_0_16px_#0ff,0_0_32px_#f0f] animate-fadeIn"
+      style={{
+        boxShadow: '0 0 8px #0ff, 0 0 16px #f0f',
+        border: '2px solid #099',
+        backdropFilter: 'blur(8px)',
+        fontFamily: 'Share Tech Mono, monospace',
+      }}
     >
       <img
         src={getSafeImageUrl(character.imageUrl)}
         alt={character.name}
-        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110 opacity-90"
+        style={{ filter: 'brightness(1.1) saturate(1.2) drop-shadow(0 0 6px #0ff)' }}
         onError={(e) => {
           e.target.src = '/api/uploads/default-character.svg';
         }}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-      <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
-        <h3 className="font-bold truncate">{character.name}</h3>
-        <p className="text-xs text-gray-300 truncate">{character.introduction || character.description}</p>
+      <div className="absolute bottom-0 left-0 right-0 p-3 text-cyan-100">
+        <h3 className="font-bold truncate text-cyan-200 drop-shadow-[0_0_4px_#0ff]" style={{fontFamily:'Share Tech Mono, monospace'}}>{character.name}</h3>
+        <p className="text-xs text-fuchsia-300 truncate drop-shadow-[0_0_2px_#f0f]" style={{fontFamily:'Share Tech Mono, monospace'}}>{character.introduction || character.description}</p>
+        {/* 태그 */}
+        {/* 태그(예: #N번째로 생성된 캐릭터, 사용자 태그 등) 렌더링 부분을 모두 삭제 */}
         <div className="flex justify-between items-center mt-2 text-xs">
           <div className="flex items-center gap-1">
-            <span>👁️ {character.usesCount || character.messageCount || 0}</span>
+            <span className="text-cyan-300 drop-shadow-[0_0_2px_#0ff]" style={{fontFamily:'Share Tech Mono, monospace'}}>👁️ {character.usesCount || character.messageCount || 0}</span>
           </div>
           <div className="flex items-center gap-1">
             <button
@@ -49,12 +58,12 @@ export const CharacterCard = ({
               aria-label="좋아요 토글"
             >
               {isLiked ? (
-                <span className="text-red-500">❤️</span>
+                <span className="text-pink-400 drop-shadow-[0_0_3px_#f0f]">❤️</span>
               ) : (
-                <OutlineHeart className="w-4 h-4 text-gray-400 hover:text-red-500 transition-colors" />
+                <OutlineHeart className="w-4 h-4 text-cyan-400 hover:text-pink-400 transition-colors drop-shadow-[0_0_2px_#0ff]" />
               )}
             </button>
-            <span className="text-xs text-gray-300">{character.likes || 0}</span>
+            <span className="text-xs text-cyan-300 drop-shadow-[0_0_2px_#0ff]" style={{fontFamily:'Share Tech Mono, monospace'}}>{character.likes || 0}</span>
           </div>
         </div>
         {/* 수정/삭제 버튼 */}
@@ -66,8 +75,9 @@ export const CharacterCard = ({
                   e.stopPropagation();
                   onEdit(character);
                 }}
-                className="p-1 rounded bg-blue-500 bg-opacity-20 border border-blue-400 border-opacity-30 text-blue-300 hover:bg-blue-500 hover:bg-opacity-40 hover:text-white transition-all duration-200"
+                className="p-1 rounded bg-black/40 glass border-2 border-cyan-700 text-cyan-200 hover:bg-black/60 hover:border-fuchsia-400 hover:text-fuchsia-200 transition-all duration-200 shadow-[0_0_8px_#0ff,0_0_16px_#f0f] animate-neonPulse"
                 title="캐릭터 수정"
+                style={{fontFamily:'Share Tech Mono, monospace'}}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
@@ -79,7 +89,6 @@ export const CharacterCard = ({
                 </svg>
               </button>
             )}
-
           </div>
         )}
       </div>

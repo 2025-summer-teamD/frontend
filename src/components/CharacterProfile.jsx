@@ -43,12 +43,11 @@ export const CharacterHeader = ({ character, liked, onLikeToggle, showLikeButton
             aria-label={liked ? '좋아요 취소' : '좋아요'}
           >
             {liked ? (
-              <span className="text-red-500 text-xl">❤️</span>
+              <span className="text-red-500 text-xl">❤️{character.likes}</span>
             ) : (
               <OutlineHeart className="w-6 h-6 text-gray-400 hover:text-red-500 transition-colors" />
             )}
           </button>
-          <span className="absolute top-8 right-0 text-sm text-gray-400">{character.likes || 0}</span>
         </>
       )}
     </div>
@@ -104,6 +103,30 @@ CharacterStats.propTypes = {
   isMyCharacter: PropTypes.bool,
 };
 
+// CollapsibleText 컴포넌트 추가
+function CollapsibleText({ text, maxLines = 2 }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!text) return null;
+  return (
+    <div>
+      <div
+        className={`overflow-hidden transition-all duration-300 ${expanded ? '' : 'line-clamp-2'}`}
+        style={{ maxHeight: expanded ? 'none' : '3.2em' }}
+      >
+        {text}
+      </div>
+      {text.length > 60 && (
+        <button
+          className="mt-1 text-xs text-cyan-300 underline hover:text-fuchsia-400 font-rounded"
+          onClick={() => setExpanded(v => !v)}
+        >
+          {expanded ? '접기' : '더보기'}
+        </button>
+      )}
+    </div>
+  );
+}
+
 // 재사용 가능한 캐릭터 정보 섹션 컴포넌트
 export const CharacterInfo = ({ character }) => (
   <div className="mb-8">
@@ -111,29 +134,29 @@ export const CharacterInfo = ({ character }) => (
       {character.prompt?.personality && (
         <div>
           <div className="text-gray-400 text-sm mb-2">성격</div>
-          <div className="text-white">{character.prompt.personality}</div>
+          <CollapsibleText text={character.prompt.personality} />
         </div>
       )}
       {character.prompt?.tone && (
         <div>
           <div className="text-gray-400 text-sm mb-2">말투</div>
-          <div className="text-white">{character.prompt.tone}</div>
+          <CollapsibleText text={character.prompt.tone} />
         </div>
       )}
       {(character.introduction || character.description) && (
         <div>
           <div className="text-gray-400 text-sm mb-2">설명</div>
-          <div className="text-white">{character.introduction || character.description}</div>
+          <CollapsibleText text={character.introduction || character.description} />
         </div>
       )}
       <div>
         <div className="text-gray-400 text-sm mb-3">태그</div>
         <div className="flex flex-wrap gap-2">
-          <span className="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-xs">
+          <span className="px-3 py-1 rounded-md border border-cyan-700 bg-black/60 text-cyan-300 text-xs font-mono tracking-widest shadow-[0_0_4px_#0ff]" style={{fontFamily:'Share Tech Mono, monospace', letterSpacing:'0.08em', border:'1.5px solid #066', boxShadow:'0 0 4px #0ff'}}>
             #{character.id || '캐릭터'}번째로 생성된 캐릭터
           </span>
           {character.prompt?.tag && character.prompt.tag.split(',').filter(tag => tag.trim()).map((tag, idx) => (
-            <span key={`tag-${idx}-${tag.trim()}`} className="bg-purple-700 text-white px-3 py-1 rounded-full text-xs">
+            <span key={`tag-${idx}-${tag.trim()}`} className="px-3 py-1 rounded-md border border-cyan-700 bg-black/60 text-cyan-300 text-xs font-mono tracking-widest shadow-[0_0_4px_#0ff]" style={{fontFamily:'Share Tech Mono, monospace', letterSpacing:'0.08em', border:'1.5px solid #066', boxShadow:'0 0 4px #0ff'}}>
               #{tag.trim()}
             </span>
           ))}
@@ -212,27 +235,26 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onC
   };
 
   return (
-    <div className="fixed inset-0 flex justify-center items-center z-50 p-5" onClick={handleBackdropClick}>
-      <div className="bg-gray-800 rounded-3xl p-8 w-140 shadow-2xl max-h-[90vh]">
+    <div className="fixed inset-0 flex justify-center items-center z-50 p-5" onClick={handleBackdropClick} style={{fontFamily:'Share Tech Mono, monospace'}}>
+      <div className="bg-black/60 glass border-2 border-cyan-700 rounded-3xl p-8 w-140 shadow-[0_0_24px_#0ff,0_0_48px_#f0f] max-h-[90vh] animate-fadeIn" style={{boxShadow:'0 0 24px #0ff, 0 0 48px #f0f', border:'2px solid #099', backdropFilter:'blur(16px)'}}>
         {/* 캐릭터 헤더 */}
         <CharacterHeader 
           character={character} 
           liked={liked} 
           onLikeToggle={onLikeToggle}
         />
-
         {/* 통계 섹션 */}
         <CharacterStats character={character} isMyCharacter={isMyCharacter} />
-
         {/* 캐릭터 정보 섹션 */}
         <CharacterInfo character={character} />
-
+        {/* 태그(추가) */}
+        
         <div className="space-y-3">
           <button
             onClick={handleStartChat}
-            className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-medium py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2"
+            className="w-full bg-gradient-to-r from-cyan-700 to-fuchsia-700 hover:from-cyan-600 hover:to-fuchsia-600 text-cyan-100 font-mono font-bold py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2 shadow-[0_0_8px_#0ff,0_0_16px_#f0f] animate-neonPulse"
             disabled={loading}
-          >
+            style={{textShadow:'0 0 4px #0ff, 0 0 8px #f0f', boxShadow:'0 0 8px #0ff, 0 0 16px #f0f'}}>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03
@@ -244,8 +266,8 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onC
           </button>
           <button
             onClick={onClose}
-            className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-6 rounded-2xl transition-colors duration-200"
-          >
+            className="w-full bg-black/40 glass border-2 border-fuchsia-700 hover:border-cyan-700 text-cyan-100 font-mono font-bold py-3 px-6 rounded-2xl transition-colors duration-200 shadow-[0_0_4px_#f0f,0_0_8px_#0ff]"
+            style={{textShadow:'0 0 3px #f0f', boxShadow:'0 0 4px #f0f, 0 0 8px #0ff', border:'2px solid #707'}}>
             닫기
           </button>
         </div>

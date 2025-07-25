@@ -173,6 +173,7 @@ export default function CharacterList() {
     <PageLayout
       title="내 캐릭터 목록"
       subtitle="내가 만들거나 저장한 캐릭터 목록이에요"
+      className="font-rounded"
     >
       {/* Search and Filter */}
       <SearchBar

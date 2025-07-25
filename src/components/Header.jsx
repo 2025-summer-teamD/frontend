@@ -5,53 +5,45 @@ import { Menu } from 'lucide-react';
 
 export default function Header({ onMenuClick }) {
   return (
-    <div className="w-full h-[80px] z-50 bg-[linear-gradient(40deg,_#040438_17.08%,_#3C3C56_73.2%)] flex items-center px-5">
+    <div className="w-full h-[80px] z-50 bg-black/60 glass border-b-2 border-cyan-400 shadow-[0_0_16px_#0ff,0_0_32px_#f0f] flex items-center px-5 font-rounded" style={{boxShadow:'0 0 16px #0ff, 0 0 32px #f0f', borderBottom:'2px solid #0ff'}}>
       {/* 왼쪽 로고 */}
       <Link to="/">
         <div className="flex items-center">
-          <img src="/assets/logo.png" alt="Logo" className="h-[40px] w-[40px]" />
-          <span className="text-white font-bold text-[28px] ml-3">ChatMate</span>
+          <img src="/assets/logo.png" alt="Logo" className="h-[40px] w-[40px] drop-shadow-[0_0_12px_#0ff]" />
+          <span className="text-cyan-200 font-extrabold text-[28px] ml-3 drop-shadow-[0_0_8px_#0ff] font-rounded">ChatMate</span>
         </div>
       </Link>
-
-      {/* 오른쪽 내비게이션 (md 이상에서 보임) */}
+      {/* 오른쪽 내비게이션 */}
       <nav className="hidden md:flex items-center space-x-4 ml-auto">
         <NavLink
           to="/"
-          className={({ isActive }) => isActive ? "text-white hover:text-white  text-[1.2rem] rounded hover:bg-white/10" : "text-[1.2rem] text-gray-400"}
+          className={({ isActive }) => isActive ? "text-cyan-200 hover:text-fuchsia-400 text-[1.2rem] rounded bg-black/30 px-2 shadow-[0_0_8px_#0ff] font-rounded" : "text-[1.2rem] px-1 text-cyan-400 hover:text-fuchsia-400 font-rounded"}
         >
           홈
         </NavLink>
         <NavLink
           to="/communities"
-          className={() =>
-            `text-[1.2rem] px-1 text-gray-400`
-          }
+          className={({ isActive }) => isActive ? "text-cyan-200 hover:text-fuchsia-400 text-[1.2rem] rounded bg-black/30 px-2 shadow-[0_0_8px_#0ff] font-rounded" : "text-[1.2rem] px-1 text-cyan-400 hover:text-fuchsia-400 font-rounded"}
         >
           커뮤니티
         </NavLink>
         <NavLink
           to="/createCharacter"
-          className={() =>
-            `text-[1.2rem] px-1 text-gray-400`
-          }
+          className={({ isActive }) => isActive ? "text-cyan-200 hover:text-fuchsia-400 text-[1.2rem] rounded bg-black/30 px-2 shadow-[0_0_8px_#0ff] font-rounded" : "text-[1.2rem] px-1 text-cyan-400 hover:text-fuchsia-400 font-rounded"}
         >
           만들기
         </NavLink>
         <NavLink
           to="/characterList"
-          className={() =>
-            `text-[1.2rem] px-1 text-gray-400`
-          }
+          className={({ isActive }) => isActive ? "text-cyan-200 hover:text-fuchsia-400 text-[1.2rem] rounded bg-black/30 px-2 shadow-[0_0_8px_#0ff] font-rounded" : "text-[1.2rem] px-1 text-cyan-400 hover:text-fuchsia-400 font-rounded"}
         >
           내 캐릭터
         </NavLink>
         <AnimatedAuthHeader />
       </nav>
-
-      {/* 메뉴 버튼 (md 이하에서 보임) */}
+      {/* 메뉴 버튼 (모바일) */}
       <div className="md:hidden ml-auto">
-        <button onClick={onMenuClick} className="text-white">
+        <button onClick={onMenuClick} className="text-cyan-200">
           <Menu size={24} />
         </button>
       </div>
