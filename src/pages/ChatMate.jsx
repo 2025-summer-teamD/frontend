@@ -345,7 +345,7 @@ const ChatMate = () => {
     formData.append('image', file);
 
     const token = await getToken(); // 이미지 업로드에도 토큰 필요할 수 있음
-    const res = await fetch(`${API_BASE_URL}/api/chat/upload-image`, { // API_BASE_URL 추가
+    const res = await fetch(`${API_BASE_URL}/chat/upload-image`, { // '/api' 중복 제거
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` }, // 필요시
       body: formData,
