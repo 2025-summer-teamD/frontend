@@ -2,14 +2,63 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import chatMessages from '../data/chatMessages'; // 더미 데이터 삭제
 import { useSendMessageToAI } from '../data/chatMessages';
-import { useUser } from '@clerk/clerk-react';
+import { useUser, useAuth } from '@clerk/clerk-react';
 import { useChatMessages } from '../contexts/ChatMessagesContext';
 import { FiPaperclip } from 'react-icons/fi';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+// 레벨/게이지 계산 및 네온 게이지 컴포넌트
+function getLevel(exp) {
+  if (exp >= 7) return 5;
+  if (exp >= 4) return 4;
+  if (exp >= 2) return 3;
+  if (exp >= 1) return 2;
+  return 1;
+}
+function getExpForNextLevel(level) {
+  // 1→2:1, 2→3:2, 3→4:3, 4→5:4
+  return [0, 1, 2, 3, 4][level] || 0;
+}
+function getExpBase(level) {
+  // 누적 기준 exp
+  return [0, 0, 1, 2, 4][level] || 0;
+}
+function LevelExpGauge({ exp }) {
+  const level = getLevel(exp);
+  const expBase = getExpBase(level);
+  const expNext = getExpForNextLevel(level);
+  const expInLevel = exp - expBase;
+  const expMax = expNext;
+  const percent = expMax ? Math.min(100, Math.round((expInLevel / expMax) * 100)) : 100;
+  return (
+    <>
+      <div className="flex gap-4 items-center text-cyan-200 font-bold font-rounded text-sm tracking-widest">
+        <span>레벨: {level}</span>
+        <span>친밀도: {exp}</span>
+      </div>
+      <div className="w-48 h-3 bg-black/60 border-2 border-cyan-700 rounded-full shadow-[0_0_8px_#0ff] relative overflow-hidden">
+        <div
+          className="h-full bg-cyan-400"
+          style={{
+            width: `${percent}%`,
+            boxShadow: '0 0 8px #0ff, 0 0 16px #0ff',
+            transition: 'width 0.4s cubic-bezier(.4,2,.6,1)'
+          }}
+        />
+        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs text-cyan-100 font-bold drop-shadow-[0_0_2px_#0ff]">
+          {expInLevel}/{expMax}
+        </span>
+      </div>
+    </>
+  );
+}
 
 const ChatMate = () => {
   const { state } = useLocation();
   const { roomId } = useParams();
   const { user } = useUser();
+  const { getToken } = useAuth();
 
   // AI 응답 훅 추가
   const { sendMessage: sendMessageToAI, error: aiError } = useSendMessageToAI();
@@ -96,36 +145,33 @@ const ChatMate = () => {
     }
   }, [state?.character, state?.chatHistory, roomId]); // roomId도 의존성에 추가
 
-  // roomId로 백엔드에서 캐릭터 정보 fetch (state가 없을 때만)
+  // 채팅방 입장 시 캐릭터 정보 fetch (state가 있든 없든 항상 최신값으로)
   useEffect(() => {
-    console.log('🔄 [API 호출 체크] useEffect 실행 - roomId:', roomId, 'state?.character:', !!state?.character);
-
-    // state에서 캐릭터 정보가 있으면 API 호출하지 않음 (위의 useEffect에서 처리됨)
-    if (state?.character) {
-      console.log('✅ state에서 캐릭터 정보 있음, API 호출 생략 (이미 위에서 처리됨)');
-      return;
-    }
-
-    console.log('🌐 state에 캐릭터 정보 없음, API 호출 시작');
-    setCharacter(null);
-    setMessagesForRoom(roomId, []); // 전역 Context에서 메시지 초기화
-    setError(null);
     if (roomId) {
       setLoading(true);
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-      fetch(`${API_BASE_URL}/chat/room-info?room_id=${roomId}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.success && data.data && data.data.character) {
-            setCharacter(data.data.character);
-          } else {
-            setError('존재하지 않거나 삭제된 채팅방입니다.');
+      (async () => {
+        const token = await getToken();
+        fetch(`${API_BASE_URL}/chat/room-info?roomId=${roomId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
         })
-        .catch(() => setError('존재하지 않거나 삭제된 채팅방입니다.'))
-        .finally(() => setLoading(false));
+          .then(res => res.json())
+          .then(data => {
+            console.log('[room-info] API 응답:', data);
+            if (data.success && data.data && data.data.character) {
+              console.log('[room-info] setCharacter 호출: exp:', data.data.character.exp, 'friendship:', data.data.character.friendship, '전체:', data.data.character);
+              setCharacter(data.data.character);
+            } else {
+              setError('존재하지 않거나 삭제된 채팅방입니다.');
+            }
+          })
+          .catch(() => setError('존재하지 않거나 삭제된 채팅방입니다.'))
+          .finally(() => setLoading(false));
+      })();
     }
-  }, [roomId, state?.character]);
+  }, [roomId, getToken]);
 
   // 더미 데이터 삭제: character가 바뀌어도 messages는 빈 배열 유지
 
@@ -198,20 +244,31 @@ const ChatMate = () => {
     addMessageToRoom(roomId, userMsg);
 
     try {
-      // AI 로딩 상태 시작
+      // AI 응답까지 받기
       setAiLoading(roomId, true);
-
-      // AI API 호출
-      console.log('🤖 AI API 호출 시작');
-      console.log('💬 AI에게 메시지 전송:', { roomId, message: messageText });
       const aiResponse = await sendMessageToAI(roomId, messageText);
-      console.log('✅ AI API 호출 성공, 응답:', aiResponse);
-      console.log('🔍 AI 응답 타입:', typeof aiResponse);
+      setAiLoading(roomId, false);
+      // AI 응답 메시지 전역 상태에 추가
+      addAiResponseToRoom(roomId, aiResponse);
 
-      // AI 응답을 해당 roomId에 추가 (채팅방이 바뀌어도 올바른 곳에 저장됨)
-      console.log('🤖 AI 응답을 전역 상태에 추가');
-      const finalResponse = typeof aiResponse === 'string' ? aiResponse : '응답을 받지 못했습니다.';
-      addAiResponseToRoom(roomId, finalResponse);
+      // 메시지 전송 후 exp/레벨/게이지 실시간 갱신
+      (async () => {
+        const token = await getToken();
+        fetch(`${API_BASE_URL}/chat/room-info?roomId=${roomId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+          .then(res => res.json())
+          .then(data => {
+            console.log('[room-info] (sendMessage 후) API 응답:', data);
+            if (data.success && data.data && data.data.character) {
+              console.log('[room-info] (sendMessage 후) setCharacter 호출: exp:', data.data.character.exp, 'friendship:', data.data.character.friendship, '전체:', data.data.character);
+              setCharacter(data.data.character);
+            }
+          });
+      })();
 
     } catch (error) {
       console.error('💥 ChatMate sendMessage에서 에러 발생:', error);
@@ -284,94 +341,96 @@ const ChatMate = () => {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full font-rounded" style={{fontFamily:undefined, background:'radial-gradient(circle at 30% 10%, #23234d 0%, #2e3a5e 60%, #181a2b 100%)', minHeight:'100vh'}}>
       {/* 헤더: sticky */}
-      <header className="sticky top-0 py-4 px-6 z-10 bg-black/20 backdrop-blur-xl"> {/* Added background for header */}
+      <header className="sticky top-0 py-4 px-6 z-10">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-[#a6c0c6]">
+          <div className="w-9 h-9 rounded-full border-2 border-cyan-300 shadow-[0_0_4px_#0ff]">
             <img
               src={character.imageUrl}
               alt={character.name}
               className="w-full h-full object-cover rounded-full"
             />
           </div>
-          <span className="text-white text-lg font-bold">
+          <span className="text-cyan-100 text-lg font-bold drop-shadow-[0_0_2px_#0ff] tracking-widest font-rounded">
             {character.name}
           </span>
         </div>
+        {/* 레벨/친밀도/게이지 UI 추가 */}
+        {character && (
+          <div className="mt-2 flex flex-col items-start gap-1">
+            {/* 레벨/친밀도 */}
+            <LevelExpGauge exp={character.exp || 0} />
+          </div>
+        )}
       </header>
-
       {/* 스크롤 영역: 프로필 + 메시지 */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 px-4 overflow-y-auto no-scrollbar sm:px-6 md:px-8 lg:px-12 pb-28"
+        className="flex-1 px-4 overflow-y-auto no-scrollbar sm:px-6 md:px-8 lg:px-12 pb-28 font-rounded"
       >
         {/* 프로필 */}
-        <div className="flex flex-col items-center my-6 text-center">
-          <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full">
+        <div className="flex flex-col items-center my-6 text-center font-rounded">
+          <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-cyan-300 shadow-[0_0_6px_#0ff]">
             <img
               src={character.imageUrl}
               alt={character.name}
               className="w-full h-full object-cover rounded-full"
             />
           </div>
-          <h3 className="text-xl sm:text-2xl font-semibold text-white mb-2 mt-3">
+          <h3 className="text-2xl font-bold text-cyan-100 mb-2 mt-3 drop-shadow-[0_0_2px_#0ff] tracking-widest font-rounded">
             {character.name}
           </h3>
-          <p className="text-white/70 text-xs sm:text-sm px-2 max-w-lg mx-auto mt-1 mb-2">
+          <p className="text-cyan-100/80 text-xs sm:text-sm px-2 max-w-lg mx-auto mt-1 mb-2 drop-shadow-[0_0_1px_#0ff] font-rounded">
             {character.description || character.introduction || character.desc}
           </p>
         </div>
-
         {/* 메시지들 */}
-        <div className="space-y-4 pb-4 max-w-3xl mx-auto">
+        <div className="space-y-4 pb-4 max-w-3xl mx-auto font-rounded">
           {messages.map((msg, idx) => {
-            console.log('채팅 메시지 객체:', msg);
             const isLast = idx === messages.length - 1;
             const nextMsg = messages[idx + 1];
             const prevMsg = messages[idx - 1];
             const showTime = isLast || msg.time !== nextMsg?.time || msg.sender !== "prevMsg?.sender";
             const showProfile = idx === 0 || msg.time !== prevMsg?.time || msg.sender !== "prevMsg?.sender";
-
             return (
               <div
                 key={msg.id}
-                className={`flex flex-col w-full ${msg.sender === 'me' ? 'items-end' : 'items-start'}`}
+                className={`flex flex-col w-full ${msg.sender === 'me' ? 'items-end' : 'items-start'} font-rounded`}
               >
                 {showProfile && (
-                  <div className={`flex items-center mb-1 ${msg.sender === 'me' ? 'flex-row-reverse' : 'flex-row'}`}>
-                    <div className="w-8 h-8 rounded-full flex-shrink-0 bg-gradient-to-br from-green-300 to-teal-400">
+                  <div className={`flex items-center mb-1 ${msg.sender === 'me' ? 'flex-row-reverse' : 'flex-row'} font-rounded`}>
+                    <div className="w-8 h-8 rounded-full border-2 border-cyan-300 shadow-[0_0_3px_#0ff] flex-shrink-0 bg-gradient-to-br from-cyan-200/60 to-fuchsia-200/40">
                       <img
                         src={msg.sender === 'me' ? user?.imageUrl || '/assets/icon-character.png' : character.imageUrl}
                         alt=""
                         className="w-full h-full object-cover rounded-full"
                       />
                     </div>
-                    <span className={`text-white font-medium text-sm ${msg.sender === 'me' ? 'mr-2' : 'ml-2'}`}>
+                    <span className={`text-cyan-100 font-bold text-sm tracking-widest drop-shadow-[0_0_1px_#0ff] font-rounded ${msg.sender === 'me' ? 'mr-2' : 'ml-2'}`}>
                       {msg.sender === 'me' ? user?.username || user?.firstName || 'You' : character.name}
                     </span>
                   </div>
                 )}
                 <div
-                  className={`max-w-[80%] sm:max-w-[70%] lg:max-w-[60%] px-4 py-3 rounded-2xl break-words ${msg.sender === 'me'
-                    ? 'bg-[#413ebc] text-white mr-10'
-                    : 'bg-white text-black ml-10'
+                  className={`max-w-[80%] sm:max-w-[70%] lg:max-w-[60%] px-4 py-3 rounded-xl break-words tracking-widest font-rounded ${msg.sender === 'me'
+                    ? 'bg-cyan-100/80 border-2 border-cyan-200 text-[#1a1a2e] shadow-[0_0_4px_#0ff]'
+                    : 'bg-fuchsia-100/80 border-2 border-fuchsia-200 text-[#1a1a2e] shadow-[0_0_4px_#f0f]'
                     }`}
+                  style={{boxShadow: msg.sender==='me'?'0 0 4px #0ff':'0 0 4px #f0f', border: msg.sender==='me'?'2px solid #7ff':'2px solid #e7e'}}
                 >
-                  {msg.imageUrl && console.log('이미지 src:', msg.imageUrl)}
                   {msg.imageUrl
                     ? <img
-                      src={msg.imageUrl.startsWith('http') ? msg.imageUrl : BACKEND_URL + msg.imageUrl}
+                      src={msg.imageUrl.startsWith('http') ? msg.imageUrl : API_BASE_URL + msg.imageUrl}
                       alt="전송된 이미지"
-                      className="max-w-xs rounded-lg"
+                      className="max-w-xs rounded-lg border-2 border-cyan-200 shadow-[0_0_4px_#0ff] font-rounded"
                     />
-                    : <p>{msg.text}</p>
+                    : <p className="font-rounded">{msg.text}</p>
                   }
                 </div>
                 {showTime && (
                   <span
-                    className={`text-xs text-white/60 mt-1 block text-right ${msg.sender === 'me' ? 'mr-10' : 'ml-10'
-                      }`}
+                    className={`text-xs text-cyan-400 mt-1 block text-right font-rounded ${msg.sender === 'me' ? 'mr-10' : 'ml-10'}`}
                   >
                     {msg.time}
                   </span>
@@ -382,13 +441,12 @@ const ChatMate = () => {
           <div ref={messagesEndRef} />
         </div>
       </div>
-
       {/* 입력창: sticky bottom */}
-      <footer className="fixed right-0 left-0 bottom-0 px-4 py-4 border-t border-white/10 bg-black/20 backdrop-blur-xl">
-        <div className="flex items-center space-x-3 max-w-4xl mx-auto relative">
+      <footer className="fixed right-0 left-0 bottom-0 px-4 py-4 border-t-2 border-cyan-200 bg-black/30 glass backdrop-blur-xl shadow-[0_0_8px_#0ff,0_0_16px_#f0f] font-rounded">
+        <div className="flex items-center space-x-3 max-w-4xl mx-auto relative font-rounded">
           <div className="relative">
             <button
-              className="text-white hover:text-white/90 p-2 text-xl"
+              className="text-cyan-400 hover:text-fuchsia-400 p-2 text-xl drop-shadow-[0_0_2px_#0ff] font-rounded"
               aria-label="파일 첨부"
               onClick={() => setShowAttachModal(v => !v)}
             >
@@ -396,9 +454,9 @@ const ChatMate = () => {
             </button>
             {/* 첨부 모달: 클립버튼 위에 작게 */}
             {showAttachModal && (
-              <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-50 bg-white/50 rounded-xl shadow-lg p-4 flex flex-col items-center w-56 backdrop-blur-sm">
+              <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-50 bg-black/80 glass border-2 border-cyan-200 rounded-xl shadow-[0_0_4px_#0ff] p-4 flex flex-col items-center w-56 backdrop-blur-sm animate-fadeIn font-rounded">
                 <button
-                  className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-4 py-2 rounded-full font-semibold transition-all"
+                  className="bg-gradient-to-r from-cyan-200 to-fuchsia-200 hover:from-cyan-100 hover:to-fuchsia-100 text-[#1a1a2e] px-4 py-2 rounded-full font-rounded font-bold transition-all shadow-[0_0_2px_#0ff]"
                   onClick={() => fileInputRef.current.click()}
                 >
                   사진 보내기
@@ -416,7 +474,7 @@ const ChatMate = () => {
                   }}
                 />
                 <button
-                  className="mt-2 text-indigo-700 hover:text-indigo-900 font-semibold text-base transition-colors"
+                  className="mt-2 text-cyan-400 hover:text-fuchsia-400 font-rounded font-bold text-base transition-colors"
                   onClick={() => setShowAttachModal(false)}
                 >
                   닫기
@@ -424,19 +482,19 @@ const ChatMate = () => {
               </div>
             )}
           </div>
-          <div className="flex-1 flex items-center space-x-2 bg-white/10 border border-white/20 rounded-full px-4 py-2.5">
+          <div className="flex-1 flex items-center space-x-2 bg-cyan-100/60 glass border-2 border-cyan-200 text-[#1a1a2e] placeholder-cyan-400 rounded-full px-4 py-2.5 font-rounded focus:outline-none focus:bg-cyan-100/80 focus:border-fuchsia-200 focus:text-fuchsia-700 transition-all shadow-[0_0_4px_#0ff]">
             <input
               type="text"
               value={newMessage}
               onChange={e => setNewMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="메시지를 입력하세요..."
-              className="w-full bg-white/10 border border-white/20 rounded-full px-4 py-2.5 text-white placeholder-white/60 focus:outline-none focus:border-blue-400 focus:bg-white/15"
+              className="w-full bg-transparent border-none outline-none text-white placeholder-cyan-400 font-rounded tracking-widest"
             />
           </div>
           <button
             onClick={sendMessage}
-            className="bg-blue-500 hover:bg-blue-600 text-white w-10 h-10 flex items-center justify-center rounded-full transition-colors text-xl"
+            className="bg-cyan-200 hover:bg-fuchsia-200 text-[#1a1a2e] w-10 h-10 flex items-center justify-center rounded-full transition-colors text-xl shadow-[0_0_3px_#0ff] font-rounded"
           >
             ➤
           </button>

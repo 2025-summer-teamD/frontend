@@ -12,9 +12,7 @@ html {
 body {
   background-color: #1a1a1a;
   color: #e5e7eb;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'Noto Sans Rounded', 'Noto Sans KR', 'Pretendard', 'Apple SD Gothic Neo', 'NanumSquareRound', 'Quicksand', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
@@ -80,6 +78,31 @@ body {
 
 .animate-slideIn {
   animation: slideIn 0.3s ease-out;
+}
+
+@keyframes moveBox1 {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  40% { transform: translate(30px, 20px) scale(1.08) rotate(3deg); }
+  70% { transform: translate(-20px, 40px) scale(0.96) rotate(-2deg); }
+  100% { transform: translate(10px, 0) scale(1.04) rotate(2deg); }
+}
+@keyframes moveBox2 {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  30% { transform: translate(-20px, 30px) scale(1.1) rotate(-4deg); }
+  60% { transform: translate(40px, -10px) scale(0.95) rotate(2deg); }
+  100% { transform: translate(0, 20px) scale(1.05) rotate(-3deg); }
+}
+@keyframes moveBox3 {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  50% { transform: translate(40px, -30px) scale(1.07) rotate(4deg); }
+  80% { transform: translate(-30px, 20px) scale(0.93) rotate(-2deg); }
+  100% { transform: translate(20px, 10px) scale(1.02) rotate(3deg); }
+}
+@keyframes moveBox4 {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  35% { transform: translate(-30px, -20px) scale(1.09) rotate(-3deg); }
+  75% { transform: translate(20px, 30px) scale(0.97) rotate(2deg); }
+  100% { transform: translate(-10px, 0) scale(1.03) rotate(-2deg); }
 }
 
 /* Glass Effect */

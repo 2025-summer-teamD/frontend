@@ -23,13 +23,20 @@ function Home() {
   return (
     <div className="text-white no-scrollbar">
       <Hero />
-      <div className="bg-[linear-gradient(to_bottom,_#000034,_#6B7595)] px-4 md:px-8 py-8 md:py-16">
-        <PopularCharacters />
-        <Features />
-        <ChatPreview />
+      <div className="font-rounded w-full mx-auto px-4 py-8 flex flex-col gap-10 items-center justify-center" style={{background:'rgba(10,20,40,0.7)', borderRadius:'2rem', boxShadow:'0 0 32px #0ff8, 0 0 64px #a0f, 0 0 8px #fff2', border:'2px solid #0ff4', backdropFilter:'blur(8px)'}}>
+        <section className="w-full mt-8 animate-fadeIn">
+          <PopularCharacters />
+        </section>
+        <section className="w-full mt-8 animate-fadeIn">
+          <Features />
+        </section>
+        <section className="w-full mt-8 animate-fadeIn">
+          <ChatPreview />
+        </section>
       </div>
     </div>
   );
 }
 
 export default Home;
+

@@ -1,30 +1,25 @@
-import { Link } from 'react-router-dom';
-import ChatIcon from '/assets/icon-chat.png'
-import CharacterIcon from '/assets/icon-character.png'
-import CommunityIcon from '/assets/icon-community.png'
+import { useNavigate } from 'react-router-dom';
 
 const features = [
   {
     title: '지능적 대화',
-    desc: [
-      '최신 AI 기술로',
-      '자연스러운 대화를 경험하세요.'
-    ],
-    icon: ChatIcon,
+    description: '내가 만든 AI 캐릭터와 실시간으로 대화하며 친밀도를 쌓아보세요.',
+    button: { label: '내 캐릭터', to: '/characterList' }
   },
   {
     title: '개성있는 캐릭터',
-    desc: ['말투, 성격, 취향까지…','똑같은 AI는 단 하나도 없습니다.'],
-    icon: CharacterIcon,
+    description: '말투, 성격, 취향까지 직접 설정해서 나만의 AI 캐릭터를 만들어보세요.',
+    button: { label: '만들기', to: '/createCharacter' }
   },
   {
     title: '커뮤니티 공유',
-    desc: ['완성한 AI 캐릭터를 커뮤니티에 공유하고,','다양한 사람들과의 피드백 속에서', '더 풍부하게 성장시켜보세요.'],
-    icon: CommunityIcon,
-  },
-]
+    description: '완성한 AI 캐릭터를 커뮤니티에 공유하고, 다양한 사람들과 소통하며 성장시켜보세요.',
+    button: { label: '커뮤니티', to: '/communities' }
+  }
+];
 
 export default function Features() {
+  const navigate = useNavigate();
   return (
     <section id="features" className="py-6 md:py-12 px-4 md:px-6">
       <h2 className="text-2xl md:text-3xl lg:text-4xl xl:text-[48px] font-bold text-center text-white mb-4 md:mb-6">
@@ -35,28 +30,24 @@ export default function Features() {
       </p>
       
       <div className="max-w-[100rem] mx-auto">
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-0 justify-items-center">
-    {features.map(({ title, desc, icon }) => (
-      <div
-        key={title}
-        className="w-full max-w-[320px] min-h-[100px] md:min-h-[100px] bg-[linear-gradient(to_top,_#0C0F2B_40%,_#040438_59%)] p-6 flex flex-col items-center text-center hover:bg-[#1F2937] transition-all rounded-lg"
-      >
-        <img src={icon} alt={title} className="h-[50px] md:h-[70px] w-[50px] md:w-[70px] mb-4 flex-shrink-0" />
-        <h3 className="text-xl md:text-2xl xl:text-[20px] font-semibold text-white mb-4 flex-shrink-0">
-          {title}
-        </h3>
-        <p className="text-sm md:text-base xl:text-[16px] text-white/60 leading-relaxed text-center">
-          {desc.map((line, i) => (
-            <span key={i}>
-              {line}
-              {i !== desc.length - 1 && <br />}
-            </span>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 justify-items-center items-center">
+          {features.map((feature, idx) => (
+            <div key={idx} className="bg-black/60 glass border-2 border-cyan-700 rounded-2xl p-6 flex flex-col items-center justify-center shadow-[0_0_16px_#0ff,0_0_32px_#a0f] hover:shadow-[0_0_32px_#0ff,0_0_64px_#a0f] transition-all duration-300 animate-fadeIn font-rounded" style={{boxShadow:'0 0 16px #0ff, 0 0 32px #a0f', border:'2px solid #0ff8', textShadow:'0 0 8px #0ff, 0 0 2px #fff'}}>
+              <button
+                className="mb-4 px-4 py-2 rounded-lg bg-black/70 border-2 border-fuchsia-400 text-fuchsia-200 font-bold shadow-[0_0_8px_#f0f,0_0_16px_#a0f] hover:bg-fuchsia-900/80 hover:text-white transition-all duration-200 tracking-widest font-rounded"
+                style={{boxShadow:'0 0 8px #f0f, 0 0 16px #a0f', border:'2px solid #f0f', textShadow:'0 0 4px #f0f'}}
+                onClick={() => navigate(feature.button.to)}
+              >
+                {feature.button.label}
+              </button>
+              <h3 className="text-xl md:text-2xl xl:text-[20px] font-bold text-cyan-200 mb-2 tracking-widest font-rounded" style={{textShadow:'0 0 8px #0ff, 0 0 2px #fff'}}>{feature.title}</h3>
+              <div className="text-cyan-100/90 text-sm md:text-base xl:text-[16px] text-center font-rounded" style={{textShadow:'0 0 4px #0ff2'}}>
+                {feature.description}
+              </div>
+            </div>
           ))}
-        </p>
+        </div>
       </div>
-    ))}
-  </div>
-</div>
 
     </section>
   )

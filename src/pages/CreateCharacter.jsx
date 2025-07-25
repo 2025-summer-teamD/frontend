@@ -167,14 +167,13 @@ export default function CreateCharacter() {
     <PageLayout
       title="새 캐릭터 만들기"
       subtitle="나만의 AI 인격체를 만들어보세요"
+      className="font-rounded"
     >
-      <div className="flex flex-col">
+      <div className="flex flex-col font-rounded">
         <div className="relative flex flex-col items-center justify-center gap-6 mb-[2rem] px-[1.5rem] max-w-[100rem] mx-auto w-full">
           <div className="flex gap-[0.5rem] w-full max-w-[30rem] justify-center">
-            {[
-              { key: 'custom', label: '나만의 AI 인격체 만들기' },
-              { key: 'existing', label: '실제 캐릭터 가져오기' },
-            ].map((tab, index) => (
+            {/* TabButton은 이미 네온 스타일 적용됨 */}
+            {[{ key: 'custom', label: '나만의 AI 인격체 만들기' }, { key: 'existing', label: '실제 캐릭터 가져오기' }].map((tab, index) => (
               <TabButton
                 key={tab.key}
                 isActive={activeTab === tab.key}
@@ -185,20 +184,21 @@ export default function CreateCharacter() {
             ))}
           </div>
         </div>
-
         <div className="flex-1 px-[1.5rem]">
           <main className="max-w-[100rem] mx-auto">
             <div className="flex flex-col xl:flex-row gap-8 xl:gap-12 items-start">
               <div className="flex-1 w-full">
-                <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-gray-700">
+                <div className="bg-black/60 glass border-2 border-cyan-700 rounded-2xl p-6 md:p-8 shadow-[0_0_16px_#0ff,0_0_32px_#f0f]" style={{boxShadow:'0 0 16px #0ff, 0 0 32px #f0f', border:'2px solid #099', fontFamily:'Share Tech Mono, monospace'}}>
                   {activeTab === 'custom' ? (
                     <>
                       <div className="mb-6">
-                        <h3 className="text-white text-xl font-bold mb-3">나만의 AI 인격체 만들기</h3>
-                        <p className="text-gray-400 text-base">캐릭터의 성격, 말투, 배경 스토리를 직접 설정하세요.</p>
+                        <h3 className="text-cyan-200 text-xl font-bold mb-3 drop-shadow-[0_0_4px_#0ff] tracking-widest">나만의 AI 인격체 만들기</h3>
+                        <p className="text-cyan-100/80 text-base drop-shadow-[0_0_2px_#0ff]">캐릭터의 성격, 말투, 배경 스토리를 직접 설정하세요.</p>
                       </div>
-
                       <div className="space-y-6">
+                        {/* Input, Textarea 등은 내부에서 커스텀 스타일 적용 필요시 별도 수정 */}
+                        {/* 태그 입력/렌더링 부분은 이미 네온 스타일 적용됨 */}
+                        {/* Button은 이미 네온 스타일 적용됨 */}
                         <Input
                           label="캐릭터 이름"
                           value={name}
@@ -240,9 +240,9 @@ export default function CreateCharacter() {
                           />
                           <div className="flex flex-wrap gap-2 mt-2">
                             {tags.map((tag, index) => (
-                              <span key={index} className="bg-[#413ebc] text-white px-3 py-1 rounded-full text-sm flex items-center">
+                              <span key={index} className="px-3 py-1 rounded-md border border-cyan-700 bg-black/60 text-cyan-300 text-sm font-mono tracking-widest shadow-[0_0_4px_#0ff] flex items-center" style={{fontFamily:'Share Tech Mono, monospace', letterSpacing:'0.08em', border:'1.5px solid #066', boxShadow:'0 0 4px #0ff'}}>
                                 {tag}
-                                <button onClick={() => removeTag(index)} className="ml-2 text-gray-200 hover:text-white">×</button>
+                                <button onClick={() => removeTag(index)} className="ml-2 text-cyan-400 hover:text-fuchsia-400">×</button>
                               </span>
                             ))}
                           </div>
@@ -265,8 +265,8 @@ export default function CreateCharacter() {
                     </>
                   ) : (
                     <>
-                      <h3 className="text-white text-xl font-bold mb-3">실제 캐릭터 가져오기</h3>
-                      <p className="text-gray-400 text-base mb-6">실존 인물 혹은 캐릭터의 이름을 입력해 검색하세요. 원하는 사진을 골라보세요.</p>
+                      <h3 className="text-cyan-200 text-xl font-bold mb-3 drop-shadow-[0_0_4px_#0ff] tracking-widest">실제 캐릭터 가져오기</h3>
+                      <p className="text-cyan-100/80 text-base mb-6 drop-shadow-[0_0_2px_#0ff]">실존 인물 혹은 캐릭터의 이름을 입력해 검색하세요. 원하는 사진을 골라보세요.</p>
                       <Input
                         type="text"
                         value={characterQuery}
@@ -301,13 +301,12 @@ export default function CreateCharacter() {
                   )}
                 </div>
               </div>
-
               {/* 미리보기 및 이미지 업로드는 공통 */}
               <div className="w-full xl:w-[25rem]">
                 <div className="xl:sticky xl:top-4">
-                  <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700">
-                    <h3 className="text-white font-bold text-xl mb-6 text-center">미리보기</h3>
-                    <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-gray-600 shadow-2xl">
+                  <div className="bg-black/60 glass border-2 border-cyan-700 rounded-2xl p-6 shadow-[0_0_16px_#0ff,0_0_32px_#f0f]" style={{boxShadow:'0 0 16px #0ff, 0 0 32px #f0f', border:'2px solid #099', fontFamily:'Share Tech Mono, monospace'}}>
+                    <h3 className="text-cyan-200 font-bold text-xl mb-6 text-center drop-shadow-[0_0_4px_#0ff] tracking-widest">미리보기</h3>
+                    <div className="bg-gradient-to-br from-black/80 to-black/60 rounded-xl border-2 border-cyan-700 shadow-[0_0_8px_#0ff]">
                       {activeTab === 'custom' ? (
                         <div className="relative p-6">
                           <img
@@ -363,7 +362,9 @@ export default function CreateCharacter() {
                         {tags.length > 0 && (
                           <div className="flex flex-wrap gap-2 mt-3">
                             {tags.map((tag, index) => (
-                              <span key={index} className="bg-[#413ebc] text-white px-3 py-1 rounded-full text-xs">#{tag}</span>
+                              <span key={index} className="px-3 py-1 rounded-md border border-cyan-700 bg-black/60 text-cyan-300 text-xs font-mono tracking-widest shadow-[0_0_4px_#0ff]" style={{fontFamily:'Share Tech Mono, monospace', letterSpacing:'0.08em', border:'1.5px solid #066', boxShadow:'0 0 4px #0ff'}}>
+                                #{tag}
+                              </span>
                             ))}
                           </div>
                         )}
@@ -373,7 +374,6 @@ export default function CreateCharacter() {
                 </div>
               </div>
             </div>
-
           </main>
         </div>
       </div>
