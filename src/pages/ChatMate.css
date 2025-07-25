@@ -1,0 +1,124 @@
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 800px;
+  margin: 0 auto;
+  border: 1px solid #ccc;
+  overflow: hidden;
+}
+
+.chat-logs {
+  flex-grow: 1;
+  padding: 15px;
+  overflow-y: auto;
+  background-color: #f9f9f9;
+}
+
+.chat-bubble {
+  padding: 8px 12px;
+  border-radius: 18px;
+  margin-bottom: 10px;
+  max-width: 70%;
+  position: relative;
+  font-size: 0.95em;
+}
+
+.chat-bubble p {
+  margin: 0;
+  word-wrap: break-word; /* 긴 텍스트 자동 줄바꿈 */
+}
+
+.chat-bubble span {
+  font-size: 0.7em;
+  color: #888;
+  position: absolute;
+  bottom: 5px;
+  right: 12px;
+}
+
+.chat-bubble.user {
+  background-color: #dcf8c6;
+  align-self: flex-end;
+  margin-left: auto;
+  text-align: right;
+}
+
+.chat-bubble.user span {
+  left: 12px;
+  right: auto;
+}
+
+.chat-bubble.ai {
+  background-color: #e0e0e0;
+  align-self: flex-start;
+  margin-right: auto;
+  text-align: left;
+}
+
+.chat-bubble.ai span {
+  right: 12px;
+}
+
+.chat-bubble.ai.streaming .cursor {
+  display: inline-block;
+  background-color: black;
+  width: 1px;
+  height: 1em; /* 텍스트 높이에 맞춤 */
+  vertical-align: middle;
+  animation: blink 0.7s infinite;
+}
+
+.chat-bubble.ai.typing-indicator p {
+  color: #555;
+  font-style: italic;
+}
+
+@keyframes blink {
+  0% { opacity: 1; }
+  50% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.chat-input-form {
+  display: flex;
+  padding: 15px;
+  border-top: 1px solid #eee;
+  background-color: #fff;
+}
+
+.chat-input-form textarea {
+  flex-grow: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  margin-right: 10px;
+  resize: none;
+  font-size: 1em;
+}
+
+.chat-input-form button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1em;
+}
+
+.chat-input-form button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: red;
+  text-align: center;
+  margin-top: 10px;
+}
+
+.chat-video {
+  max-width: 100%;
+  border-radius: 10px;
+}

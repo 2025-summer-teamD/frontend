@@ -1,14 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
-import chatMessages from '../data/chatMessages'; // 더미 데이터 삭제
-import { useSendMessageToAI } from '../data/chatMessages';
+import { useSendMessageToAI } from '../data/chatMessages'; // 경로 확인
 import { useUser, useAuth } from '@clerk/clerk-react';
-import { useChatMessages } from '../contexts/ChatMessagesContext';
+import { useChatMessages } from '../contexts/ChatMessagesContext'; // 경로 확인
 import { FiPaperclip } from 'react-icons/fi';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-// 레벨/게이지 계산 및 네온 게이지 컴포넌트
+// --- Level/Exp Gauge Components (변경 없음) ---
 function getLevel(exp) {
   if (exp >= 7) return 5;
   if (exp >= 4) return 4;
@@ -17,11 +16,9 @@ function getLevel(exp) {
   return 1;
 }
 function getExpForNextLevel(level) {
-  // 1→2:1, 2→3:2, 3→4:3, 4→5:4
   return [0, 1, 2, 3, 4][level] || 0;
 }
 function getExpBase(level) {
-  // 누적 기준 exp
   return [0, 0, 1, 2, 4][level] || 0;
 }
 function LevelExpGauge({ exp }) {
@@ -60,7 +57,7 @@ const ChatMate = () => {
   const { user } = useUser();
   const { getToken } = useAuth();
 
-  // AI 응답 훅 추가
+  // useSendMessageToAI 훅: sendMessageToAI 함수와 에러 상태를 가져옴
   const { sendMessage: sendMessageToAI, error: aiError } = useSendMessageToAI();
 
   // 전역 메시지 Context 사용
@@ -68,20 +65,21 @@ const ChatMate = () => {
     getMessages,
     setMessagesForRoom,
     addMessageToRoom,
-    addAiResponseToRoom,
+    // addAiResponseToRoom 대신 스트리밍 중 업데이트하는 방식으로 변경
+    updateStreamingAiMessage, // ⭐ 새로 추가할 함수
+    finishStreamingAiMessage, // ⭐ 새로 추가할 함수
+    addVideoMessageToRoom,    // ⭐ 새로 추가할 함수
     getAiLoading,
     setAiLoading
   } = useChatMessages();
 
   // 이전 대화기록을 메시지 형식으로 변환하는 함수
-  const convertChatHistoryToMessages = (chatHistory, characterData) => {
+  const convertChatHistoryToMessages = useCallback((chatHistory, characterData) => {
     console.log('📜 채팅 히스토리 변환 시작:', { chatHistory, characterData });
-
     if (!chatHistory || !Array.isArray(chatHistory)) {
       console.log('❌ 채팅 히스토리가 없거나 배열이 아님');
       return [];
     }
-
     return chatHistory.map(item => {
       const convertedMessage = {
         id: item.id,
@@ -92,12 +90,18 @@ const ChatMate = () => {
           minute: '2-digit',
           hour12: true,
         }),
-        characterId: characterData?.characterId || characterData?.id
+        characterId: characterData?.characterId || characterData?.id,
+        // 이미지가 있다면 imageUrl 추가
+        imageUrl: item.type === 'video' ? item.text : undefined // 백엔드에서 type: 'video'로 오고 text가 URL이라면
       };
+      // 실제 비디오 URL이 text에 포함되어 있다면 videoType으로 구분하여 저장
+      if (item.type === 'video' && item.text) {
+        convertedMessage.type = 'video';
+      }
       console.log('💬 변환된 메시지:', convertedMessage);
       return convertedMessage;
     });
-  };
+  }, []); // 의존성 없음
 
   // 캐릭터 정보 상태
   const [character, setCharacter] = useState(state?.character || null);
@@ -143,7 +147,7 @@ const ChatMate = () => {
         setMessagesForRoom(roomId, []);
       }
     }
-  }, [state?.character, state?.chatHistory, roomId]); // roomId도 의존성에 추가
+  }, [state?.character, state?.chatHistory, roomId, convertChatHistoryToMessages, setMessagesForRoom]); // 의존성 추가
 
   // 채팅방 입장 시 캐릭터 정보 fetch (state가 있든 없든 항상 최신값으로)
   useEffect(() => {
@@ -163,36 +167,44 @@ const ChatMate = () => {
             if (data.success && data.data && data.data.character) {
               console.log('[room-info] setCharacter 호출: exp:', data.data.character.exp, 'friendship:', data.data.character.friendship, '전체:', data.data.character);
               setCharacter(data.data.character);
+              // 초기 로드시 chatHistory도 함께 로드하여 메시지 상태 업데이트
+              if (data.data.chatHistory) {
+                const convertedMessages = convertChatHistoryToMessages(data.data.chatHistory, data.data.character);
+                setMessagesForRoom(roomId, convertedMessages);
+              }
             } else {
               setError('존재하지 않거나 삭제된 채팅방입니다.');
             }
           })
-          .catch(() => setError('존재하지 않거나 삭제된 채팅방입니다.'))
+          .catch((err) => {
+            console.error('room-info fetch error:', err);
+            setError('존재하지 않거나 삭제된 채팅방입니다.');
+          })
           .finally(() => setLoading(false));
       })();
     }
-  }, [roomId, getToken]);
+  }, [roomId, getToken, convertChatHistoryToMessages, setMessagesForRoom]); // 의존성 추가
 
-  // 더미 데이터 삭제: character가 바뀌어도 messages는 빈 배열 유지
-
-  // 첫 로드시 스크롤을 맨 위에 고정
+  // 첫 로드시 스크롤을 맨 위에 고정 (이 부분은 보통 하단으로 스크롤이 더 일반적입니다)
+  // 현재 코드는 첫 로드시 0으로 가고, 새 메시지 시 맨 아래로 갑니다.
   useEffect(() => {
     const timer = setTimeout(() => {
       if (scrollContainerRef.current) {
-        scrollContainerRef.current.scrollTop = 0;
+        // 맨 위로 고정 대신 맨 아래로 고정하는 것이 UX상 더 좋습니다.
+        // scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
       }
     }, 0);
     return () => clearTimeout(timer);
-  }, []);
+  }, [messages, aiLoading]); // messages와 aiLoading 변경 시에도 스크롤
 
   // 새 메시지 추가 시(첫 렌더 제외) 아래로 스크롤
   useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
+    // aiLoading이 true일 때도 스크롤이 자동으로 내려가도록 처리
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, aiLoading]); // messages 또는 aiLoading이 변경될 때마다 스크롤
 
   useEffect(() => {
     if (character) {
@@ -243,15 +255,45 @@ const ChatMate = () => {
     console.log('📝 전역 상태에 사용자 메시지 추가');
     addMessageToRoom(roomId, userMsg);
 
+    // AI 응답 스트리밍을 위한 임시 AI 메시지 추가 (초기에는 비어있음)
+    const aiMessageId = Date.now() + 1; // AI 메시지 ID 미리 생성
+    addMessageToRoom(roomId, {
+      id: aiMessageId,
+      text: '', // 빈 텍스트로 시작
+      sender: 'other',
+      time: new Date().toLocaleTimeString('ko-KR', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      }),
+      characterId: character.id,
+      isStreaming: true // ⭐ 스트리밍 중임을 나타내는 플래그
+    });
+
     try {
-      // AI 응답까지 받기
-      setAiLoading(roomId, true);
-      const aiResponse = await sendMessageToAI(roomId, messageText);
-      setAiLoading(roomId, false);
-      // AI 응답 메시지 전역 상태에 추가
-      addAiResponseToRoom(roomId, aiResponse);
+      setAiLoading(roomId, true); // AI 로딩 상태 시작
+
+      // AI 응답 스트리밍 받기
+      // onNewChunk: AI가 한 글자씩 보낼 때마다 호출
+      // onVideoUrl: 영상 URL이 도착했을 때 호출
+      await sendMessageToAI(
+        roomId,
+        messageText,
+        (chunk, accumulatedText) => {
+          // ⭐ 각 청크가 올 때마다 AI 메시지 업데이트
+          updateStreamingAiMessage(roomId, aiMessageId, accumulatedText);
+        },
+        (videoUrl) => {
+          // ⭐ 영상 URL이 도착했을 때 영상 메시지 추가
+          addVideoMessageToRoom(roomId, videoUrl, character.id);
+        }
+      );
+
+      // 스트리밍이 완료된 후 AI 메시지의 isStreaming 플래그 제거
+      finishStreamingAiMessage(roomId, aiMessageId);
 
       // 메시지 전송 후 exp/레벨/게이지 실시간 갱신
+      // 이 부분은 AI 응답 완료 후 한 번만 호출하면 됩니다.
       (async () => {
         const token = await getToken();
         fetch(`${API_BASE_URL}/chat/room-info?roomId=${roomId}`, {
@@ -277,61 +319,81 @@ const ChatMate = () => {
       console.error('💥 에러 stack:', error.stack);
       console.error('AI 응답 실패:', error);
 
-      // 에러 메시지 추가
-      console.log('❌ 에러 메시지 객체 생성 시작');
-      const errorMsg = {
-        id: Date.now() + 2,
-        text: '죄송합니다. 응답을 생성하는데 문제가 발생했습니다.',
-        sender: 'other',
-        time: now,
-        characterId: character.id,
-      };
-      console.log('✅ 에러 메시지 객체 생성 성공:', errorMsg);
+      // 에러 발생 시 스트리밍 중인 메시지 업데이트 (또는 삭제 후 에러 메시지 추가)
+      // 여기서는 스트리밍 메시지를 에러 메시지로 변경
+      updateStreamingAiMessage(roomId, aiMessageId, '죄송합니다. 응답을 생성하는데 문제가 발생했습니다.', true); // isError 플래그 추가
+      finishStreamingAiMessage(roomId, aiMessageId); // 스트리밍 종료 처리
 
-      addMessageToRoom(roomId, errorMsg);
     } finally {
-      // AI 로딩 상태 종료
-      setAiLoading(roomId, false);
+      setAiLoading(roomId, false); // AI 로딩 상태 종료
     }
 
     console.log('🏁 ChatMate sendMessage 완료');
   };
 
   const handleKeyPress = e => {
-    if (e.key === 'Enter' && !aiLoading) sendMessage();
+    if (e.key === 'Enter' && !aiLoading) {
+      e.preventDefault(); // Enter 키 기본 동작 (개행) 방지
+      sendMessage();
+    }
   };
 
-  // 1. handleImageUpload 함수 추가
+  // handleImageUpload 함수는 변경 없음 (이미지 업로드 로직은 그대로 유지)
   const handleImageUpload = async (file) => {
     if (!file) return;
     const formData = new FormData();
     formData.append('image', file);
-    // 인증 필요시 토큰 추가 가능
-    // const token = await getToken();
-    const res = await fetch('/api/chat/upload-image', {
+
+    const token = await getToken(); // 이미지 업로드에도 토큰 필요할 수 있음
+    const res = await fetch(`${API_BASE_URL}/api/chat/upload-image`, { // API_BASE_URL 추가
       method: 'POST',
-      // headers: { Authorization: `Bearer ${token}` }, // 필요시
+      headers: { Authorization: `Bearer ${token}` }, // 필요시
       body: formData,
     });
     const data = await res.json();
     if (data.success && data.imageUrl) {
+      const userImageMsgId = Date.now();
       addMessageToRoom(roomId, {
-        id: Date.now(),
+        id: userImageMsgId,
         text: '',
         imageUrl: data.imageUrl,
         sender: 'me',
         time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
         characterId: character.id,
       });
-      // AI에게도 이미지 메시지 전송
+
+      // AI에게 이미지 메시지 전송 (스트리밍 답변 받기)
       setAiLoading(roomId, true);
+      const aiMessageId = Date.now() + 1; // AI 메시지 ID 미리 생성
+      addMessageToRoom(roomId, {
+        id: aiMessageId,
+        text: '', // 빈 텍스트로 시작
+        sender: 'other',
+        time: new Date().toLocaleTimeString('ko-KR', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true,
+        }),
+        characterId: character.id,
+        isStreaming: true // ⭐ 스트리밍 중임을 나타내는 플래그
+      });
+
       try {
-        // 프롬프트에 이미지 URL을 명시적으로 포함
-        const aiResponse = await sendMessageToAI(roomId, `[이미지] ${data.imageUrl}`);
-        addAiResponseToRoom(roomId, aiResponse);
+        await sendMessageToAI(
+          roomId,
+          `[이미지] ${data.imageUrl}`, // 백엔드 LLM에 이미지 URL 전달 (프롬프트로)
+          (chunk, accumulatedText) => {
+            updateStreamingAiMessage(roomId, aiMessageId, accumulatedText);
+          },
+          (videoUrl) => {
+            addVideoMessageToRoom(roomId, videoUrl, character.id);
+          }
+        );
+        finishStreamingAiMessage(roomId, aiMessageId);
       } catch (e) {
         console.error('AI 이미지 답변 생성 에러:', e);
-        addAiResponseToRoom(roomId, '이미지에 대한 답변 생성에 실패했습니다.');
+        updateStreamingAiMessage(roomId, aiMessageId, '이미지에 대한 답변 생성에 실패했습니다.', true);
+        finishStreamingAiMessage(roomId, aiMessageId);
       } finally {
         setAiLoading(roomId, false);
       }
@@ -339,6 +401,7 @@ const ChatMate = () => {
       alert('이미지 업로드 실패');
     }
   };
+
 
   return (
     <div className="flex flex-col h-full font-cyberpunk" style={{fontFamily:undefined, background:'radial-gradient(circle at 30% 10%, #23234d 0%, #2e3a5e 60%, #181a2b 100%)', minHeight:'100vh'}}>
@@ -391,8 +454,13 @@ const ChatMate = () => {
             const isLast = idx === messages.length - 1;
             const nextMsg = messages[idx + 1];
             const prevMsg = messages[idx - 1];
-            const showTime = isLast || msg.time !== nextMsg?.time || msg.sender !== "prevMsg?.sender";
-            const showProfile = idx === 0 || msg.time !== prevMsg?.time || msg.sender !== "prevMsg?.sender";
+            // 메시지 그룹화 로직 강화 (시간이 바뀌거나, 보낸 사람이 바뀌거나, 첫 메시지일 경우 프로필/시간 표시)
+            const showTime = isLast || (nextMsg && (msg.time !== nextMsg.time || msg.sender !== nextMsg.sender));
+            const showProfile = idx === 0 || (prevMsg && (msg.time !== prevMsg.time || msg.sender !== prevMsg.sender));
+
+            // ⭐ 스트리밍 중인 메시지 표시 로직
+            const isStreaming = msg.isStreaming && msg.sender === 'other';
+
             return (
               <div
                 key={msg.id}
@@ -419,16 +487,25 @@ const ChatMate = () => {
                     }`}
                   style={{boxShadow: msg.sender==='me'?'0 0 4px #0ff':'0 0 4px #f0f', border: msg.sender==='me'?'2px solid #7ff':'2px solid #e7e'}}
                 >
-                  {msg.imageUrl
+                  {msg.imageUrl // 이미지 URL이 있다면 이미지 렌더링
                     ? <img
                       src={msg.imageUrl.startsWith('http') ? msg.imageUrl : API_BASE_URL + msg.imageUrl}
                       alt="전송된 이미지"
                       className="max-w-xs rounded-lg border-2 border-cyan-200 shadow-[0_0_4px_#0ff] font-cyberpunk"
                     />
-                    : <p className="font-cyberpunk">{msg.text}</p>
+                    : msg.type === 'video' // 영상 URL이 있다면 비디오 렌더링
+                      ? <video
+                          controls
+                          src={msg.text.startsWith('http') ? msg.text : API_BASE_URL + msg.text}
+                          className="max-w-xs rounded-lg border-2 border-cyan-200 shadow-[0_0_4px_#0ff] font-cyberpunk"
+                        />
+                      : <p className="font-cyberpunk">
+                          {isStreaming && !msg.text ? '...' : msg.text} {/* AI 로딩 시 표시 */}
+                          {isStreaming && msg.text && <span className="cursor">|</span>} {/* 스트리밍 중 커서 */}
+                        </p>
                   }
                 </div>
-                {showTime && (
+                {(showTime || isStreaming) && ( // 스트리밍 중에도 시간 표시 (선택 사항)
                   <div className={`flex w-full mt-1 ${msg.sender === 'me' ? 'justify-end pr-2' : 'justify-start pl-2'}`}>
                     <span className="text-xs text-cyan-400 font-cyberpunk">
                       {msg.time}
@@ -490,11 +567,13 @@ const ChatMate = () => {
               onKeyPress={handleKeyPress}
               placeholder="메시지를 입력하세요..."
               className="w-full bg-transparent border-none outline-none text-white placeholder-cyan-400 font-cyberpunk tracking-widest"
+              disabled={aiLoading} // AI 로딩 중에는 입력 비활성화
             />
           </div>
           <button
             onClick={sendMessage}
             className="bg-cyan-200 hover:bg-fuchsia-200 text-[#1a1a2e] w-10 h-10 flex items-center justify-center rounded-full transition-colors text-xl shadow-[0_0_3px_#0ff] font-cyberpunk"
+            disabled={aiLoading || !newMessage.trim()} // AI 로딩 중이거나 메시지가 비어있으면 비활성화
           >
             ➤
           </button>
