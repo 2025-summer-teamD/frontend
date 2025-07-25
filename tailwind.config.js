@@ -17,18 +17,6 @@ export default {
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
       },
-      fontFamily: {
-        rounded: [
-          'Noto Sans Rounded',
-          'Noto Sans KR',
-          'Pretendard',
-          'Apple SD Gothic Neo',
-          'NanumSquareRound',
-          'Quicksand',
-          'Arial',
-          'sans-serif',
-        ],
-      },
     },
   },
   plugins: [

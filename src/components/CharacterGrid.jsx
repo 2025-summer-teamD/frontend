@@ -1,6 +1,6 @@
 import React from 'react';
 import { getSafeImageUrl } from '../utils/imageUtils';
-import { Heart as OutlineHeart } from 'lucide-react';
+import { Heart as OutlineHeart, Heart as SolidHeart } from 'lucide-react';
 import PropTypes from 'prop-types';
 
 // 재사용 가능한 캐릭터 카드 컴포넌트
@@ -58,12 +58,17 @@ export const CharacterCard = ({
               aria-label="좋아요 토글"
             >
               {isLiked ? (
-                <span className="text-pink-400 drop-shadow-[0_0_3px_#f0f]">❤️</span>
-              ) : (
+              <>
+                <SolidHeart className="w-4 h-4 text-pink-400 drop-shadow-[0_0_3px_#f0f] transition-transform transform scale-110" />
+                <span className="ml-1 text-pink-400 font-bold text-md drop-shadow-[0_0_2px_#f0f]">{character.likes ?? 0}</span>
+              </>
+            ) : (
+              <>
                 <OutlineHeart className="w-4 h-4 text-cyan-400 hover:text-pink-400 transition-colors drop-shadow-[0_0_2px_#0ff]" />
-              )}
+                <span className="ml-1 text-cyan-400 font-bold text-md drop-shadow-[0_0_2px_#0ff]">{character.likes ?? 0}</span>
+              </>
+            )}
             </button>
-            <span className="text-xs text-cyan-300 drop-shadow-[0_0_2px_#0ff]" style={{fontFamily:'Share Tech Mono, monospace'}}>{character.likes || 0}</span>
           </div>
         </div>
         {/* 수정/삭제 버튼 */}

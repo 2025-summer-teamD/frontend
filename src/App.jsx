@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import Communities from './pages/Communities';
 import CharacterList from './pages/CharacterList';
@@ -9,6 +9,7 @@ import Sidebar from './components/SideBar';
 import ProtectedRoute from './components/ProtectedRoute';
 import { ChatRoomsProvider } from './contexts/ChatRoomsContext';
 import { ChatMessagesProvider } from './contexts/ChatMessagesContext';
+import './App.css'
 
 function App() {
   return (

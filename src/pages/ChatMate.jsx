@@ -33,11 +33,11 @@ function LevelExpGauge({ exp }) {
   const percent = expMax ? Math.min(100, Math.round((expInLevel / expMax) * 100)) : 100;
   return (
     <>
-      <div className="flex gap-4 items-center text-cyan-200 font-bold font-rounded text-sm tracking-widest">
+      <div className="flex gap-4 items-center text-cyan-200 font-bold font-cyberpunk text-sm tracking-widest">
         <span>레벨: {level}</span>
         <span>친밀도: {exp}</span>
       </div>
-      <div className="w-48 h-3 bg-black/60 border-2 border-cyan-700 rounded-full shadow-[0_0_8px_#0ff] relative overflow-hidden">
+      <div className="w-48 h-5 bg-black/60 border-2 border-cyan-700 rounded-full shadow-[0_0_8px_#0ff] relative overflow-hidden">
         <div
           className="h-full bg-cyan-400"
           style={{
@@ -341,7 +341,7 @@ const ChatMate = () => {
   };
 
   return (
-    <div className="flex flex-col h-full font-rounded" style={{fontFamily:undefined, background:'radial-gradient(circle at 30% 10%, #23234d 0%, #2e3a5e 60%, #181a2b 100%)', minHeight:'100vh'}}>
+    <div className="flex flex-col h-full font-cyberpunk" style={{fontFamily:undefined, background:'radial-gradient(circle at 30% 10%, #23234d 0%, #2e3a5e 60%, #181a2b 100%)', minHeight:'100vh'}}>
       {/* 헤더: sticky */}
       <header className="sticky top-0 py-4 px-6 z-10">
         <div className="flex items-center gap-3">
@@ -352,7 +352,7 @@ const ChatMate = () => {
               className="w-full h-full object-cover rounded-full"
             />
           </div>
-          <span className="text-cyan-100 text-lg font-bold drop-shadow-[0_0_2px_#0ff] tracking-widest font-rounded">
+          <span className="text-cyan-100 text-lg font-bold drop-shadow-[0_0_2px_#0ff] tracking-widest font-cyberpunk">
             {character.name}
           </span>
         </div>
@@ -367,10 +367,10 @@ const ChatMate = () => {
       {/* 스크롤 영역: 프로필 + 메시지 */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 px-4 overflow-y-auto no-scrollbar sm:px-6 md:px-8 lg:px-12 pb-28 font-rounded"
+        className="flex-1 px-4 overflow-y-auto no-scrollbar sm:px-6 md:px-8 lg:px-12 pb-28 font-cyberpunk"
       >
         {/* 프로필 */}
-        <div className="flex flex-col items-center my-6 text-center font-rounded">
+        <div className="flex flex-col items-center my-6 text-center font-cyberpunk">
           <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-cyan-300 shadow-[0_0_6px_#0ff]">
             <img
               src={character.imageUrl}
@@ -378,15 +378,15 @@ const ChatMate = () => {
               className="w-full h-full object-cover rounded-full"
             />
           </div>
-          <h3 className="text-2xl font-bold text-cyan-100 mb-2 mt-3 drop-shadow-[0_0_2px_#0ff] tracking-widest font-rounded">
+          <h3 className="text-2xl font-bold text-cyan-100 mb-2 mt-3 drop-shadow-[0_0_2px_#0ff] tracking-widest font-cyberpunk">
             {character.name}
           </h3>
-          <p className="text-cyan-100/80 text-xs sm:text-sm px-2 max-w-lg mx-auto mt-1 mb-2 drop-shadow-[0_0_1px_#0ff] font-rounded">
+          <p className="text-cyan-100/80 text-xs sm:text-sm px-2 max-w-lg mx-auto mt-1 mb-2 drop-shadow-[0_0_1px_#0ff] font-cyberpunk">
             {character.description || character.introduction || character.desc}
           </p>
         </div>
         {/* 메시지들 */}
-        <div className="space-y-4 pb-4 max-w-3xl mx-auto font-rounded">
+        <div className="space-y-4 pb-4 max-w-3xl mx-auto font-cyberpunk">
           {messages.map((msg, idx) => {
             const isLast = idx === messages.length - 1;
             const nextMsg = messages[idx + 1];
@@ -396,10 +396,10 @@ const ChatMate = () => {
             return (
               <div
                 key={msg.id}
-                className={`flex flex-col w-full ${msg.sender === 'me' ? 'items-end' : 'items-start'} font-rounded`}
+                className={`flex flex-col w-full ${msg.sender === 'me' ? 'items-end' : 'items-start'} font-cyberpunk`}
               >
                 {showProfile && (
-                  <div className={`flex items-center mb-1 ${msg.sender === 'me' ? 'flex-row-reverse' : 'flex-row'} font-rounded`}>
+                  <div className={`flex items-center mb-1 ${msg.sender === 'me' ? 'flex-row-reverse' : 'flex-row'} font-cyberpunk`}>
                     <div className="w-8 h-8 rounded-full border-2 border-cyan-300 shadow-[0_0_3px_#0ff] flex-shrink-0 bg-gradient-to-br from-cyan-200/60 to-fuchsia-200/40">
                       <img
                         src={msg.sender === 'me' ? user?.imageUrl || '/assets/icon-character.png' : character.imageUrl}
@@ -407,13 +407,13 @@ const ChatMate = () => {
                         className="w-full h-full object-cover rounded-full"
                       />
                     </div>
-                    <span className={`text-cyan-100 font-bold text-sm tracking-widest drop-shadow-[0_0_1px_#0ff] font-rounded ${msg.sender === 'me' ? 'mr-2' : 'ml-2'}`}>
+                    <span className={`text-cyan-100 font-bold text-sm tracking-widest drop-shadow-[0_0_1px_#0ff] font-cyberpunk ${msg.sender === 'me' ? 'mr-2' : 'ml-2'}`}>
                       {msg.sender === 'me' ? user?.username || user?.firstName || 'You' : character.name}
                     </span>
                   </div>
                 )}
                 <div
-                  className={`max-w-[80%] sm:max-w-[70%] lg:max-w-[60%] px-4 py-3 rounded-xl break-words tracking-widest font-rounded ${msg.sender === 'me'
+                  className={`max-w-[80%] sm:max-w-[70%] lg:max-w-[60%] px-4 py-3 rounded-xl break-words tracking-widest font-cyberpunk ${msg.sender === 'me'
                     ? 'bg-cyan-100/80 border-2 border-cyan-200 text-[#1a1a2e] shadow-[0_0_4px_#0ff]'
                     : 'bg-fuchsia-100/80 border-2 border-fuchsia-200 text-[#1a1a2e] shadow-[0_0_4px_#f0f]'
                     }`}
@@ -423,17 +423,17 @@ const ChatMate = () => {
                     ? <img
                       src={msg.imageUrl.startsWith('http') ? msg.imageUrl : API_BASE_URL + msg.imageUrl}
                       alt="전송된 이미지"
-                      className="max-w-xs rounded-lg border-2 border-cyan-200 shadow-[0_0_4px_#0ff] font-rounded"
+                      className="max-w-xs rounded-lg border-2 border-cyan-200 shadow-[0_0_4px_#0ff] font-cyberpunk"
                     />
-                    : <p className="font-rounded">{msg.text}</p>
+                    : <p className="font-cyberpunk">{msg.text}</p>
                   }
                 </div>
                 {showTime && (
-                  <span
-                    className={`text-xs text-cyan-400 mt-1 block text-right font-rounded ${msg.sender === 'me' ? 'mr-10' : 'ml-10'}`}
-                  >
-                    {msg.time}
-                  </span>
+                  <div className={`flex w-full mt-1 ${msg.sender === 'me' ? 'justify-end pr-2' : 'justify-start pl-2'}`}>
+                    <span className="text-xs text-cyan-400 font-cyberpunk">
+                      {msg.time}
+                    </span>
+                  </div>
                 )}
               </div>
             );
@@ -442,11 +442,11 @@ const ChatMate = () => {
         </div>
       </div>
       {/* 입력창: sticky bottom */}
-      <footer className="fixed right-0 left-0 bottom-0 px-4 py-4 border-t-2 border-cyan-200 bg-black/30 glass backdrop-blur-xl shadow-[0_0_8px_#0ff,0_0_16px_#f0f] font-rounded">
-        <div className="flex items-center space-x-3 max-w-4xl mx-auto relative font-rounded">
+      <footer className="fixed right-0 left-0 bottom-0 px-4 py-4 border-t-2 border-cyan-200 bg-black/30 glass backdrop-blur-xl shadow-[0_0_8px_#0ff,0_0_16px_#f0f] font-cyberpunk">
+        <div className="flex items-center space-x-3 max-w-4xl mx-auto relative font-cyberpunk">
           <div className="relative">
             <button
-              className="text-cyan-400 hover:text-fuchsia-400 p-2 text-xl drop-shadow-[0_0_2px_#0ff] font-rounded"
+              className="text-cyan-400 hover:text-fuchsia-400 p-2 text-xl drop-shadow-[0_0_2px_#0ff] font-cyberpunk"
               aria-label="파일 첨부"
               onClick={() => setShowAttachModal(v => !v)}
             >
@@ -454,9 +454,9 @@ const ChatMate = () => {
             </button>
             {/* 첨부 모달: 클립버튼 위에 작게 */}
             {showAttachModal && (
-              <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-50 bg-black/80 glass border-2 border-cyan-200 rounded-xl shadow-[0_0_4px_#0ff] p-4 flex flex-col items-center w-56 backdrop-blur-sm animate-fadeIn font-rounded">
+              <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-50 bg-black/80 glass border-2 border-cyan-200 rounded-xl shadow-[0_0_4px_#0ff] p-4 flex flex-col items-center w-56 backdrop-blur-sm animate-fadeIn font-cyberpunk">
                 <button
-                  className="bg-gradient-to-r from-cyan-200 to-fuchsia-200 hover:from-cyan-100 hover:to-fuchsia-100 text-[#1a1a2e] px-4 py-2 rounded-full font-rounded font-bold transition-all shadow-[0_0_2px_#0ff]"
+                  className="bg-gradient-to-r from-cyan-200 to-fuchsia-200 hover:from-cyan-100 hover:to-fuchsia-100 text-[#1a1a2e] px-4 py-2 rounded-full font-cyberpunk font-bold transition-all shadow-[0_0_2px_#0ff]"
                   onClick={() => fileInputRef.current.click()}
                 >
                   사진 보내기
@@ -474,7 +474,7 @@ const ChatMate = () => {
                   }}
                 />
                 <button
-                  className="mt-2 text-cyan-400 hover:text-fuchsia-400 font-rounded font-bold text-base transition-colors"
+                  className="mt-2 text-cyan-400 hover:text-fuchsia-400 font-cyberpunk font-bold text-base transition-colors"
                   onClick={() => setShowAttachModal(false)}
                 >
                   닫기
@@ -482,19 +482,19 @@ const ChatMate = () => {
               </div>
             )}
           </div>
-          <div className="flex-1 flex items-center space-x-2 bg-cyan-100/60 glass border-2 border-cyan-200 text-[#1a1a2e] placeholder-cyan-400 rounded-full px-4 py-2.5 font-rounded focus:outline-none focus:bg-cyan-100/80 focus:border-fuchsia-200 focus:text-fuchsia-700 transition-all shadow-[0_0_4px_#0ff]">
+          <div className="flex-1 flex items-center space-x-2 bg-cyan-100/60 glass border-2 border-cyan-200 text-[#1a1a2e] placeholder-cyan-400 rounded-full px-4 py-2.5 font-cyberpunk focus:outline-none focus:bg-cyan-100/80 focus:border-fuchsia-200 focus:text-fuchsia-700 transition-all shadow-[0_0_4px_#0ff]">
             <input
               type="text"
               value={newMessage}
               onChange={e => setNewMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="메시지를 입력하세요..."
-              className="w-full bg-transparent border-none outline-none text-white placeholder-cyan-400 font-rounded tracking-widest"
+              className="w-full bg-transparent border-none outline-none text-white placeholder-cyan-400 font-cyberpunk tracking-widest"
             />
           </div>
           <button
             onClick={sendMessage}
-            className="bg-cyan-200 hover:bg-fuchsia-200 text-[#1a1a2e] w-10 h-10 flex items-center justify-center rounded-full transition-colors text-xl shadow-[0_0_3px_#0ff] font-rounded"
+            className="bg-cyan-200 hover:bg-fuchsia-200 text-[#1a1a2e] w-10 h-10 flex items-center justify-center rounded-full transition-colors text-xl shadow-[0_0_3px_#0ff] font-cyberpunk"
           >
             ➤
           </button>

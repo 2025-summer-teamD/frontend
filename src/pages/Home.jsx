@@ -21,19 +21,17 @@ function Home() {
   }, [isLoaded, isSignedIn, getToken, userId]); // 의존성 배열에 필요한 값들을 포함합니다.
 
   return (
-    <div className="text-white no-scrollbar">
+    <div className="text-white no-scrollbar" style={{background: 'linear-gradient(to bottom, #181a2b 60%, #0f1023 100%)'}}>
       <Hero />
-      <div className="font-rounded w-full mx-auto px-4 py-8 flex flex-col gap-10 items-center justify-center" style={{background:'rgba(10,20,40,0.7)', borderRadius:'2rem', boxShadow:'0 0 32px #0ff8, 0 0 64px #a0f, 0 0 8px #fff2', border:'2px solid #0ff4', backdropFilter:'blur(8px)'}}>
-        <section className="w-full mt-8 animate-fadeIn">
-          <PopularCharacters />
-        </section>
-        <section className="w-full mt-8 animate-fadeIn">
-          <Features />
-        </section>
-        <section className="w-full mt-8 animate-fadeIn">
-          <ChatPreview />
-        </section>
-      </div>
+      <section className="w-full animate-fadeIn">
+        <PopularCharacters />
+      </section>
+      <section className="w-full animate-fadeIn">
+        <Features />
+      </section>
+      <section className="w-full animate-fadeIn">
+        <ChatPreview />
+      </section>
     </div>
   );
 }

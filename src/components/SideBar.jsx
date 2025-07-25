@@ -188,7 +188,7 @@ const Sidebar = ({ children }) => {
               <input
                 type="text"
                 placeholder="검색하기"
-                className="w-full bg-black/60 glass border-2 border-cyan-400 text-cyan-100 placeholder-cyan-400 rounded-full px-10 py-2.5 font-mono focus:outline-none focus:bg-black/70 focus:border-fuchsia-400 focus:text-fuchsia-200 transition-all shadow-[0_0_8px_#0ff]"
+                className="w-full bg-black/60 glass border-2 border-cyan-400 text-cyan-100 placeholder-cyan-400 rounded-full px-10 py-2.5 font-cyberpunk focus:outline-none focus:bg-black/70 focus:border-fuchsia-400 focus:text-fuchsia-200 transition-all shadow-[0_0_8px_#0ff]"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 style={{textShadow:'0 0 8px #0ff', boxShadow:'0 0 8px #0ff'}}
@@ -226,7 +226,7 @@ const Sidebar = ({ children }) => {
                     </div>
                     <div className="ml-3 flex-1 truncate">
                       <div className="flex items-center justify-between">
-                        <h3 className="text-cyan-100 font-mono font-medium text-[0.9rem] drop-shadow-[0_0_4px_#0ff]">{chat.name}</h3>
+                        <h3 className="text-cyan-100 font-cyberpunk font-medium text-[0.9rem] drop-shadow-[0_0_4px_#0ff]">{chat.name}</h3>
                         <span className="text-cyan-400 text-sm drop-shadow-[0_0_2px_#0ff]">{formatLastMessageTime(chat.time)}</span>
                       </div>
                       <p className="text-cyan-200 text-sm mt-1 truncate drop-shadow-[0_0_2px_#0ff]">{chat.lastChat || '대화 시작하기'}</p>

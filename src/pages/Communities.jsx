@@ -12,6 +12,7 @@ import PageLayout from '../components/PageLayout';
 import TabButton from '../components/TabButton';
 import { Heart as OutlineHeart, Heart as SolidHeart } from 'lucide-react';
 import { useAuth } from "@clerk/clerk-react";
+import { CharacterCard } from '../components/CharacterGrid';
 
 export default function Communities() {
   const { getToken } = useAuth();
@@ -127,83 +128,30 @@ export default function Communities() {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
           {sortedCharacters.map(character => {
             const isLiked = character.liked || likedIds.includes(character.id);
-            
             const handleSelect = async () => {
               try {
-                // 조회수 증가 - id가 있을 때만
                 if (character.id) {
                   const token = await getToken();
                   await incrementViewCount(character.id, token);
-                  // 조회수 증가 성공 시 해당 캐릭터의 조회수만 업데이트
                   character.usesCount = (character.usesCount || 0) + 1;
-                  // 상태 강제 업데이트를 위해 배열을 새로 생성
                   setCharacters(prev => [...prev]);
                 }
               } catch (error) {
                 console.error('조회수 증가 실패:', error);
-                // 조회수 증가 실패해도 상세보기는 열기
               }
-              // 상세보기 모달 열기
               setSelectedCharacter(character);
             };
-
             return (
-              <div
+              <CharacterCard
                 key={character.id}
-                role="button"
-                tabIndex={0}
-                onClick={handleSelect}
-                onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && handleSelect()}
-                className="group relative aspect-[3/4] neon-card bg-black/40 glass border-2 border-cyan-700 rounded-2xl overflow-hidden cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-[0_0_16px_#0ff,0_0_32px_#f0f] animate-fadeIn"
-                style={{
-                  boxShadow: '0 0 8px #0ff, 0 0 16px #f0f',
-                  border: '2px solid #099',
-                  backdropFilter: 'blur(8px)',
-                  fontFamily: 'Share Tech Mono, monospace',
-                }}
-              >
-                <img
-                  src={character.imageUrl}
-                  alt={character.name}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110 opacity-90"
-                  style={{ filter: 'brightness(1.1) saturate(1.2) drop-shadow(0 0 6px #0ff)' }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-3 text-cyan-100">
-                  <h3 className="font-bold truncate text-cyan-200 drop-shadow-[0_0_4px_#0ff]" style={{fontFamily:'Share Tech Mono, monospace'}}>{character.name}</h3>
-                  <p className="text-xs text-fuchsia-300 truncate drop-shadow-[0_0_2px_#f0f]" style={{fontFamily:'Share Tech Mono, monospace'}}>{character.introduction}</p>
-                  {/* 태그 */}
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {character.prompt?.tag && character.prompt.tag.split(',').filter(tag => tag.trim()).map((tag, idx) => (
-                      <span key={`tag-${idx}-${tag.trim()}`} className="px-2 py-1 rounded-md border border-cyan-700 bg-black/60 text-cyan-300 text-[0.7rem] font-mono tracking-widest shadow-[0_0_4px_#0ff]" style={{fontFamily:'Share Tech Mono, monospace', letterSpacing:'0.08em', border:'1.5px solid #066', boxShadow:'0 0 4px #0ff'}}>
-                        #{tag.trim()}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="flex justify-between items-center mt-2 text-xs">
-                    <div className="flex items-center gap-1">
-                      <span className="text-cyan-300 drop-shadow-[0_0_2px_#0ff]" style={{fontFamily:'Share Tech Mono, monospace'}}>👁️ {character.usesCount || 0}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={e => {
-                          e.stopPropagation();
-                          handleLikeToggle(character.id, !isLiked);
-                        }}
-                        className="flex items-center focus:outline-none"
-                        aria-label="좋아요 토글"
-                      >
-                        {isLiked ? (
-                          <span className="text-pink-400 drop-shadow-[0_0_3px_#f0f]">❤️</span>
-                        ) : (
-                          <OutlineHeart className="w-4 h-4 text-cyan-400 hover:text-pink-400 transition-colors drop-shadow-[0_0_2px_#0ff]" />
-                        )}
-                      </button>
-                      <span className="text-xs text-cyan-300 drop-shadow-[0_0_2px_#0ff]" style={{fontFamily:'Share Tech Mono, monospace'}}>{character.likes || 0}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                character={character}
+                isMine={false}
+                isLiked={isLiked}
+                onLikeToggle={handleLikeToggle}
+                onEdit={() => {}}
+                onSelect={handleSelect}
+                showEditButtons={false}
+              />
             );
           })}
         </div>
@@ -217,6 +165,7 @@ export default function Communities() {
           onClose={() => setSelectedCharacter(null)}
           onLikeToggle={handleLikeToggle}
           onChatRoomCreated={refetchMyChatCharacters}
+          style={{ zIndex: 100 }}
         />
       )}
 
