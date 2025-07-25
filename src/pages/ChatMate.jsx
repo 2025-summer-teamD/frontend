@@ -421,7 +421,16 @@ const ChatMate = () => {
                 >
                   {msg.imageUrl
                     ? <img
-                      src={msg.imageUrl.startsWith('http') ? msg.imageUrl : API_BASE_URL + msg.imageUrl}
+                      src={(() => {
+                        if (!msg.imageUrl) return '';
+                        if (msg.imageUrl.startsWith('http')) return msg.imageUrl;
+                        if (msg.imageUrl.startsWith('/uploads')) {
+                          // API_BASE_URL 예: http://localhost:3001/api -> http://localhost:3001
+                          const backendOrigin = API_BASE_URL.replace(/\/api\/?$/, '');
+                          return backendOrigin + msg.imageUrl;
+                        }
+                        return API_BASE_URL + msg.imageUrl; // 기타 상대경로
+                      })()}
                       alt="전송된 이미지"
                       className="max-w-xs rounded-lg border-2 border-cyan-200 shadow-[0_0_4px_#0ff] font-cyberpunk"
                     />
