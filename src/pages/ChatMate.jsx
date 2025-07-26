@@ -508,14 +508,14 @@ const ChatMate = () => {
               </div>
             )}
           </div>
-          <div className="flex-1 flex items-center space-x-2 bg-cyan-100/60 glass border-2 border-cyan-200 text-[#1a1a2e] placeholder-cyan-400 rounded-full px-4 py-2.5 font-cyberpunk focus:outline-none focus:bg-cyan-100/80 focus:border-fuchsia-200 focus:text-fuchsia-700 transition-all shadow-[0_0_4px_#0ff]">
+          <div className="flex-1 flex items-center space-x-2 bg-cyan-100/60 glass border-2 border-cyan-200 rounded-full px-4 py-2.5 font-cyberpunk focus-within:bg-cyan-100/80 focus-within:border-fuchsia-200 transition-all shadow-[0_0_4px_#0ff]">
             <input
               type="text"
               value={newMessage}
               onChange={e => setNewMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="메시지를 입력하세요..."
-              className="w-full bg-transparent border-none outline-none text-white placeholder-cyan-400 font-cyberpunk tracking-widest"
+              className="w-full bg-transparent border-none outline-none text-black placeholder-cyan-400 font-cyberpunk tracking-widest"
               disabled={aiLoading} // AI 로딩 중에는 입력 비활성화
             />
           </div>
