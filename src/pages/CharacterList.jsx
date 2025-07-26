@@ -45,8 +45,6 @@ export default function CharacterList() {
 
   const [tab, setTab] = useState('created'); // 'created' 또는 'liked'
   const [searchQuery, setSearchQuery] = useState(''); // 검색어 상태
-  // const [activeSort, setActiveSort] = useState('인기순'); // 정렬 상태 - 제거됨
-  // const [selectedCharacter, setSelectedCharacter] = useState(null); // 더 이상 사용하지 않음
   const [editingCharacter, setEditingCharacter] = useState(null);
   const [editingModalCharacter, setEditingModalCharacter] = useState(null); // 수정 모달용 상태
   const [showCreateChatModal, setShowCreateChatModal] = useState(false); // 채팅방 생성 모달

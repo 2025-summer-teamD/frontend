@@ -10,7 +10,7 @@ export default function Header({ onMenuClick }) {
       <Link to="/">
         <div className="flex items-center">
           <img src="/assets/logo.png" alt="Logo" className="h-[40px] w-[40px] drop-shadow-[0_0_12px_#0ff]" />
-          <span className="text-cyan-200 font-extrabold text-[28px] ml-3 drop-shadow-[0_0_8px_#0ff] font-cyberpunk">ChatMate</span>
+          <span className="text-cyan-200 font-extrabold text-[24px] ml-3 drop-shadow-[0_0_8px_#0ff] logo-font">Anima</span>
         </div>
       </Link>
       {/* 오른쪽 내비게이션 */}

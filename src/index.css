@@ -1,99 +1,114 @@
 @import 'tailwindcss';
 
-/* Global Styles */
-* {
-  box-sizing: border-box;
+/* Optimized Font Loading */
+@font-face {
+  font-family: 'Cafe24Moyamoya';
+  src: url('/assets/fonts/Cafe24Moyamoya-Face-v1.0.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
 }
 
-html {
-  scroll-behavior: smooth;
+@font-face {
+  font-family: 'Cafe24PROUP';
+  src: url('/assets/fonts/Cafe24PROUP.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
 }
 
-body {
-  background-color: #1a1a1a;
-  color: #e5e7eb;
-  margin: 0;
-  padding: 0; /* 혹시 모를 패딩도 함께 제거 */
+/* Hero Text Styles */
+.hero-title, .hero-text {
+  font-family: 'Cafe24Moyamoya', sans-serif !important;
+  color: rgba(255, 255, 255, 0.7);
+  text-shadow: 
+    0 0 5px #1e90ff,
+    0 0 10px #1e90ff,
+    0 0 15px #4169e1,
+    0 0 20px #4169e1,
+    0 0 35px #00bfff,
+    0 0 40px #00bfff !important;
+  animation: neonGlow 3s ease-in-out infinite alternate;
+  will-change: text-shadow;
 }
 
-/* Scrollbar Styles */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
+/* Section Title Styles - 섹션 제목 통일 스타일 */
+.section-title {
+  font-family: 'Cafe24Moyamoya', sans-serif !important;
+  color: white !important;
+  text-shadow: 
+    0 0 4px #0080ff,
+    0 0 8px #0080ff,
+    0 0 12px #0080ff !important;
+  font-size: 2rem !important; /* 32px - 통일된 크기 */
 }
 
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+/* 반응형 크기 조정 */
+@media (min-width: 768px) {
+  .section-title {
+    font-size: 2.5rem !important; /* 40px */
+  }
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+@media (min-width: 1024px) {
+  .section-title {
+    font-size: 3rem !important; /* 48px */
+  }
 }
 
-::-webkit-scrollbar-track {
-  background: #1a1a1a;
+.logo-font {
+  font-family: 'Cafe24PROUP', sans-serif !important;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #4a4a4a;
-  border-radius: 4px;
+/* Essential Animations Only */
+@keyframes neonGlow {
+  from {
+    text-shadow: 
+      0 0 5px #1e90ff,
+      0 0 10px #1e90ff,
+      0 0 15px #4169e1,
+      0 0 20px #4169e1,
+      0 0 35px #00bfff,
+      0 0 40px #00bfff;
+  }
+  to {
+    text-shadow: 
+      0 0 2px #1e90ff,
+      0 0 5px #1e90ff,
+      0 0 8px #4169e1,
+      0 0 12px #4169e1,
+      0 0 18px #00bfff,
+      0 0 25px #00bfff;
+  }
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #5a5a5a;
-}
-
-/* Animations */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateX(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease-out;
-}
-
-.animate-slideIn {
-  animation: slideIn 0.3s ease-out;
-}
-
+/* 네온 박스 움직임 애니메이션 */
 @keyframes moveBox1 {
   0% { transform: translate(0, 0) scale(1) rotate(0deg); }
   40% { transform: translate(30px, 20px) scale(1.08) rotate(3deg); }
   70% { transform: translate(-20px, 40px) scale(0.96) rotate(-2deg); }
   100% { transform: translate(10px, 0) scale(1.04) rotate(2deg); }
 }
+
 @keyframes moveBox2 {
   0% { transform: translate(0, 0) scale(1) rotate(0deg); }
   30% { transform: translate(-20px, 30px) scale(1.1) rotate(-4deg); }
   60% { transform: translate(40px, -10px) scale(0.95) rotate(2deg); }
   100% { transform: translate(0, 20px) scale(1.05) rotate(-3deg); }
 }
+
 @keyframes moveBox3 {
   0% { transform: translate(0, 0) scale(1) rotate(0deg); }
   50% { transform: translate(40px, -30px) scale(1.07) rotate(4deg); }
   80% { transform: translate(-30px, 20px) scale(0.93) rotate(-2deg); }
   100% { transform: translate(20px, 10px) scale(1.02) rotate(3deg); }
 }
+
 @keyframes moveBox4 {
   0% { transform: translate(0, 0) scale(1) rotate(0deg); }
   35% { transform: translate(-30px, -20px) scale(1.09) rotate(-3deg); }
@@ -101,52 +116,113 @@ body {
   100% { transform: translate(-10px, 0) scale(1.03) rotate(-2deg); }
 }
 
-/* Glass Effect */
+/* 네온 글로우 펄스 애니메이션 */
+@keyframes neonPulse1 {
+  0% { box-shadow: 0 0 80px 20px #0ff; }
+  50% { box-shadow: 0 0 120px 35px #0ff; }
+  100% { box-shadow: 0 0 80px 20px #0ff; }
+}
+
+@keyframes neonPulse2 {
+  0% { box-shadow: 0 0 60px 16px #0ff; }
+  30% { box-shadow: 0 0 90px 28px #0ff; }
+  70% { box-shadow: 0 0 45px 12px #0ff; }
+  100% { box-shadow: 0 0 60px 16px #0ff; }
+}
+
+@keyframes neonPulse3 {
+  0% { box-shadow: 0 0 100px 24px #f0f; }
+  40% { box-shadow: 0 0 140px 40px #f0f; }
+  80% { box-shadow: 0 0 80px 18px #f0f; }
+  100% { box-shadow: 0 0 100px 24px #f0f; }
+}
+
+@keyframes neonPulse4 {
+  0% { box-shadow: 0 0 80px 18px #f0f; }
+  25% { box-shadow: 0 0 110px 32px #f0f; }
+  75% { box-shadow: 0 0 60px 14px #f0f; }
+  100% { box-shadow: 0 0 80px 18px #f0f; }
+}
+
+/* Custom styles */
 .glass {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
-/* Text Selection */
-::selection {
-  background-color: #3b82f6;
-  color: white;
+.neon-card {
+  border: 2px solid rgba(0, 255, 255, 0.6);
+  box-shadow: 
+    0 0 10px rgba(0, 255, 255, 0.3),
+    0 0 20px rgba(0, 255, 255, 0.2),
+    0 0 30px rgba(0, 255, 255, 0.1),
+    inset 0 0 10px rgba(0, 255, 255, 0.1);
 }
 
-/* Focus Styles */
-:focus {
-  outline: none;
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-:focus-visible {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
-/* Transition Classes */
-.transition-smooth {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+.font-cyberpunk {
+  font-family: 'Share Tech Mono', monospace;
 }
 
-/* Line Clamp Utilities */
-.line-clamp-1 {
+.animate-fadeIn {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.animate-neonPulse {
+  animation: neonGlow 2s ease-in-out infinite alternate;
+}
+
+/* Global Styles */
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { 
+  background-color: #1a1a1a; 
+  color: #e5e7eb; 
+  margin: 0; 
+  padding: 0; 
+}
+
+/* Optimized Scrollbar */
+.no-scrollbar { 
+  -ms-overflow-style: none; 
+  scrollbar-width: none; 
+}
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #1a1a1a; }
+::-webkit-scrollbar-thumb { 
+  background: #4a4a4a; 
+  border-radius: 4px; 
+}
+::-webkit-scrollbar-thumb:hover { background: #5a5a5a; }
+
+/* Essential Utilities */
+.animate-fadeIn { animation: fadeIn 0.3s ease-out; }
+.glass { 
+  background: rgba(255, 255, 255, 0.05); 
+  backdrop-filter: blur(10px); 
+  border: 1px solid rgba(255, 255, 255, 0.1); 
+}
+
+::selection { background-color: #3b82f6; color: white; }
+:focus { outline: none; }
+:focus-visible { outline: 2px solid #3b82f6; outline-offset: 2px; }
+
+/* Line Clamp */
+.line-clamp-1, .line-clamp-2, .line-clamp-3 {
   overflow: hidden;
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
 }
-
-.line-clamp-2 {
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
-.line-clamp-3 {
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-}
+.line-clamp-1 { -webkit-line-clamp: 1; }
+.line-clamp-2 { -webkit-line-clamp: 2; }
+.line-clamp-3 { -webkit-line-clamp: 3; }

@@ -211,7 +211,7 @@ const Sidebar = ({ children }) => {
           <div className="flex items-center justify-between p-4.5">
             <Link to="/" className="flex items-center">
               <img src={logo} alt="Logo" className="w-10 h-10 drop-shadow-[0_0_12px_#0ff]" />
-              <span className="text-cyan-200 font-extrabold text-lg ml-2 drop-shadow-[0_0_8px_#0ff]">ChatMate</span>
+              <span className="text-cyan-200 font-extrabold text-[24px] ml-2 drop-shadow-[0_0_8px_#0ff] logo-font">Anima</span>
             </Link>
           </div>
           {/* Buttons */}
@@ -320,7 +320,7 @@ const Sidebar = ({ children }) => {
             {!sidebarOpen && (
               <Link to="/" className="flex items-center">
                 <img src={logo} alt="Logo" className="w-8 h-8 drop-shadow-[0_0_8px_#0ff]" />
-                <span className="text-cyan-200 font-extrabold text-lg ml-2 drop-shadow-[0_0_6px_#0ff]">ChatMate</span>
+                <span className="text-cyan-200 font-extrabold text-[24px] ml-2 drop-shadow-[0_0_6px_#0ff] logo-font">Anima</span>
               </Link>
             )}
           </div>

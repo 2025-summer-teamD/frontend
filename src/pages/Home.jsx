@@ -1,35 +1,19 @@
-import { useAuth } from '@clerk/clerk-react';
-import { useEffect } from 'react'; // useEffect를 사용하려면 import 해야 합니다.
 import Hero from "../components/Hero";
 import PopularCharacters from "../components/PopularCharacters";
-import Features from "../components/features";
-import ChatPreview from "../components/chatPreview";
+import Features from "../components/Features";
+import ChatPreview from "../components/ChatPreview";
 
 function Home() {
-  // useAuth 훅은 반드시 함수 컴포넌트 내부의 최상위에서 호출되어야 합니다.
-  const { getToken, userId, isLoaded, isSignedIn } = useAuth();
-
-  useEffect(() => {
-    if (isLoaded && isSignedIn) {
-      const getClerkToken = async () => {
-        const token = await getToken();
-        console.log("Clerk Session Token:", token);
-        console.log("User ID:", userId);
-      };
-      getClerkToken();
-    }
-  }, [isLoaded, isSignedIn, getToken, userId]); // 의존성 배열에 필요한 값들을 포함합니다.
-
   return (
-    <div className="text-white no-scrollbar" style={{background: 'linear-gradient(to bottom, #181a2b 60%, #0f1023 100%)'}}>
+    <div className="text-white no-scrollbar" style={{background: 'linear-gradient(to bottom, #1A1A2E 0%, #1a237e 25%, #2E3A8C 50%, #483D8B 75%, #7b68ee 100%)'}}>
       <Hero />
-      <section className="w-full animate-fadeIn">
+      <section className="w-full animate-fadeIn pt-16 md:pt-24 lg:pt-32">
         <PopularCharacters />
       </section>
-      <section className="w-full animate-fadeIn">
+      <section className="w-full animate-fadeIn pt-16 md:pt-24 lg:pt-32">
         <Features />
       </section>
-      <section className="w-full animate-fadeIn">
+      <section className="w-full animate-fadeIn pt-16 md:pt-24 lg:pt-32">
         <ChatPreview />
       </section>
     </div>

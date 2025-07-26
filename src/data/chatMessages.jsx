@@ -3,11 +3,7 @@ import { useAuth } from "@clerk/clerk-react";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-// 이 파일에서는 메시지 전송 관련 API 호출, sendMessage, useSendMessageToAI 등은 모두 제거됨
-// 메시지 전송은 반드시 소켓 emit만 사용
-// AI 응답 등은 SSE로만 수신
 
-// 채팅방 생성/입장 관련 훅만 남김
 export function useCreateChatRoom() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -68,7 +64,6 @@ export function useCreateChatRoom() {
   return { createChatRoom, loading, error };
 }
 
-// 채팅방 입장/생성 통합 커스텀 훅 (기존 방이 있으면 입장, 없으면 생성)
 export function useEnterOrCreateChatRoom() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -139,7 +134,7 @@ export function useEnterOrCreateChatRoom() {
 
       return {
         roomId: postData.data.id,
-        character: postData.data.character, // 백엔드에서 이제 character 정보를 포함해서 반환함
+        character: postData.data.character,
         chatHistory: postData.data.chatHistory || [],
         isNewRoom: true
       };
@@ -162,5 +157,3 @@ const chatMessages = [
 
 export default chatMessages;
 export { chatMessages };
-
-
