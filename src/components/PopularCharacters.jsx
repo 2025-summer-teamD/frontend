@@ -5,6 +5,10 @@ import { useNavigate } from 'react-router-dom';
 import { useEnterOrCreateChatRoom } from '../data/chatMessages';
 import { getSafeImageUrl } from '../utils/imageUtils';
 import BaseCard from './BaseCard';
+import CharacterInfo from './CharacterInfo';
+import CharacterStats from './CharacterStats';
+import SlideButton from './SlideButton';
+import SectionHeader from './SectionHeader';
 
 const PopularCharacters = React.memo(({ onChatRoomCreated }) => {
   const containerRef = useRef(null);
@@ -184,51 +188,40 @@ const PopularCharacters = React.memo(({ onChatRoomCreated }) => {
 
   if (loading) {
     return (
-      <section id="characters" className="py-8 md:py-16 px-4 md:px-8">
-        <h2 className="section-title font-bold text-center mb-4 md:mb-6">
-          인기 캐릭터
-        </h2>
-        <p className="text-lg md:text-xl lg:text-2xl xl:text-[24px] text-center font-bold mb-16 md:mb-20 leading-relaxed text-cyan-100" style={{textShadow:'0 0 4px #0080ff, 0 0 8px #0080ff, 0 0 12px #0080ff'}}>
-          복잡한 설정 없이, 인기 캐릭터와 바로 소통하세요.
-        </p>
+      <SectionHeader 
+        title="인기 캐릭터" 
+        subtitle="복잡한 설정 없이, 인기 캐릭터와 바로 소통하세요."
+      >
         <div className="text-center text-white">로딩 중...</div>
-      </section>
+      </SectionHeader>
     );
   }
 
   if (error) {
     return (
-      <section id="characters" className="py-8 md:py-16 px-4 md:px-8">
-        <h2 className="section-title font-bold text-center mb-4 md:mb-6">
-          인기 캐릭터
-        </h2>
-        <p className="text-lg md:text-xl lg:text-2xl xl:text-[24px] text-center font-bold mb-16 md:mb-20 leading-relaxed text-cyan-100" style={{textShadow:'0 0 4px #0080ff, 0 0 8px #0080ff, 0 0 12px #0080ff'}}>
-          복잡한 설정 없이, 인기 캐릭터와 바로 소통하세요.
-        </p>
+      <SectionHeader 
+        title="인기 캐릭터" 
+        subtitle="복잡한 설정 없이, 인기 캐릭터와 바로 소통하세요."
+      >
         <div className="text-center text-white">{error}</div>
-      </section>
+      </SectionHeader>
     );
   }
 
-      return (
-      <section id="characters" className="py-8 md:py-16 px-4 md:px-8">
-        <h2 className="section-title font-bold text-center mb-4 md:mb-6">
-          인기 캐릭터
-        </h2>
-      <p className="text-lg md:text-xl lg:text-2xl xl:text-[24px] text-center font-bold mb-16 md:mb-20 leading-relaxed text-cyan-100" style={{textShadow:'0 0 4px #0080ff, 0 0 8px #0080ff, 0 0 12px #0080ff'}}>
-        복잡한 설정 없이, 인기 캐릭터와 바로 소통하세요.
-      </p>
+        return (
+    <SectionHeader 
+      title="인기 캐릭터" 
+      subtitle="복잡한 설정 없이, 인기 캐릭터와 바로 소통하세요."
+    >
       
       <div className="flex items-center justify-center relative">
         {/* 왼쪽 화살표 */}
-        <button
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-black/60 glass border-2 border-cyan-700 text-cyan-200 hover:text-fuchsia-400 rounded-full w-12 h-12 flex items-center justify-center shadow-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+        <SlideButton
+          direction="left"
           onClick={() => setCurrentIndex(i => Math.max(0, i - cardsPerPage))}
           disabled={currentIndex === 0}
-          aria-label="이전 캐릭터들"
-        >
-          <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
-        </button>
+          ariaLabel="이전 캐릭터들"
+        />
         
         {/* 카드 리스트 */}
         <div ref={containerRef} className="flex gap-6 overflow-x-auto overflow-y-visible w-full max-w-7xl px-8 py-6" style={{scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch'}}>
@@ -249,46 +242,25 @@ const PopularCharacters = React.memo(({ onChatRoomCreated }) => {
                 onKeyDown={(event) => handleKeyDown(event, character.id)}
                 className="w-[240px] h-[320px] flex-shrink-0 neon-card"
               >
-                <h3 className="font-bold truncate text-cyan-200 drop-shadow-[0_0_4px_#0ff] text-2xl" style={{fontFamily:'Share Tech Mono, monospace'}}>{character.name}</h3>
-                <p className="text-xs text-fuchsia-300 truncate drop-shadow-[0_0_2px_#f0f]" style={{fontFamily:'Share Tech Mono, monospace'}}>{character.introduction || character.description}</p>
-                <div className="flex justify-between items-center mt-2 text-xs gap-2">
-                  {/* VIEWS 박스 */}
-                  <div className="flex-1 bg-white/20 border-2 border-cyan-400 rounded-lg px-2 py-1 text-center">
-                    <div className="text-cyan-400 font-bold text-[10px] tracking-wider" style={{fontFamily:'Share Tech Mono, monospace'}}>VIEWS</div>
-                    <div className="text-cyan-200 font-bold text-sm" style={{fontFamily:'Share Tech Mono, monospace'}}>{character.usesCount || character.messageCount || 0}</div>
-                  </div>
-                  
-                  {/* LIKES 박스 */}
-                  <div className="flex-1 bg-white/20 border-2 border-fuchsia-400 rounded-lg px-2 py-1 text-center">
-                    <div className="text-fuchsia-400 font-bold text-[10px] tracking-wider" style={{fontFamily:'Share Tech Mono, monospace'}}>LIKES</div>
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        handleLikeToggle(characterId, !isLiked);
-                      }}
-                      className="w-full focus:outline-none"
-                      aria-label="좋아요 토글"
-                    >
-                      <div className={`font-bold text-sm transition-all ${isLiked ? 'text-pink-300' : 'text-fuchsia-200'}`} style={{fontFamily:'Share Tech Mono, monospace'}}>
-                        {character.likes ?? 0}
-                      </div>
-                    </button>
-                  </div>
-                </div>
+                <CharacterInfo character={character} isMine={false} nameSize="text-2xl" />
+                <CharacterStats 
+                  character={character} 
+                  isLiked={isLiked} 
+                  onLikeToggle={handleLikeToggle} 
+                  characterId={characterId} 
+                />
               </BaseCard>
             );
           })}
         </div>
         
         {/* 오른쪽 화살표 */}
-        <button
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-black/60 glass border-2 border-cyan-700 text-cyan-200 hover:text-fuchsia-400 rounded-full w-12 h-12 flex items-center justify-center shadow-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+        <SlideButton
+          direction="right"
           onClick={() => setCurrentIndex(i => Math.min(maxIndex, i + cardsPerPage))}
           disabled={currentIndex >= maxIndex}
-          aria-label="다음 캐릭터들"
-        >
-          <svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
-        </button>
+          ariaLabel="다음 캐릭터들"
+        />
       </div>
       
       {chatLoading && (
@@ -299,7 +271,7 @@ const PopularCharacters = React.memo(({ onChatRoomCreated }) => {
           </div>
         </div>
       )}
-    </section>
+    </SectionHeader>
   );
 });
 
