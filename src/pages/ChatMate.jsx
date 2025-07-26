@@ -5,6 +5,7 @@ import { useChatMessages } from '../contexts/ChatMessagesContext';
 import { FiPaperclip } from 'react-icons/fi';
 import { io } from 'socket.io-client';
 import { useMyCharacters } from '../data/characters';
+import { v4 as uuidv4 } from 'uuid';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -258,7 +259,7 @@ const ChatMate = () => {
     
     socket.on('receiveMessage', async (msg) => {
       addMessageToRoom(roomId, {
-        id: Date.now() + Math.random(),
+        id: uuidv4(),
         text: msg.message,
         sender: msg.senderType === 'user' && msg.senderId === user.id ? 'me' : (msg.senderType === 'ai' ? 'ai' : 'other'),
         aiId: msg.aiId ? String(msg.aiId) : undefined,
@@ -363,7 +364,7 @@ const ChatMate = () => {
     const data = await res.json();
     if (data.success && data.imageUrl) {
       addMessageToRoom(roomId, {
-        id: Date.now(),
+        id: uuidv4(),
         text: '',
         imageUrl: data.imageUrl,
         sender: 'me',

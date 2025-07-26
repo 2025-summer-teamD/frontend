@@ -318,9 +318,18 @@ export default function CharacterList() {
             ) : (
               <ul className="space-y-2 max-h-64 overflow-y-auto no-scrollbar">
                 {showCharacters.map(character => (
-                  <li key={character.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-cyan-900/40 cursor-pointer transition-all"
+                  <li
+                    key={character.id}
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-cyan-900/40 cursor-pointer transition-all"
                     onClick={() => {
                       handleCharacterSelect(character.id);
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        handleCharacterSelect(character.id);
+                      }
                     }}
                   >
                     <input

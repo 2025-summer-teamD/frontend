@@ -91,6 +91,13 @@ export default function MyChatRoomList() {
           key={room.roomId}
           className="group bg-black/60 border-2 border-cyan-700 rounded-xl p-4 cursor-pointer hover:shadow-[0_0_8px_#0ff] flex items-center justify-between"
           onClick={() => handleRoomClick(room)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              handleRoomClick(room);
+            }
+          }}
         >
           <div className="flex items-center gap-4 flex-1">
             {room.imageUrl && (
