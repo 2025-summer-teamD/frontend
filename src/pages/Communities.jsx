@@ -10,7 +10,6 @@ import SearchBar from '../components/SearchBar';
 import EmptyState from '../components/EmptyState';
 import PageLayout from '../components/PageLayout';
 import TabButton from '../components/TabButton';
-import { Heart as OutlineHeart, Heart as SolidHeart } from 'lucide-react';
 import { useAuth } from "@clerk/clerk-react";
 import { CharacterCard } from '../components/CharacterGrid';
 

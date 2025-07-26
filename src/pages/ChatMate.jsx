@@ -4,52 +4,10 @@ import { useSendMessageToAI } from '../data/chatMessages'; // 경로 확인
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { useChatMessages } from '../contexts/ChatMessagesContext'; // 경로 확인
 import { FiPaperclip } from 'react-icons/fi';
+import { getLevel, getExpForNextLevel, getExpBase } from '../utils/levelUtils';
+import NeonBackground from '../components/NeonBackground';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-// --- Level/Exp Gauge Components (변경 없음) ---
-function getLevel(exp) {
-  if (exp >= 7) return 5;
-  if (exp >= 4) return 4;
-  if (exp >= 2) return 3;
-  if (exp >= 1) return 2;
-  return 1;
-}
-function getExpForNextLevel(level) {
-  return [0, 1, 2, 3, 4][level] || 0;
-}
-function getExpBase(level) {
-  return [0, 0, 1, 2, 4][level] || 0;
-}
-function LevelExpGauge({ exp }) {
-  const level = getLevel(exp);
-  const expBase = getExpBase(level);
-  const expNext = getExpForNextLevel(level);
-  const expInLevel = exp - expBase;
-  const expMax = expNext;
-  const percent = expMax ? Math.min(100, Math.round((expInLevel / expMax) * 100)) : 100;
-  return (
-    <>
-      <div className="flex gap-4 items-center text-cyan-200 font-bold font-cyberpunk text-sm tracking-widest">
-        <span>레벨: {level}</span>
-        <span>친밀도: {exp}</span>
-      </div>
-      <div className="w-48 h-5 bg-black/60 border-2 border-cyan-700 rounded-full shadow-[0_0_8px_#0ff] relative overflow-hidden">
-        <div
-          className="h-full bg-cyan-400"
-          style={{
-            width: `${percent}%`,
-            boxShadow: '0 0 8px #0ff, 0 0 16px #0ff',
-            transition: 'width 0.4s cubic-bezier(.4,2,.6,1)'
-          }}
-        />
-        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs text-cyan-100 font-bold drop-shadow-[0_0_2px_#0ff]">
-          {expInLevel}/{expMax}
-        </span>
-      </div>
-    </>
-  );
-}
 
 const ChatMate = () => {
   const { state } = useLocation();
@@ -75,9 +33,7 @@ const ChatMate = () => {
 
   // 이전 대화기록을 메시지 형식으로 변환하는 함수
   const convertChatHistoryToMessages = useCallback((chatHistory, characterData) => {
-    console.log('📜 채팅 히스토리 변환 시작:', { chatHistory, characterData });
     if (!chatHistory || !Array.isArray(chatHistory)) {
-      console.log('❌ 채팅 히스토리가 없거나 배열이 아님');
       return [];
     }
     return chatHistory.map(item => {
@@ -91,17 +47,14 @@ const ChatMate = () => {
           hour12: true,
         }),
         characterId: characterData?.characterId || characterData?.id,
-        // 이미지가 있다면 imageUrl 추가
-        imageUrl: item.type === 'video' ? item.text : undefined // 백엔드에서 type: 'video'로 오고 text가 URL이라면
+        imageUrl: item.type === 'video' ? item.text : undefined
       };
-      // 실제 비디오 URL이 text에 포함되어 있다면 videoType으로 구분하여 저장
       if (item.type === 'video' && item.text) {
         convertedMessage.type = 'video';
       }
-      console.log('💬 변환된 메시지:', convertedMessage);
       return convertedMessage;
     });
-  }, []); // 의존성 없음
+  }, []);
 
   // 캐릭터 정보 상태
   const [character, setCharacter] = useState(state?.character || null);
@@ -121,33 +74,22 @@ const ChatMate = () => {
   const [showAttachModal, setShowAttachModal] = useState(false);
   const fileInputRef = useRef(null);
 
-  // 🆕 사이드바 채팅방 전환 감지: state 변경 시 상태 업데이트
+  // 사이드바 채팅방 전환 감지: state 변경 시 상태 업데이트
   useEffect(() => {
-    console.log('🔄 [채팅방 전환 감지] state 변경됨');
-    console.log('🔍 새로운 state?.character:', state?.character);
-    console.log('🔍 새로운 state?.chatHistory 길이:', state?.chatHistory?.length || 0);
-
     if (state?.character) {
-      console.log('✅ 새로운 채팅방 데이터로 상태 업데이트');
-
-      // 캐릭터 정보 업데이트
       setCharacter(state.character);
       setError(null);
       setLoading(false);
 
-      // 메시지 히스토리를 전역 Context에 저장
       const newChatHistory = state.chatHistory || [];
       if (newChatHistory.length > 0) {
-        console.log('✅ 새로운 채팅 히스토리 변환 시작');
         const convertedMessages = convertChatHistoryToMessages(newChatHistory, state.character);
-        console.log('✅ 새로운 메시지 변환 완료:', convertedMessages);
         setMessagesForRoom(roomId, convertedMessages);
       } else {
-        console.log('❌ 새로운 채팅방에 히스토리 없음, 메시지 초기화');
         setMessagesForRoom(roomId, []);
       }
     }
-  }, [state?.character, state?.chatHistory, roomId, convertChatHistoryToMessages, setMessagesForRoom]); // 의존성 추가
+  }, [state?.character, state?.chatHistory, roomId, convertChatHistoryToMessages, setMessagesForRoom]);
 
   // 채팅방 입장 시 캐릭터 정보 fetch (state가 있든 없든 항상 최신값으로)
   useEffect(() => {
@@ -163,11 +105,8 @@ const ChatMate = () => {
         })
           .then(res => res.json())
           .then(data => {
-            console.log('[room-info] API 응답:', data);
             if (data.success && data.data && data.data.character) {
-              console.log('[room-info] setCharacter 호출: exp:', data.data.character.exp, 'friendship:', data.data.character.friendship, '전체:', data.data.character);
               setCharacter(data.data.character);
-              // 초기 로드시 chatHistory도 함께 로드하여 메시지 상태 업데이트
               if (data.data.chatHistory) {
                 const convertedMessages = convertChatHistoryToMessages(data.data.chatHistory, data.data.character);
                 setMessagesForRoom(roomId, convertedMessages);
@@ -177,7 +116,7 @@ const ChatMate = () => {
             }
           })
           .catch((err) => {
-            console.error('room-info fetch error:', err);
+            console.error('채팅방 정보 로드 실패:', err);
             setError('존재하지 않거나 삭제된 채팅방입니다.');
           })
           .finally(() => setLoading(false));
@@ -206,11 +145,7 @@ const ChatMate = () => {
     }
   }, [messages, aiLoading]); // messages 또는 aiLoading이 변경될 때마다 스크롤
 
-  useEffect(() => {
-    if (character) {
-      console.log(`[ChatMate] 채팅방 입장: 캐릭터 이름 = ${character.name}, id = ${character.id}`);
-    }
-  }, [character]);
+
 
   // 조건부 렌더링은 모든 Hook 선언 이후에 위치해야 함
   if (loading) return <div className="text-white p-8">캐릭터 정보를 불러오는 중...</div>;
@@ -219,47 +154,33 @@ const ChatMate = () => {
 
   // AI 응답 포함한 메시지 전송
   const sendMessage = async () => {
-    console.log('🚀 ChatMate sendMessage 시작');
-    console.log('🔍 newMessage.trim():', newMessage.trim());
-    console.log('🔍 aiLoading:', aiLoading);
-
     if (!newMessage.trim() || aiLoading) {
-      console.log('❌ 조건 체크 실패 - 메시지 전송 중단');
       return;
     }
 
-    console.log('✅ 조건 체크 통과');
     const messageText = newMessage.trim();
-    setNewMessage(''); // 입력창 즉시 비우기
+    setNewMessage('');
 
-    console.log('⏰ 시간 생성 시작');
     const now = new Date().toLocaleTimeString('ko-KR', {
       hour: 'numeric',
       minute: '2-digit',
       hour12: true,
     });
-    console.log('✅ 시간 생성 성공:', now);
 
-    // 사용자 메시지 추가
-    console.log('👤 사용자 메시지 객체 생성 시작');
     const userMsg = {
-      id: Date.now(), // 고유 ID 생성
+      id: Date.now(),
       text: messageText,
       sender: 'me',
       time: now,
       characterId: character.id,
     };
-    console.log('✅ 사용자 메시지 객체 생성 성공:', userMsg);
 
-    // 전역 상태에 사용자 메시지 즉시 추가
-    console.log('📝 전역 상태에 사용자 메시지 추가');
     addMessageToRoom(roomId, userMsg);
 
-    // AI 응답 스트리밍을 위한 임시 AI 메시지 추가 (초기에는 비어있음)
-    const aiMessageId = Date.now() + 1; // AI 메시지 ID 미리 생성
+    const aiMessageId = Date.now() + 1;
     addMessageToRoom(roomId, {
       id: aiMessageId,
-      text: '', // 빈 텍스트로 시작
+      text: '',
       sender: 'other',
       time: new Date().toLocaleTimeString('ko-KR', {
         hour: 'numeric',
@@ -267,68 +188,47 @@ const ChatMate = () => {
         hour12: true,
       }),
       characterId: character.id,
-      isStreaming: true // ⭐ 스트리밍 중임을 나타내는 플래그
+      isStreaming: true
     });
 
     try {
-      setAiLoading(roomId, true); // AI 로딩 상태 시작
+      setAiLoading(roomId, true);
 
-      // AI 응답 스트리밍 받기
-      // onNewChunk: AI가 한 글자씩 보낼 때마다 호출
-      // onVideoUrl: 영상 URL이 도착했을 때 호출
       await sendMessageToAI(
         roomId,
         messageText,
         (chunk, accumulatedText) => {
-          // ⭐ 각 청크가 올 때마다 AI 메시지 업데이트
           updateStreamingAiMessage(roomId, aiMessageId, accumulatedText);
         },
         (videoUrl) => {
-          // ⭐ 영상 URL이 도착했을 때 영상 메시지 추가
           addVideoMessageToRoom(roomId, videoUrl, character.id);
         }
       );
 
-      // 스트리밍이 완료된 후 AI 메시지의 isStreaming 플래그 제거
       finishStreamingAiMessage(roomId, aiMessageId);
 
-      // 메시지 전송 후 exp/레벨/게이지 실시간 갱신
-      // 이 부분은 AI 응답 완료 후 한 번만 호출하면 됩니다.
-      (async () => {
-        const token = await getToken();
-        fetch(`${API_BASE_URL}/chat/room-info?roomId=${roomId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
+      // 경험치 업데이트
+      const token = await getToken();
+      fetch(`${API_BASE_URL}/chat/room-info?roomId=${roomId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.data && data.data.character) {
+            setCharacter(data.data.character);
           }
-        })
-          .then(res => res.json())
-          .then(data => {
-            console.log('[room-info] (sendMessage 후) API 응답:', data);
-            if (data.success && data.data && data.data.character) {
-              console.log('[room-info] (sendMessage 후) setCharacter 호출: exp:', data.data.character.exp, 'friendship:', data.data.character.friendship, '전체:', data.data.character);
-              setCharacter(data.data.character);
-            }
-          });
-      })();
+        });
 
     } catch (error) {
-      console.error('💥 ChatMate sendMessage에서 에러 발생:', error);
-      console.error('💥 에러 타입:', typeof error);
-      console.error('💥 에러 message:', error.message);
-      console.error('💥 에러 stack:', error.stack);
       console.error('AI 응답 실패:', error);
-
-      // 에러 발생 시 스트리밍 중인 메시지 업데이트 (또는 삭제 후 에러 메시지 추가)
-      // 여기서는 스트리밍 메시지를 에러 메시지로 변경
-      updateStreamingAiMessage(roomId, aiMessageId, '죄송합니다. 응답을 생성하는데 문제가 발생했습니다.', true); // isError 플래그 추가
-      finishStreamingAiMessage(roomId, aiMessageId); // 스트리밍 종료 처리
-
+      updateStreamingAiMessage(roomId, aiMessageId, '죄송합니다. 응답을 생성하는데 문제가 발생했습니다.', true);
+      finishStreamingAiMessage(roomId, aiMessageId);
     } finally {
-      setAiLoading(roomId, false); // AI 로딩 상태 종료
+      setAiLoading(roomId, false);
     }
-
-    console.log('🏁 ChatMate sendMessage 완료');
   };
 
   const handleKeyPress = e => {
@@ -391,7 +291,7 @@ const ChatMate = () => {
         );
         finishStreamingAiMessage(roomId, aiMessageId);
       } catch (e) {
-        console.error('AI 이미지 답변 생성 에러:', e);
+        console.error('이미지 AI 응답 실패:', e);
         updateStreamingAiMessage(roomId, aiMessageId, '이미지에 대한 답변 생성에 실패했습니다.', true);
         finishStreamingAiMessage(roomId, aiMessageId);
       } finally {
@@ -404,7 +304,7 @@ const ChatMate = () => {
 
 
   return (
-    <div className="flex flex-col h-full font-cyberpunk" style={{fontFamily:undefined, background:'radial-gradient(circle at 30% 10%, #23234d 0%, #2e3a5e 60%, #181a2b 100%)', minHeight:'100vh'}}>
+    <NeonBackground className="flex flex-col h-full font-cyberpunk">
       {/* 헤더: sticky */}
       <header className="sticky top-0 py-4 px-6 z-10">
         <div className="flex items-center gap-3">
@@ -415,22 +315,62 @@ const ChatMate = () => {
               className="w-full h-full object-cover rounded-full"
             />
           </div>
-          <span className="text-cyan-100 text-lg font-bold drop-shadow-[0_0_2px_#0ff] tracking-widest font-cyberpunk">
-            {character.name}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-cyan-100 text-lg font-bold drop-shadow-[0_0_2px_#0ff] tracking-widest font-cyberpunk">
+              {character.name}
+            </span>
+            {/* 레벨과 친밀도 박스 */}
+            {character && (
+              <div className="flex gap-2">
+                {/* LEVEL 박스 */}
+                <div className="bg-white/20 border-2 border-yellow-400 rounded-lg px-3 py-1 text-center">
+                  <div className="text-yellow-200 font-bold text-sm font-cyberpunk">Lv.{getLevel(character.exp || 0)}</div>
+                </div>
+                
+                {/* INTIMACY 박스 */}
+                <div className="bg-white/20 border-2 border-fuchsia-400 rounded-lg px-3 py-1 text-center">
+                  <div className="text-fuchsia-200 font-bold text-sm font-cyberpunk">친밀도 {character.exp || 0}</div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-        {/* 레벨/친밀도/게이지 UI 추가 */}
+        {/* 경험치 게이지만 아래에 */}
         {character && (
-          <div className="mt-2 flex flex-col items-start gap-1">
-            {/* 레벨/친밀도 */}
-            <LevelExpGauge exp={character.exp || 0} />
+          <div className="mt-2 flex justify-start ml-12">
+            <div className="w-48 h-5 bg-black/60 border-2 border-cyan-700 rounded-full shadow-[0_0_8px_#0ff] relative overflow-hidden">
+              <div
+                className="h-full bg-cyan-400"
+                style={{
+                  width: `${(() => {
+                    const level = getLevel(character.exp || 0);
+                    const expBase = getExpBase(level);
+                    const expNext = getExpForNextLevel(level);
+                    const expInLevel = (character.exp || 0) - expBase;
+                    const expMax = expNext;
+                    return expMax ? Math.min(100, Math.round((expInLevel / expMax) * 100)) : 100;
+                  })()}%`,
+                  boxShadow: '0 0 8px #0ff, 0 0 16px #0ff',
+                  transition: 'width 0.4s cubic-bezier(.4,2,.6,1)'
+                }}
+              />
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs text-cyan-100 font-bold drop-shadow-[0_0_2px_#0ff]">
+                {(() => {
+                  const level = getLevel(character.exp || 0);
+                  const expBase = getExpBase(level);
+                  const expNext = getExpForNextLevel(level);
+                  const expInLevel = (character.exp || 0) - expBase;
+                  return `${expInLevel}/${expNext}`;
+                })()}
+              </span>
+            </div>
           </div>
         )}
       </header>
       {/* 스크롤 영역: 프로필 + 메시지 */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 px-4 overflow-y-auto no-scrollbar sm:px-6 md:px-8 lg:px-12 pb-28 font-cyberpunk"
+        className="flex-1 px-4 overflow-y-auto no-scrollbar sm:px-6 md:px-8 lg:px-12 pb-28 font-cyberpunk relative z-10"
       >
         {/* 프로필 */}
         <div className="flex flex-col items-center my-6 text-center font-cyberpunk">
@@ -528,7 +468,7 @@ const ChatMate = () => {
         </div>
       </div>
       {/* 입력창: sticky bottom */}
-      <footer className="fixed right-0 left-0 bottom-0 px-4 py-4 border-t-2 border-cyan-200 bg-black/30 glass backdrop-blur-xl shadow-[0_0_8px_#0ff,0_0_16px_#f0f] font-cyberpunk">
+      <footer className="fixed right-0 left-0 bottom-0 px-4 py-4 border-t-2 border-cyan-200 bg-black/30 glass backdrop-blur-xl shadow-[0_0_8px_#0ff,0_0_16px_#f0f] font-cyberpunk z-20">
         <div className="flex items-center space-x-3 max-w-4xl mx-auto relative font-cyberpunk">
           <div className="relative">
             <button
@@ -588,7 +528,7 @@ const ChatMate = () => {
           </button>
         </div>
       </footer>
-    </div>
+    </NeonBackground>
   );
 };
 
