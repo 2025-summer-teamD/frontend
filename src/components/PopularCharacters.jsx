@@ -4,6 +4,7 @@ import { useAuth } from "@clerk/clerk-react";
 import { useNavigate } from 'react-router-dom';
 import { useEnterOrCreateChatRoom } from '../data/chatMessages';
 import { getSafeImageUrl } from '../utils/imageUtils';
+import BaseCard from './BaseCard';
 
 const PopularCharacters = React.memo(({ onChatRoomCreated }) => {
   const containerRef = useRef(null);
@@ -241,60 +242,40 @@ const PopularCharacters = React.memo(({ onChatRoomCreated }) => {
             const characterId = character.id;
             
             return (
-              <div
+              <BaseCard
                 key={character.id}
-                role="button"
-                tabIndex={0}
+                character={character}
                 onClick={() => handleStartChat(character)}
                 onKeyDown={(event) => handleKeyDown(event, character.id)}
-                className="group relative w-[240px] h-[320px] flex-shrink-0 neon-card bg-black/40 glass border-2 border-cyan-700 rounded-2xl overflow-hidden cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-[0_0_16px_#0ff,0_0_32px_#f0f] animate-fadeIn"
-                style={{
-                  boxShadow: '0 0 8px #0ff, 0 0 16px #f0f',
-                  border: '2px solid #099',
-                  backdropFilter: 'blur(8px)',
-                  fontFamily: 'Share Tech Mono, monospace',
-                }}
-                aria-label={`${character.name}와 대화하기`}
+                className="w-[240px] h-[320px] flex-shrink-0 neon-card"
               >
-                <img
-                  src={getSafeImageUrl(character.imageUrl)}
-                  alt={character.name}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110 opacity-90"
-                  style={{ filter: 'brightness(1.1) saturate(1.2) drop-shadow(0 0 6px #0ff)' }}
-                  onError={(e) => {
-                    e.target.src = '/api/uploads/default-character.svg';
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-3 text-cyan-100">
-                  <h3 className="font-bold truncate text-cyan-200 drop-shadow-[0_0_4px_#0ff] text-2xl" style={{fontFamily:'Share Tech Mono, monospace'}}>{character.name}</h3>
-                  <p className="text-xs text-fuchsia-300 truncate drop-shadow-[0_0_2px_#f0f]" style={{fontFamily:'Share Tech Mono, monospace'}}>{character.introduction || character.description}</p>
-                  <div className="flex justify-between items-center mt-2 text-xs gap-2">
-                    {/* VIEWS 박스 */}
-                    <div className="flex-1 bg-white/20 border-2 border-cyan-400 rounded-lg px-2 py-1 text-center">
-                      <div className="text-cyan-400 font-bold text-[10px] tracking-wider" style={{fontFamily:'Share Tech Mono, monospace'}}>VIEWS</div>
-                      <div className="text-cyan-200 font-bold text-sm" style={{fontFamily:'Share Tech Mono, monospace'}}>{character.usesCount || character.messageCount || 0}</div>
-                    </div>
-                    
-                    {/* LIKES 박스 */}
-                    <div className="flex-1 bg-white/20 border-2 border-fuchsia-400 rounded-lg px-2 py-1 text-center">
-                      <div className="text-fuchsia-400 font-bold text-[10px] tracking-wider" style={{fontFamily:'Share Tech Mono, monospace'}}>LIKES</div>
-                      <button
-                        onClick={e => {
-                          e.stopPropagation();
-                          handleLikeToggle(characterId, !isLiked);
-                        }}
-                        className="w-full focus:outline-none"
-                        aria-label="좋아요 토글"
-                      >
-                        <div className={`font-bold text-sm transition-all ${isLiked ? 'text-pink-300' : 'text-fuchsia-200'}`} style={{fontFamily:'Share Tech Mono, monospace'}}>
-                          {character.likes ?? 0}
-                        </div>
-                      </button>
-                    </div>
+                <h3 className="font-bold truncate text-cyan-200 drop-shadow-[0_0_4px_#0ff] text-2xl" style={{fontFamily:'Share Tech Mono, monospace'}}>{character.name}</h3>
+                <p className="text-xs text-fuchsia-300 truncate drop-shadow-[0_0_2px_#f0f]" style={{fontFamily:'Share Tech Mono, monospace'}}>{character.introduction || character.description}</p>
+                <div className="flex justify-between items-center mt-2 text-xs gap-2">
+                  {/* VIEWS 박스 */}
+                  <div className="flex-1 bg-white/20 border-2 border-cyan-400 rounded-lg px-2 py-1 text-center">
+                    <div className="text-cyan-400 font-bold text-[10px] tracking-wider" style={{fontFamily:'Share Tech Mono, monospace'}}>VIEWS</div>
+                    <div className="text-cyan-200 font-bold text-sm" style={{fontFamily:'Share Tech Mono, monospace'}}>{character.usesCount || character.messageCount || 0}</div>
+                  </div>
+                  
+                  {/* LIKES 박스 */}
+                  <div className="flex-1 bg-white/20 border-2 border-fuchsia-400 rounded-lg px-2 py-1 text-center">
+                    <div className="text-fuchsia-400 font-bold text-[10px] tracking-wider" style={{fontFamily:'Share Tech Mono, monospace'}}>LIKES</div>
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleLikeToggle(characterId, !isLiked);
+                      }}
+                      className="w-full focus:outline-none"
+                      aria-label="좋아요 토글"
+                    >
+                      <div className={`font-bold text-sm transition-all ${isLiked ? 'text-pink-300' : 'text-fuchsia-200'}`} style={{fontFamily:'Share Tech Mono, monospace'}}>
+                        {character.likes ?? 0}
+                      </div>
+                    </button>
                   </div>
                 </div>
-              </div>
+              </BaseCard>
             );
           })}
         </div>

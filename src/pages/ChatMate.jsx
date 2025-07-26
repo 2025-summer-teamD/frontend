@@ -4,23 +4,10 @@ import { useSendMessageToAI } from '../data/chatMessages'; // 경로 확인
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { useChatMessages } from '../contexts/ChatMessagesContext'; // 경로 확인
 import { FiPaperclip } from 'react-icons/fi';
+import { getLevel, getExpForNextLevel, getExpBase } from '../utils/levelUtils';
+import NeonBackground from '../components/NeonBackground';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-// --- Level/Exp Gauge Components (변경 없음) ---
-function getLevel(exp) {
-  if (exp >= 7) return 5;
-  if (exp >= 4) return 4;
-  if (exp >= 2) return 3;
-  if (exp >= 1) return 2;
-  return 1;
-}
-function getExpForNextLevel(level) {
-  return [0, 1, 2, 3, 4][level] || 0;
-}
-function getExpBase(level) {
-  return [0, 0, 1, 2, 4][level] || 0;
-}
 
 const ChatMate = () => {
   const { state } = useLocation();
@@ -46,9 +33,7 @@ const ChatMate = () => {
 
   // 이전 대화기록을 메시지 형식으로 변환하는 함수
   const convertChatHistoryToMessages = useCallback((chatHistory, characterData) => {
-    console.log('📜 채팅 히스토리 변환 시작:', { chatHistory, characterData });
     if (!chatHistory || !Array.isArray(chatHistory)) {
-      console.log('❌ 채팅 히스토리가 없거나 배열이 아님');
       return [];
     }
     return chatHistory.map(item => {
@@ -62,17 +47,14 @@ const ChatMate = () => {
           hour12: true,
         }),
         characterId: characterData?.characterId || characterData?.id,
-        // 이미지가 있다면 imageUrl 추가
-        imageUrl: item.type === 'video' ? item.text : undefined // 백엔드에서 type: 'video'로 오고 text가 URL이라면
+        imageUrl: item.type === 'video' ? item.text : undefined
       };
-      // 실제 비디오 URL이 text에 포함되어 있다면 videoType으로 구분하여 저장
       if (item.type === 'video' && item.text) {
         convertedMessage.type = 'video';
       }
-      console.log('💬 변환된 메시지:', convertedMessage);
       return convertedMessage;
     });
-  }, []); // 의존성 없음
+  }, []);
 
   // 캐릭터 정보 상태
   const [character, setCharacter] = useState(state?.character || null);
@@ -92,33 +74,22 @@ const ChatMate = () => {
   const [showAttachModal, setShowAttachModal] = useState(false);
   const fileInputRef = useRef(null);
 
-  // 🆕 사이드바 채팅방 전환 감지: state 변경 시 상태 업데이트
+  // 사이드바 채팅방 전환 감지: state 변경 시 상태 업데이트
   useEffect(() => {
-    console.log('🔄 [채팅방 전환 감지] state 변경됨');
-    console.log('🔍 새로운 state?.character:', state?.character);
-    console.log('🔍 새로운 state?.chatHistory 길이:', state?.chatHistory?.length || 0);
-
     if (state?.character) {
-      console.log('✅ 새로운 채팅방 데이터로 상태 업데이트');
-
-      // 캐릭터 정보 업데이트
       setCharacter(state.character);
       setError(null);
       setLoading(false);
 
-      // 메시지 히스토리를 전역 Context에 저장
       const newChatHistory = state.chatHistory || [];
       if (newChatHistory.length > 0) {
-        console.log('✅ 새로운 채팅 히스토리 변환 시작');
         const convertedMessages = convertChatHistoryToMessages(newChatHistory, state.character);
-        console.log('✅ 새로운 메시지 변환 완료:', convertedMessages);
         setMessagesForRoom(roomId, convertedMessages);
       } else {
-        console.log('❌ 새로운 채팅방에 히스토리 없음, 메시지 초기화');
         setMessagesForRoom(roomId, []);
       }
     }
-  }, [state?.character, state?.chatHistory, roomId, convertChatHistoryToMessages, setMessagesForRoom]); // 의존성 추가
+  }, [state?.character, state?.chatHistory, roomId, convertChatHistoryToMessages, setMessagesForRoom]);
 
   // 채팅방 입장 시 캐릭터 정보 fetch (state가 있든 없든 항상 최신값으로)
   useEffect(() => {
@@ -134,11 +105,8 @@ const ChatMate = () => {
         })
           .then(res => res.json())
           .then(data => {
-            console.log('[room-info] API 응답:', data);
             if (data.success && data.data && data.data.character) {
-              console.log('[room-info] setCharacter 호출: exp:', data.data.character.exp, 'friendship:', data.data.character.friendship, '전체:', data.data.character);
               setCharacter(data.data.character);
-              // 초기 로드시 chatHistory도 함께 로드하여 메시지 상태 업데이트
               if (data.data.chatHistory) {
                 const convertedMessages = convertChatHistoryToMessages(data.data.chatHistory, data.data.character);
                 setMessagesForRoom(roomId, convertedMessages);
@@ -148,7 +116,7 @@ const ChatMate = () => {
             }
           })
           .catch((err) => {
-            console.error('room-info fetch error:', err);
+            console.error('채팅방 정보 로드 실패:', err);
             setError('존재하지 않거나 삭제된 채팅방입니다.');
           })
           .finally(() => setLoading(false));
@@ -177,11 +145,7 @@ const ChatMate = () => {
     }
   }, [messages, aiLoading]); // messages 또는 aiLoading이 변경될 때마다 스크롤
 
-  useEffect(() => {
-    if (character) {
-      console.log(`[ChatMate] 채팅방 입장: 캐릭터 이름 = ${character.name}, id = ${character.id}`);
-    }
-  }, [character]);
+
 
   // 조건부 렌더링은 모든 Hook 선언 이후에 위치해야 함
   if (loading) return <div className="text-white p-8">캐릭터 정보를 불러오는 중...</div>;
@@ -190,47 +154,33 @@ const ChatMate = () => {
 
   // AI 응답 포함한 메시지 전송
   const sendMessage = async () => {
-    console.log('🚀 ChatMate sendMessage 시작');
-    console.log('🔍 newMessage.trim():', newMessage.trim());
-    console.log('🔍 aiLoading:', aiLoading);
-
     if (!newMessage.trim() || aiLoading) {
-      console.log('❌ 조건 체크 실패 - 메시지 전송 중단');
       return;
     }
 
-    console.log('✅ 조건 체크 통과');
     const messageText = newMessage.trim();
-    setNewMessage(''); // 입력창 즉시 비우기
+    setNewMessage('');
 
-    console.log('⏰ 시간 생성 시작');
     const now = new Date().toLocaleTimeString('ko-KR', {
       hour: 'numeric',
       minute: '2-digit',
       hour12: true,
     });
-    console.log('✅ 시간 생성 성공:', now);
 
-    // 사용자 메시지 추가
-    console.log('👤 사용자 메시지 객체 생성 시작');
     const userMsg = {
-      id: Date.now(), // 고유 ID 생성
+      id: Date.now(),
       text: messageText,
       sender: 'me',
       time: now,
       characterId: character.id,
     };
-    console.log('✅ 사용자 메시지 객체 생성 성공:', userMsg);
 
-    // 전역 상태에 사용자 메시지 즉시 추가
-    console.log('📝 전역 상태에 사용자 메시지 추가');
     addMessageToRoom(roomId, userMsg);
 
-    // AI 응답 스트리밍을 위한 임시 AI 메시지 추가 (초기에는 비어있음)
-    const aiMessageId = Date.now() + 1; // AI 메시지 ID 미리 생성
+    const aiMessageId = Date.now() + 1;
     addMessageToRoom(roomId, {
       id: aiMessageId,
-      text: '', // 빈 텍스트로 시작
+      text: '',
       sender: 'other',
       time: new Date().toLocaleTimeString('ko-KR', {
         hour: 'numeric',
@@ -238,68 +188,47 @@ const ChatMate = () => {
         hour12: true,
       }),
       characterId: character.id,
-      isStreaming: true // ⭐ 스트리밍 중임을 나타내는 플래그
+      isStreaming: true
     });
 
     try {
-      setAiLoading(roomId, true); // AI 로딩 상태 시작
+      setAiLoading(roomId, true);
 
-      // AI 응답 스트리밍 받기
-      // onNewChunk: AI가 한 글자씩 보낼 때마다 호출
-      // onVideoUrl: 영상 URL이 도착했을 때 호출
       await sendMessageToAI(
         roomId,
         messageText,
         (chunk, accumulatedText) => {
-          // ⭐ 각 청크가 올 때마다 AI 메시지 업데이트
           updateStreamingAiMessage(roomId, aiMessageId, accumulatedText);
         },
         (videoUrl) => {
-          // ⭐ 영상 URL이 도착했을 때 영상 메시지 추가
           addVideoMessageToRoom(roomId, videoUrl, character.id);
         }
       );
 
-      // 스트리밍이 완료된 후 AI 메시지의 isStreaming 플래그 제거
       finishStreamingAiMessage(roomId, aiMessageId);
 
-      // 메시지 전송 후 exp/레벨/게이지 실시간 갱신
-      // 이 부분은 AI 응답 완료 후 한 번만 호출하면 됩니다.
-      (async () => {
-        const token = await getToken();
-        fetch(`${API_BASE_URL}/chat/room-info?roomId=${roomId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
+      // 경험치 업데이트
+      const token = await getToken();
+      fetch(`${API_BASE_URL}/chat/room-info?roomId=${roomId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.data && data.data.character) {
+            setCharacter(data.data.character);
           }
-        })
-          .then(res => res.json())
-          .then(data => {
-            console.log('[room-info] (sendMessage 후) API 응답:', data);
-            if (data.success && data.data && data.data.character) {
-              console.log('[room-info] (sendMessage 후) setCharacter 호출: exp:', data.data.character.exp, 'friendship:', data.data.character.friendship, '전체:', data.data.character);
-              setCharacter(data.data.character);
-            }
-          });
-      })();
+        });
 
     } catch (error) {
-      console.error('💥 ChatMate sendMessage에서 에러 발생:', error);
-      console.error('💥 에러 타입:', typeof error);
-      console.error('💥 에러 message:', error.message);
-      console.error('💥 에러 stack:', error.stack);
       console.error('AI 응답 실패:', error);
-
-      // 에러 발생 시 스트리밍 중인 메시지 업데이트 (또는 삭제 후 에러 메시지 추가)
-      // 여기서는 스트리밍 메시지를 에러 메시지로 변경
-      updateStreamingAiMessage(roomId, aiMessageId, '죄송합니다. 응답을 생성하는데 문제가 발생했습니다.', true); // isError 플래그 추가
-      finishStreamingAiMessage(roomId, aiMessageId); // 스트리밍 종료 처리
-
+      updateStreamingAiMessage(roomId, aiMessageId, '죄송합니다. 응답을 생성하는데 문제가 발생했습니다.', true);
+      finishStreamingAiMessage(roomId, aiMessageId);
     } finally {
-      setAiLoading(roomId, false); // AI 로딩 상태 종료
+      setAiLoading(roomId, false);
     }
-
-    console.log('🏁 ChatMate sendMessage 완료');
   };
 
   const handleKeyPress = e => {
@@ -362,7 +291,7 @@ const ChatMate = () => {
         );
         finishStreamingAiMessage(roomId, aiMessageId);
       } catch (e) {
-        console.error('AI 이미지 답변 생성 에러:', e);
+        console.error('이미지 AI 응답 실패:', e);
         updateStreamingAiMessage(roomId, aiMessageId, '이미지에 대한 답변 생성에 실패했습니다.', true);
         finishStreamingAiMessage(roomId, aiMessageId);
       } finally {
@@ -375,56 +304,7 @@ const ChatMate = () => {
 
 
   return (
-    <div className="flex flex-col h-full font-cyberpunk relative" style={{fontFamily:undefined, background:'radial-gradient(circle at 30% 10%, #1a1a2e 0%, #23234d 60%, #0f0f23 100%)', minHeight:'100vh'}}>
-      {/* 네온 박스 그림자 네 군데 (움직임 추가) */}
-      <div style={{
-        position: 'absolute',
-        width: '160px',
-        height: '160px',
-        left: '40px',
-        top: '60px',
-        border: '2px solid #0ff',
-        borderRadius: '0px',
-        opacity: 0.45,
-        zIndex: 2,
-        animation: 'moveBox1 8s ease-in-out infinite alternate, neonPulse1 3s ease-in-out infinite',
-      }} />
-      <div style={{
-        position: 'absolute',
-        width: '120px',
-        height: '120px',
-        right: '60px',
-        top: '80px',
-        border: '2px solid #0ff',
-        borderRadius: '0px',
-        opacity: 0.35,
-        zIndex: 2,
-        animation: 'moveBox2 10s ease-in-out infinite alternate, neonPulse2 4s ease-in-out infinite',
-      }} />
-      <div style={{
-        position: 'absolute',
-        width: '180px',
-        height: '180px',
-        left: '80px',
-        bottom: '80px',
-        border: '2px solid #f0f',
-        borderRadius: '0px',
-        opacity: 0.32,
-        zIndex: 2,
-        animation: 'moveBox3 12s ease-in-out infinite alternate, neonPulse3 5s ease-in-out infinite',
-      }} />
-      <div style={{
-        position: 'absolute',
-        width: '140px',
-        height: '140px',
-        right: '100px',
-        bottom: '100px',
-        border: '2px solid #f0f',
-        borderRadius: '0px',
-        opacity: 0.28,
-        zIndex: 2,
-        animation: 'moveBox4 9s ease-in-out infinite alternate, neonPulse4 3.5s ease-in-out infinite',
-      }} />
+    <NeonBackground className="flex flex-col h-full font-cyberpunk">
       {/* 헤더: sticky */}
       <header className="sticky top-0 py-4 px-6 z-10">
         <div className="flex items-center gap-3">
@@ -648,7 +528,7 @@ const ChatMate = () => {
           </button>
         </div>
       </footer>
-    </div>
+    </NeonBackground>
   );
 };
 
