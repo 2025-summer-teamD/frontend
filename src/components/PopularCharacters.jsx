@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useCommunityCharacters, incrementViewCount, toggleLike } from '../data/characters';
 import { useAuth } from "@clerk/clerk-react";
 import { useNavigate } from 'react-router-dom';
@@ -9,10 +9,12 @@ import CharacterInfo from './CharacterInfo';
 import CharacterStats from './CharacterStats';
 import SlideButton from './SlideButton';
 import SectionHeader from './SectionHeader';
+import ScrollContainer from './ScrollContainer';
+import LoadingOverlay from './LoadingOverlay';
+import { useDragScroll } from '../hooks/useDragScroll';
 
 const PopularCharacters = React.memo(({ onChatRoomCreated }) => {
-  const containerRef = useRef(null);
-  const scrollInterval = useRef(null);
+  const containerRef = useDragScroll();
   const { characters, loading, error } = useCommunityCharacters();
   const { getToken } = useAuth();
   const navigate = useNavigate();
@@ -110,81 +112,7 @@ const PopularCharacters = React.memo(({ onChatRoomCreated }) => {
     }
   }, [handleViewCount]);
 
-  // 마우스 드래그로 스크롤 기능
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    let isDown = false;
-    let startX;
-    let scrollLeft;
-    const onMouseDown = (e) => {
-      isDown = true;
-      container.classList.add('dragging');
-      startX = e.pageX - container.offsetLeft;
-      scrollLeft = container.scrollLeft;
-    };
-    const onMouseLeave = () => {
-      isDown = false;
-      container.classList.remove('dragging');
-    };
-    const onMouseUp = () => {
-      isDown = false;
-      container.classList.remove('dragging');
-    };
-    const onMouseMove = (e) => {
-      if (!isDown) return;
-      e.preventDefault();
-      const x = e.pageX - container.offsetLeft;
-      const walk = (x - startX) * 1.5; // 스크롤 속도 조절
-      container.scrollLeft = scrollLeft - walk;
-    };
-    container.addEventListener('mousedown', onMouseDown);
-    container.addEventListener('mouseleave', onMouseLeave);
-    container.addEventListener('mouseup', onMouseUp);
-    container.addEventListener('mousemove', onMouseMove);
-    return () => {
-      container.removeEventListener('mousedown', onMouseDown);
-      container.removeEventListener('mouseleave', onMouseLeave);
-      container.removeEventListener('mouseup', onMouseUp);
-      container.removeEventListener('mousemove', onMouseMove);
-    };
-  }, []);
 
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const handleMouseMove = (e) => {
-      const { left, right } = container.getBoundingClientRect();
-      const mouseX = e.clientX;
-
-      clearInterval(scrollInterval.current);
-
-      if (mouseX - left < 200) {
-        scrollInterval.current = setInterval(() => {
-          container.scrollLeft -= 1000; // 스크롤 이동속도(오른쪽)
-        }, 10);
-      } else if (right - mouseX < 200) {
-        scrollInterval.current = setInterval(() => {
-          container.scrollLeft += 1000; // 스크롤 이동속도(왼쪽)
-        }, 10);
-      }
-    };
-
-    const stopScrolling = () => {
-      clearInterval(scrollInterval.current);
-    };
-
-    container.addEventListener('mousemove', handleMouseMove);
-    container.addEventListener('mouseleave', stopScrolling);
-
-    return () => {
-      container.removeEventListener('mousemove', handleMouseMove);
-      container.removeEventListener('mouseleave', stopScrolling);
-
-      clearInterval(scrollInterval.current);
-    };
-  }, []);
 
   if (loading) {
     return (
@@ -224,35 +152,25 @@ const PopularCharacters = React.memo(({ onChatRoomCreated }) => {
         />
         
         {/* 카드 리스트 */}
-        <div ref={containerRef} className="flex gap-6 overflow-x-auto overflow-y-visible w-full max-w-7xl px-8 py-6" style={{scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch'}}>
-          <style jsx>{`
-            div::-webkit-scrollbar {
-              display: none;
-            }
-          `}</style>
-          {visibleCharacters.map((character) => {
-            const isLiked = character.liked || likedIds.includes(character.id);
-            const characterId = character.id;
-            
-            return (
-              <BaseCard
-                key={character.id}
-                character={character}
-                onClick={() => handleStartChat(character)}
-                onKeyDown={(event) => handleKeyDown(event, character.id)}
-                className="w-[240px] h-[320px] flex-shrink-0 neon-card"
-              >
-                <CharacterInfo character={character} isMine={false} nameSize="text-2xl" />
-                <CharacterStats 
-                  character={character} 
-                  isLiked={isLiked} 
-                  onLikeToggle={handleLikeToggle} 
-                  characterId={characterId} 
-                />
-              </BaseCard>
-            );
-          })}
-        </div>
+        <ScrollContainer ref={containerRef}>
+          {visibleCharacters.map((character) => (
+            <BaseCard
+              key={character.id}
+              character={character}
+              onClick={() => handleStartChat(character)}
+              onKeyDown={(event) => handleKeyDown(event, character.id)}
+              className="w-[240px] h-[320px] flex-shrink-0 neon-card"
+            >
+              <CharacterInfo character={character} isMine={false} nameSize="text-2xl" />
+              <CharacterStats 
+                character={character} 
+                isLiked={character.liked || likedIds.includes(character.id)} 
+                onLikeToggle={handleLikeToggle} 
+                characterId={character.id} 
+              />
+            </BaseCard>
+          ))}
+        </ScrollContainer>
         
         {/* 오른쪽 화살표 */}
         <SlideButton
@@ -263,14 +181,7 @@ const PopularCharacters = React.memo(({ onChatRoomCreated }) => {
         />
       </div>
       
-      {chatLoading && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-black/80 glass border-2 border-cyan-700 rounded-2xl p-6 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400 mx-auto mb-4"></div>
-            <p className="text-cyan-200 font-bold">채팅방 생성 중...</p>
-          </div>
-        </div>
-      )}
+      <LoadingOverlay isVisible={chatLoading} message="채팅방 생성 중..." />
     </SectionHeader>
   );
 });
