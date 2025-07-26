@@ -44,8 +44,6 @@ export default function CharacterList() {
 
   const [tab, setTab] = useState('created'); // 'created' 또는 'liked'
   const [searchQuery, setSearchQuery] = useState(''); // 검색어 상태
-  // const [activeSort, setActiveSort] = useState('인기순'); // 정렬 상태 - 제거됨
-  // const [selectedCharacter, setSelectedCharacter] = useState(null); // 더 이상 사용하지 않음
   const [editingCharacter, setEditingCharacter] = useState(null);
 
   // useMyCharacters 훅은 이제 'tab' 파라미터를 받지 않고 모든 'created' 캐릭터를 가져옵니다.

@@ -32,24 +32,6 @@ const PageLayout = ({
       boxShadow: '0 0 80px 10px #0ff, 0 0 160px 40px #f0f',
       position: 'relative',
     }}>
-      {/* 네온 격자 배경 */}
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        zIndex: 0,
-        opacity: 0.22,
-        backgroundImage: `linear-gradient(90deg, rgba(0,255,255,0.18) 1px, transparent 1px), linear-gradient(180deg, rgba(255,0,255,0.12) 1px, transparent 1px)`,
-        backgroundSize: '80px 80px',
-        pointerEvents: 'none',
-      }} />
-      {/* 스캔라인 효과 */}
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        zIndex: 1,
-        background: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,255,255,0.07) 4px, transparent 6px)',
-        pointerEvents: 'none',
-      }} />
       {/* 네온 박스 그림자 네 군데 (움직임 추가) */}
       <div style={{
         position: 'absolute',
@@ -58,11 +40,10 @@ const PageLayout = ({
         left: '40px',
         top: '60px',
         border: '2px solid #0ff',
-        borderRadius: '18px',
-        boxShadow: '0 0 80px 20px #0ff',
+        borderRadius: '0px',
         opacity: 0.45,
         zIndex: 2,
-        animation: 'moveBox1 8s ease-in-out infinite alternate',
+        animation: 'moveBox1 8s ease-in-out infinite alternate, neonPulse1 3s ease-in-out infinite',
       }} />
       <div style={{
         position: 'absolute',
@@ -71,11 +52,10 @@ const PageLayout = ({
         right: '60px',
         top: '80px',
         border: '2px solid #0ff',
-        borderRadius: '18px',
-        boxShadow: '0 0 60px 16px #0ff',
+        borderRadius: '0px',
         opacity: 0.35,
         zIndex: 2,
-        animation: 'moveBox2 10s ease-in-out infinite alternate',
+        animation: 'moveBox2 10s ease-in-out infinite alternate, neonPulse2 4s ease-in-out infinite',
       }} />
       <div style={{
         position: 'absolute',
@@ -84,11 +64,10 @@ const PageLayout = ({
         left: '80px',
         bottom: '80px',
         border: '2px solid #f0f',
-        borderRadius: '18px',
-        boxShadow: '0 0 100px 24px #f0f',
+        borderRadius: '0px',
         opacity: 0.32,
         zIndex: 2,
-        animation: 'moveBox3 12s ease-in-out infinite alternate',
+        animation: 'moveBox3 12s ease-in-out infinite alternate, neonPulse3 5s ease-in-out infinite',
       }} />
       <div style={{
         position: 'absolute',
@@ -97,11 +76,10 @@ const PageLayout = ({
         right: '100px',
         bottom: '100px',
         border: '2px solid #f0f',
-        borderRadius: '18px',
-        boxShadow: '0 0 80px 18px #f0f',
+        borderRadius: '0px',
         opacity: 0.28,
         zIndex: 2,
-        animation: 'moveBox4 9s ease-in-out infinite alternate',
+        animation: 'moveBox4 9s ease-in-out infinite alternate, neonPulse4 3.5s ease-in-out infinite',
       }} />
       {/* keyframes는 index.css에 추가 필요 */}
       <main className="relative z-10 max-w-screen-xl mx-auto px-6 py-8">

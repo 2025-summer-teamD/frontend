@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import Sidebar from '../components/SideBar'
 import CAMERA from '/assets/image-preview.png'
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { getSafeImageUrl } from '../utils/imageUtils';

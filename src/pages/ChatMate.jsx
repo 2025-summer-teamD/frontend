@@ -21,35 +21,6 @@ function getExpForNextLevel(level) {
 function getExpBase(level) {
   return [0, 0, 1, 2, 4][level] || 0;
 }
-function LevelExpGauge({ exp }) {
-  const level = getLevel(exp);
-  const expBase = getExpBase(level);
-  const expNext = getExpForNextLevel(level);
-  const expInLevel = exp - expBase;
-  const expMax = expNext;
-  const percent = expMax ? Math.min(100, Math.round((expInLevel / expMax) * 100)) : 100;
-  return (
-    <>
-      <div className="flex gap-4 items-center text-cyan-200 font-bold font-cyberpunk text-sm tracking-widest">
-        <span>레벨: {level}</span>
-        <span>친밀도: {exp}</span>
-      </div>
-      <div className="w-48 h-5 bg-black/60 border-2 border-cyan-700 rounded-full shadow-[0_0_8px_#0ff] relative overflow-hidden">
-        <div
-          className="h-full bg-cyan-400"
-          style={{
-            width: `${percent}%`,
-            boxShadow: '0 0 8px #0ff, 0 0 16px #0ff',
-            transition: 'width 0.4s cubic-bezier(.4,2,.6,1)'
-          }}
-        />
-        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs text-cyan-100 font-bold drop-shadow-[0_0_2px_#0ff]">
-          {expInLevel}/{expMax}
-        </span>
-      </div>
-    </>
-  );
-}
 
 const ChatMate = () => {
   const { state } = useLocation();
@@ -404,7 +375,56 @@ const ChatMate = () => {
 
 
   return (
-    <div className="flex flex-col h-full font-cyberpunk" style={{fontFamily:undefined, background:'radial-gradient(circle at 30% 10%, #23234d 0%, #2e3a5e 60%, #181a2b 100%)', minHeight:'100vh'}}>
+    <div className="flex flex-col h-full font-cyberpunk relative" style={{fontFamily:undefined, background:'radial-gradient(circle at 30% 10%, #1a1a2e 0%, #23234d 60%, #0f0f23 100%)', minHeight:'100vh'}}>
+      {/* 네온 박스 그림자 네 군데 (움직임 추가) */}
+      <div style={{
+        position: 'absolute',
+        width: '160px',
+        height: '160px',
+        left: '40px',
+        top: '60px',
+        border: '2px solid #0ff',
+        borderRadius: '0px',
+        opacity: 0.45,
+        zIndex: 2,
+        animation: 'moveBox1 8s ease-in-out infinite alternate, neonPulse1 3s ease-in-out infinite',
+      }} />
+      <div style={{
+        position: 'absolute',
+        width: '120px',
+        height: '120px',
+        right: '60px',
+        top: '80px',
+        border: '2px solid #0ff',
+        borderRadius: '0px',
+        opacity: 0.35,
+        zIndex: 2,
+        animation: 'moveBox2 10s ease-in-out infinite alternate, neonPulse2 4s ease-in-out infinite',
+      }} />
+      <div style={{
+        position: 'absolute',
+        width: '180px',
+        height: '180px',
+        left: '80px',
+        bottom: '80px',
+        border: '2px solid #f0f',
+        borderRadius: '0px',
+        opacity: 0.32,
+        zIndex: 2,
+        animation: 'moveBox3 12s ease-in-out infinite alternate, neonPulse3 5s ease-in-out infinite',
+      }} />
+      <div style={{
+        position: 'absolute',
+        width: '140px',
+        height: '140px',
+        right: '100px',
+        bottom: '100px',
+        border: '2px solid #f0f',
+        borderRadius: '0px',
+        opacity: 0.28,
+        zIndex: 2,
+        animation: 'moveBox4 9s ease-in-out infinite alternate, neonPulse4 3.5s ease-in-out infinite',
+      }} />
       {/* 헤더: sticky */}
       <header className="sticky top-0 py-4 px-6 z-10">
         <div className="flex items-center gap-3">
@@ -415,22 +435,62 @@ const ChatMate = () => {
               className="w-full h-full object-cover rounded-full"
             />
           </div>
-          <span className="text-cyan-100 text-lg font-bold drop-shadow-[0_0_2px_#0ff] tracking-widest font-cyberpunk">
-            {character.name}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-cyan-100 text-lg font-bold drop-shadow-[0_0_2px_#0ff] tracking-widest font-cyberpunk">
+              {character.name}
+            </span>
+            {/* 레벨과 친밀도 박스 */}
+            {character && (
+              <div className="flex gap-2">
+                {/* LEVEL 박스 */}
+                <div className="bg-white/20 border-2 border-yellow-400 rounded-lg px-3 py-1 text-center">
+                  <div className="text-yellow-200 font-bold text-sm font-cyberpunk">Lv.{getLevel(character.exp || 0)}</div>
+                </div>
+                
+                {/* INTIMACY 박스 */}
+                <div className="bg-white/20 border-2 border-fuchsia-400 rounded-lg px-3 py-1 text-center">
+                  <div className="text-fuchsia-200 font-bold text-sm font-cyberpunk">친밀도 {character.exp || 0}</div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-        {/* 레벨/친밀도/게이지 UI 추가 */}
+        {/* 경험치 게이지만 아래에 */}
         {character && (
-          <div className="mt-2 flex flex-col items-start gap-1">
-            {/* 레벨/친밀도 */}
-            <LevelExpGauge exp={character.exp || 0} />
+          <div className="mt-2 flex justify-start ml-12">
+            <div className="w-48 h-5 bg-black/60 border-2 border-cyan-700 rounded-full shadow-[0_0_8px_#0ff] relative overflow-hidden">
+              <div
+                className="h-full bg-cyan-400"
+                style={{
+                  width: `${(() => {
+                    const level = getLevel(character.exp || 0);
+                    const expBase = getExpBase(level);
+                    const expNext = getExpForNextLevel(level);
+                    const expInLevel = (character.exp || 0) - expBase;
+                    const expMax = expNext;
+                    return expMax ? Math.min(100, Math.round((expInLevel / expMax) * 100)) : 100;
+                  })()}%`,
+                  boxShadow: '0 0 8px #0ff, 0 0 16px #0ff',
+                  transition: 'width 0.4s cubic-bezier(.4,2,.6,1)'
+                }}
+              />
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs text-cyan-100 font-bold drop-shadow-[0_0_2px_#0ff]">
+                {(() => {
+                  const level = getLevel(character.exp || 0);
+                  const expBase = getExpBase(level);
+                  const expNext = getExpForNextLevel(level);
+                  const expInLevel = (character.exp || 0) - expBase;
+                  return `${expInLevel}/${expNext}`;
+                })()}
+              </span>
+            </div>
           </div>
         )}
       </header>
       {/* 스크롤 영역: 프로필 + 메시지 */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 px-4 overflow-y-auto no-scrollbar sm:px-6 md:px-8 lg:px-12 pb-28 font-cyberpunk"
+        className="flex-1 px-4 overflow-y-auto no-scrollbar sm:px-6 md:px-8 lg:px-12 pb-28 font-cyberpunk relative z-10"
       >
         {/* 프로필 */}
         <div className="flex flex-col items-center my-6 text-center font-cyberpunk">
@@ -528,7 +588,7 @@ const ChatMate = () => {
         </div>
       </div>
       {/* 입력창: sticky bottom */}
-      <footer className="fixed right-0 left-0 bottom-0 px-4 py-4 border-t-2 border-cyan-200 bg-black/30 glass backdrop-blur-xl shadow-[0_0_8px_#0ff,0_0_16px_#f0f] font-cyberpunk">
+      <footer className="fixed right-0 left-0 bottom-0 px-4 py-4 border-t-2 border-cyan-200 bg-black/30 glass backdrop-blur-xl shadow-[0_0_8px_#0ff,0_0_16px_#f0f] font-cyberpunk z-20">
         <div className="flex items-center space-x-3 max-w-4xl mx-auto relative font-cyberpunk">
           <div className="relative">
             <button
