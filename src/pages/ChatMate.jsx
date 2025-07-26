@@ -16,7 +16,7 @@ function getLevel(exp) {
   if (exp >= 10) return 3;
   if (exp >= 5) return 2;
   if (exp >= 1) return 1;
-  return 0;
+  return 1; // exp가 0이거나 음수일 때도 레벨 1을 반환 (friendship 기본값과 일치)
 }
 function getExpForNextLevel(level) {
   // 각 레벨별 필요 친밀도: 1레벨(1), 2레벨(5), 3레벨(10), 4레벨(15), 5레벨(20)
@@ -250,6 +250,12 @@ const ChatMate = () => {
     const socket = io(SOCKET_URL, { transports: ['websocket'] });
     socketRef.current = socket;
     socket.emit('joinRoom', { roomId, userId: user.id });
+    
+    // 채팅방 입장 시 unreadCount 초기화 이벤트 수신
+    socket.on('roomJoined', (data) => {
+      console.log('채팅방 입장됨, unreadCount 초기화:', data);
+    });
+    
     socket.on('receiveMessage', async (msg) => {
       addMessageToRoom(roomId, {
         id: Date.now() + Math.random(),
@@ -325,11 +331,14 @@ const ChatMate = () => {
     setNewMessage('');
     // addMessageToRoom(roomId, { ... }) // 이 부분 삭제!
     if (socketRef.current) {
+      // 사용자 이름 결정 (username > firstName > name > userId 순서)
+      const userName = user?.username || user?.firstName || user?.fullName || user?.id;
       socketRef.current.emit('sendMessage', {
         roomId,
         message: messageText,
         senderType: 'user',
         senderId: user.id,
+        userName: userName, // 사용자 이름 추가
         timestamp: new Date().toISOString()
       });
     }

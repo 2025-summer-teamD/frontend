@@ -16,6 +16,7 @@ import { useMyCharacters, useCharacterDetail, useUpdateCharacter, toggleLike, us
 import { useAuth, useUser } from '@clerk/clerk-react';
 import { useChatRooms } from '../contexts/ChatRoomsContext';
 import { getSafeImageUrl } from '../utils/imageUtils';
+import MyChatRoomList from '../components/MyChatRoomList';
 
 export default function CharacterList() {
   const { userId, getToken } = useAuth();
@@ -67,18 +68,19 @@ export default function CharacterList() {
 
   // 탭 변경 시 데이터 새로고침
   useEffect(() => {
+    if (tab === 'mychats') return; // 내 채팅방 탭에서는 캐릭터 API 호출 X
     fetchMyCharacters(tab);
   }, [tab, fetchMyCharacters]);
 
   // 검색 필터링
-  const filteredCharacters = characters.filter(char => {
+  const filteredCharacters = Array.isArray(characters) ? characters.filter(character => {
     const keyword = searchQuery.toLowerCase();
     return (
-      char.name.toLowerCase().includes(keyword) ||
-      (char.description && char.description.toLowerCase().includes(keyword)) ||
-      (char.introduction && char.introduction.toLowerCase().includes(keyword))
+      character.name.toLowerCase().includes(keyword) ||
+      (character.description && character.description.toLowerCase().includes(keyword)) ||
+      (character.introduction && character.introduction.toLowerCase().includes(keyword))
     );
-  });
+  }) : [];
 
   // 정렬 제거 - 기본 순서로 표시
   const sortedCharacters = filteredCharacters;
@@ -267,6 +269,9 @@ export default function CharacterList() {
           >
             찜한 캐릭터
           </TabButton>
+          <TabButton isActive={tab === 'mychats'} onClick={() => setTab('mychats')}>
+            내 채팅방
+          </TabButton>
         </div>
         <button
           onClick={() => setShowCreateChatModal(true)}
@@ -280,23 +285,27 @@ export default function CharacterList() {
         </button>
       </div>
 
-      {/* 캐릭터 카드 그리드 */}
-      {showCharacters.length === 0 ? (
-        <EmptyState />
+      {tab === 'mychats' ? (
+        <MyChatRoomList />
       ) : (
-        <CharacterGrid
-          characters={showCharacters.map(char => ({
-            ...char,
-            imageUrl: getSafeImageUrl(char.imageUrl || char.image || '')
-          }))}
-          myId={userId}
-          tab={tab}
-          likedIds={likedIds}
-          onLikeToggle={handleLikeToggle}
-          onEdit={handleEditCharacter}
-          onDelete={handleDeleteCharacter}
-          onSelect={handleSelectCharacter}
-        />
+        /* 캐릭터 카드 그리드 */
+        showCharacters.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <CharacterGrid
+            characters={showCharacters.map(char => ({
+              ...char,
+              imageUrl: getSafeImageUrl(char.imageUrl || char.image || '')
+            }))}
+            myId={userId}
+            tab={tab}
+            likedIds={likedIds}
+            onLikeToggle={handleLikeToggle}
+            onEdit={handleEditCharacter}
+            onDelete={handleDeleteCharacter}
+            onSelect={handleSelectCharacter}
+          />
+        )
       )}
 
       {/* 채팅방 생성 모달 */}

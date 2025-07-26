@@ -128,6 +128,14 @@ export function useMyCharacters(type = 'created') {
   const { getToken } = useAuth();
 
   const fetchMyCharacters = useCallback(async (characterType = type) => {
+    // mychats 탭에서는 캐릭터 API 호출하지 않음
+    if (characterType === 'mychats') {
+      setCharacters([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -136,7 +144,9 @@ export function useMyCharacters(type = 'created') {
         getToken,
         {}
       );
-      setCharacters(data.data);
+      // data가 배열인지 확인하고 적절히 설정
+      const charactersData = Array.isArray(data) ? data : (data.data || []);
+      setCharacters(charactersData);
     } catch (err) {
       const errorMessage = handleApiError(err, '캐릭터 목록을 불러오는데 실패했습니다.');
       setError(errorMessage);

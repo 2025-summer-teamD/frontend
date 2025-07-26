@@ -34,12 +34,33 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
     if (!character?.id) return;
     (async () => {
       const token = await getToken();
+      
+      // 1. 조회수 증가
+      try {
+        await fetch(`/api/personas/${character.id}/view`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      } catch (error) {
+        console.error('조회수 증가 실패:', error);
+      }
+      
+      // 2. 캐릭터 상세 정보 조회
       const res = await fetch(`/api/my/characters/${character.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
-      if (data.success && data.data && typeof data.data.exp === 'number') {
-        setExp(data.data.exp);
+      if (data.success && data.data) {
+        // 백엔드에서 보내는 exp 값 사용
+        if (typeof data.data.exp === 'number') {
+          setExp(data.data.exp);
+        }
+        // character prop도 업데이트하여 조회수, 좋아요 등이 실시간으로 반영되도록 함
+        if (data.data.usesCount !== undefined || data.data.likes !== undefined) {
+          // character prop을 업데이트할 수 있는 방법이 없으므로, 
+          // 부모 컴포넌트에서 character 데이터를 새로고침하도록 알림
+          console.log('Character data updated:', data.data);
+        }
       }
     })();
   }, [character?.id, getToken]);
@@ -283,12 +304,12 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
             {liked ? (
               <>
                 <SolidHeart className="w-6 h-6 text-pink-400 drop-shadow-[0_0_3px_#f0f] transition-transform transform scale-110" />
-                <span className="ml-1 text-pink-400 font-bold text-lg drop-shadow-[0_0_2px_#f0f]">{character.likes ?? 0}</span>
+                <span className="ml-1 text-pink-400 font-bold text-lg drop-shadow-[0_0_2px_#f0f]">{character.likes || character.likesCount || 0}</span>
               </>
             ) : (
               <>
                 <OutlineHeart className="w-6 h-6 text-cyan-400 hover:text-pink-400 transition-colors drop-shadow-[0_0_2px_#0ff]" />
-                <span className="ml-1 text-cyan-400 font-bold text-lg drop-shadow-[0_0_2px_#0ff]">{character.likes ?? 0}</span>
+                <span className="ml-1 text-cyan-400 font-bold text-lg drop-shadow-[0_0_2px_#0ff]">{character.likes || character.likesCount || 0}</span>
               </>
             )}
           </button>
@@ -300,12 +321,11 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
             <div className="text-cyan-400 text-sm font-mono">조회수</div>
           </div>
           <div className="text-center">
-            <div className="text-[28px] font-bold text-cyan-200 mb-1 drop-shadow-[0_0_4px_#0ff]">{character?.likes || 0}</div>
+            <div className="text-[28px] font-bold text-cyan-200 mb-1 drop-shadow-[0_0_4px_#0ff]">{character?.likes || character?.likesCount || 0}</div>
             <div className="text-cyan-400 text-sm font-mono">좋아요</div>
           </div>
           <div className="text-center">
-            {/* exp(친밀도) 표시 부분에서, character.id와 roomInfoParticipants의 personaId가 일치하는 참가자의 exp를 찾아 표시 */}
-            {/* exp 표시 UI에서 <LevelExpGauge exp={myExp} /> 또는 exp:{myExp} 등으로 사용 */}
+            {/* 백엔드에서 받은 exp 값 표시 */}
             <div className="text-[28px] font-bold text-cyan-200 mb-1 drop-shadow-[0_0_4px_#0ff]">{exp}</div>
             <div className="text-cyan-400 text-sm font-mono">친밀도</div>
           </div>
