@@ -17,39 +17,66 @@ const Sidebar = ({ children }) => {
   const sidebarListRef = useRef(null);
   const contentRef = useRef(null);
 
-  console.log('[SideBar] 렌더 시작');
 
-  // characters 원본 데이터 로그
-  console.log('[SideBar] characters:', characters);
-  // searchQuery 값 로그
-  console.log('[SideBar] searchQuery:', searchQuery);
 
   // name, characterId, roomId 없는 방은 아예 제외
   const filteredCharacters = characters
-    .filter(room => !!room.name && (room.characterId || room.id) && !!room.roomId)
+    .filter(room => {
+      // name이 있고, roomId가 있는 방만 포함 (characterId는 선택사항)
+      const hasName = !!room.name;
+      const hasRoomId = !!room.roomId;
+      return hasName && hasRoomId;
+    })
     .filter(room => {
       const name = room.name ?? '';
       const lastChat = room.lastChat ?? '';
       return name.toLowerCase().includes(searchQuery.toLowerCase()) ||
              lastChat.toLowerCase().includes(searchQuery.toLowerCase());
+    })
+    .sort((a, b) => {
+      // 최신 메시지 시간 기준으로 내림차순 정렬 (최신이 위로)
+      const timeA = a.time ? new Date(a.time).getTime() : 0;
+      const timeB = b.time ? new Date(b.time).getTime() : 0;
+      return timeB - timeA;
     });
 
-  // filteredCharacters가 바뀔 때마다 로그 출력
-  useEffect(() => {
-    console.log('[SideBar] filteredCharacters:', filteredCharacters);
-    filteredCharacters.forEach((chat, idx) => {
-      console.log(`[SideBar] filteredCharacters[${idx}]:`, chat);
-    });
-  }, [filteredCharacters]);
 
   // 채팅방 입장 API 호출 함수
-  const enterChatRoom = async (characterId) => {
-    console.log('🚪 [Sidebar] 채팅방 입장 시도 - characterId:', characterId);
-
+  const enterChatRoom = async (characterId, existingRoomId = null) => {
     try {
       const token = await getToken();
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-      const response = await fetch(`${API_BASE_URL}/chat/rooms?characterId=${characterId}`, {
+      
+      let roomId = existingRoomId;
+      
+      // 기존 roomId가 없으면 새로 생성
+      if (!roomId) {
+        const createResponse = await fetch(`${API_BASE_URL}/chat/rooms`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            participantIds: [characterId]
+          }),
+        });
+
+        if (!createResponse.ok) {
+          const errorText = await createResponse.text();
+          throw new Error(`채팅방 생성 실패: ${createResponse.status}`);
+        }
+
+        const createResult = await createResponse.json();
+        roomId = createResult.data?.roomId;
+
+        if (!roomId) {
+          throw new Error('채팅방 ID를 받지 못했습니다.');
+        }
+      }
+
+                      // 채팅방 정보 조회
+                const infoResponse = await fetch(`${API_BASE_URL}/chat/room-info?roomId=${roomId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -57,22 +84,19 @@ const Sidebar = ({ children }) => {
         },
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ [Sidebar] 채팅방 입장 API 에러:', errorText);
-        throw new Error(`채팅방 입장 실패: ${response.status}`);
+      if (!infoResponse.ok) {
+        const errorText = await infoResponse.text();
+        throw new Error(`채팅방 정보 조회 실패: ${infoResponse.status}`);
       }
 
-      const result = await response.json();
-      console.log('✅ [Sidebar] 채팅방 입장 성공:', result);
+      const infoResult = await infoResponse.json();
 
       return {
-        roomId: result.data?.roomId,
-        character: result.data?.character,
-        chatHistory: result.data?.chatHistory || []
+        roomId: roomId,
+        character: infoResult.data?.character,
+        chatHistory: infoResult.data?.chatHistory || []
       };
     } catch (err) {
-      console.error('💥 [Sidebar] 채팅방 입장 에러:', err);
       throw err;
     }
   };
@@ -80,15 +104,32 @@ const Sidebar = ({ children }) => {
   // 채팅방 클릭 핸들러
   const handleChatRoomClick = async (e, chat) => {
     e.preventDefault();
-    // characterId 없는 방 클릭 방지
+    // characterId 또는 id가 없는 방 클릭 방지
     const characterId = chat.characterId || chat.id;
     if (!characterId) {
-      alert('올바르지 않은 채팅방입니다.');
+      // characterId가 없어도 roomId가 있으면 채팅방에 입장 가능
+      if (chat.roomId) {
+        try {
+          setSidebarOpen(false);
+          navigate(`/chatMate/${chat.roomId}`, {
+            state: {
+              character: chat,
+              roomId: chat.roomId
+            }
+          });
+        } catch (error) {
+          alert('채팅방 입장에 실패했습니다: ' + error.message);
+        }
+      } else {
+        alert('올바르지 않은 채팅방입니다.');
+      }
       return;
     }
     try {
       setSidebarOpen(false);
-      const { roomId, character: updatedCharacter, chatHistory } = await enterChatRoom(characterId);
+      // 기존 roomId가 있으면 그것을 사용, 없으면 새로 생성
+      const existingRoomId = chat.roomId;
+      const { roomId, character: updatedCharacter, chatHistory } = await enterChatRoom(characterId, existingRoomId);
       navigate(`/chatMate/${roomId}`, {
         state: {
           character: updatedCharacter,
@@ -115,10 +156,30 @@ const Sidebar = ({ children }) => {
     return `${Math.floor(diffInMinutes / 1440)}일 전`;
   };
 
+  // 참가자 이름들을 표시하는 함수
+  const getParticipantNames = (chat) => {
+    const names = [];
+    
+    // 메인 캐릭터 이름 추가
+    if (chat.name) {
+      names.push(chat.name);
+    }
+    
+    // AI 참가자들 이름 추가 (중복 제거)
+    if (chat.aiParticipants && Array.isArray(chat.aiParticipants)) {
+      chat.aiParticipants.forEach(participant => {
+        if (participant.name && !names.includes(participant.name)) {
+          names.push(participant.name);
+        }
+      });
+    }
+    
+    return names.join(', ');
+  };
+
   // 🔄 사이드바가 열릴 때마다 채팅목록 새로고침
   useEffect(() => {
     if (sidebarOpen) {
-      console.log('[SideBar] 메뉴 열림 - 채팅목록 새로고침(refetch 호출)');
       refetch(); // 채팅목록 업데이트
     }
   }, [sidebarOpen, refetch]);
@@ -209,6 +270,7 @@ const Sidebar = ({ children }) => {
               </div>
             ) : (
               filteredCharacters.filter(chat => !!chat.roomId).map((chat, idx) => {
+                const participantNames = getParticipantNames(chat);
                 return (
                   <Link
                     key={chat.roomId}
@@ -222,7 +284,7 @@ const Sidebar = ({ children }) => {
                     </div>
                     <div className="ml-3 flex-1 truncate">
                       <div className="flex items-center justify-between">
-                        <h3 className="text-cyan-100 font-cyberpunk font-medium text-[0.9rem] drop-shadow-[0_0_4px_#0ff]">{chat.name}</h3>
+                        <h3 className="text-cyan-100 font-cyberpunk font-medium text-[0.9rem] drop-shadow-[0_0_4px_#0ff]">{participantNames}</h3>
                         <span className="text-cyan-400 text-sm drop-shadow-[0_0_2px_#0ff]">{formatLastMessageTime(chat.time)}</span>
                       </div>
                       <p className="text-cyan-200 text-sm mt-1 truncate drop-shadow-[0_0_2px_#0ff]">{chat.lastChat || '대화 시작하기'}</p>

@@ -97,10 +97,7 @@ const ChatMate = () => {
 
   // 이전 대화기록을 메시지 형식으로 변환하는 함수
   const convertChatHistoryToMessages = (chatHistory, characterData) => {
-    console.log('📜 채팅 히스토리 변환 시작:', { chatHistory, characterData });
-
     if (!chatHistory || !Array.isArray(chatHistory)) {
-      console.log('❌ 채팅 히스토리가 없거나 배열이 아님');
       return [];
     }
 
@@ -136,13 +133,7 @@ const ChatMate = () => {
 
   // 🆕 사이드바 채팅방 전환 감지: state 변경 시 상태 업데이트
   useEffect(() => {
-    console.log('🔄 [채팅방 전환 감지] state 변경됨');
-    console.log('🔍 새로운 state?.character:', state?.character);
-    console.log('🔍 새로운 state?.chatHistory 길이:', state?.chatHistory?.length || 0);
-
     if (state?.character) {
-      console.log('✅ 새로운 채팅방 데이터로 상태 업데이트');
-
       // 캐릭터 정보 업데이트
       setCharacter(state.character);
       setError(null);
@@ -151,12 +142,9 @@ const ChatMate = () => {
       // 메시지 히스토리를 전역 Context에 저장
       const newChatHistory = state.chatHistory || [];
       if (newChatHistory.length > 0) {
-        console.log('✅ 새로운 채팅 히스토리 변환 시작');
         const convertedMessages = convertChatHistoryToMessages(newChatHistory, state.character);
-        console.log('✅ 새로운 메시지 변환 완료:', convertedMessages);
         setMessagesForRoom(roomId, convertedMessages);
       } else {
-        console.log('❌ 새로운 채팅방에 히스토리 없음, 메시지 초기화');
         setMessagesForRoom(roomId, []);
       }
       // 참여자 목록 동기화
@@ -166,12 +154,14 @@ const ChatMate = () => {
     }
   }, [state?.character, state?.chatHistory, roomId]); // roomId도 의존성에 추가
 
+  // roomId가 변경될 때 인사 플래그 리셋
+  useEffect(() => {
+    hasSentInitialGreeting.current = false;
+  }, [roomId]);
+
   // room-info API 호출 (채팅방 정보 및 참여자 목록 조회)
   useEffect(() => {
     if (!roomId || !getToken) return;
-    
-    // roomId가 변경되면 초기 인사 플래그 리셋
-    hasSentInitialGreeting.current = false;
     
     (async () => {
       try {
@@ -183,18 +173,27 @@ const ChatMate = () => {
           }
         });
         const data = await response.json();
-        console.log('[room-info] API 응답:', data);
         if (data.success && data.data && data.data.character) {
-          console.log('[room-info] setCharacter 호출: exp:', data.data.character.exp, 'friendship:', data.data.character.friendship, '전체:', data.data.character);
           setCharacter(data.data.character);
           setRoomInfoParticipants(data.data.participants || []);
           setParticipants(data.data.participants || []); // 참여자 목록도 동기화
           
-          // 채팅방에 처음 들어왔을 때 AI들이 자동으로 인사
+          // 채팅방에 처음 들어왔을 때 AI들이 자동으로 인사 (새로운 방이고 AI가 2명 이상일 때만)
           const currentMessages = getMessages(roomId);
-          if (currentMessages.length === 0 && data.data.participants && data.data.participants.length > 1 && !hasSentInitialGreeting.current) {
-            console.log('🎉 새로운 그룹 채팅방 입장 - AI들이 자동으로 인사할 예정');
+          const chatHistory = data.data.chatHistory || [];
+          
+          // 백엔드에서 받은 채팅 기록이 없고, 현재 메시지도 없고, AI 참여자가 2명 이상이고, 아직 인사를 보내지 않았을 때만
+          const hasGreetedKey = `room_${roomId}_greeted`;
+          const hasGreeted = localStorage.getItem(hasGreetedKey);
+          
+          if (currentMessages.length === 0 && 
+              chatHistory.length === 0 && 
+              data.data.participants && 
+              data.data.participants.length > 1 && 
+              !hasSentInitialGreeting.current &&
+              !hasGreeted) {
             hasSentInitialGreeting.current = true;
+            localStorage.setItem(hasGreetedKey, 'true');
             
             // AI 자동 인사 요청
             setTimeout(async () => {
@@ -211,20 +210,17 @@ const ChatMate = () => {
                 const greetingData = await response.json();
                 
                 if (greetingData.success && greetingData.data.greetings) {
-                  console.log('🤖 AI 자동 인사 응답:', greetingData.data.greetings);
-                  
                   // 각 AI의 인사 메시지를 소켓으로 전송
                   greetingData.data.greetings.forEach((greeting, index) => {
                     setTimeout(() => {
                       if (socketRef.current) {
-                        console.log(`🚀 ${greeting.personaName} 인사 메시지 전송:`, greeting.message);
                         socketRef.current.emit('sendMessage', {
                           roomId,
                           message: greeting.message,
                           senderType: 'ai',
-                          senderId: greeting.personaId, // 수정: senderId 명확히 전달
+                          senderId: greeting.personaId,
                           aiName: greeting.personaName,
-                          aiId: greeting.personaId, // 추가: aiId 명확히 전달
+                          aiId: greeting.personaId,
                           timestamp: greeting.timestamp
                         });
                       }
@@ -255,10 +251,6 @@ const ChatMate = () => {
     socketRef.current = socket;
     socket.emit('joinRoom', { roomId, userId: user.id });
     socket.on('receiveMessage', async (msg) => {
-      console.log('📨 수신된 메시지:', JSON.stringify(msg));
-      console.log('📨 aiId:', msg.aiId, '타입:', typeof msg.aiId);
-      console.log('📨 aiName:', msg.aiName, '타입:', typeof msg.aiName);
-      
       addMessageToRoom(roomId, {
         id: Date.now() + Math.random(),
         text: msg.message,
@@ -268,19 +260,18 @@ const ChatMate = () => {
         time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
         characterId: msg.senderType === 'ai' ? msg.aiId : character?.id,
       });
-      
-
     });
     
     // EXP 업데이트 이벤트 수신
     socket.on('expUpdated', (data) => {
-      console.log('📊 EXP 업데이트 수신:', data);
       setRoomInfoParticipants(prev => {
         return prev.map(participant => {
           if (String(participant.personaId) === String(data.personaId)) {
             return {
               ...participant,
-              exp: data.newExp
+              exp: data.newExp,
+              // 백엔드에서 전송한 레벨 사용 (없으면 계산)
+              friendship: data.newLevel || getLevel(data.newExp)
             };
           }
           return participant;
@@ -320,11 +311,7 @@ const ChatMate = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  useEffect(() => {
-    if (character) {
-      console.log(`[ChatMate] 채팅방 입장: 캐릭터 이름 = ${character.name}, id = ${character.id}`);
-    }
-  }, [character]);
+
 
   // 조건부 렌더링은 모든 Hook 선언 이후에 위치해야 함
   if (loading) return <div className="text-white p-8">캐릭터 정보를 불러오는 중...</div>;
@@ -480,7 +467,8 @@ const ChatMate = () => {
                 ...participant,
                 ...myAIs.find(ai => String(ai.id) === String(participant.personaId))
               };
-              const level = getLevel(ai.exp || 0);
+              // 실시간 업데이트된 friendship(레벨) 사용, 없으면 계산
+              const level = ai.friendship || getLevel(ai.exp || 0);
               const expBase = getExpBase(level);
               const expNext = getExpForNextLevel(level + 1);
               const expInLevel = (ai.exp || 0) - expBase;
@@ -523,16 +511,10 @@ const ChatMate = () => {
         </div>
         {/* 메시지들 */}
         <div className="space-y-4 pb-4 max-w-3xl mx-auto font-cyberpunk">
-          {messages.map((msg, idx) => {
-            // 디버그 로그 추가
-            console.log('msg:', msg);
-            console.log('myAIs:', myAIs);
-            const isAI = msg.sender === 'ai';
-            // 메시지 렌더링 시에도 aiObj를 myAIs가 아니라 roomInfoParticipants에서 찾아 exp, personality 등 활용
-            const aiObj = isAI ? roomInfoParticipants.find(ai => String(ai.personaId) === String(msg.aiId)) : null;
-            console.log('aiObj:', aiObj);
-            console.log('roomInfoParticipants:', roomInfoParticipants);
-            console.log('AI exp:', roomInfoParticipants.find(p => String(p.personaId) === String(msg.aiId))?.exp);
+                  {messages.map((msg, idx) => {
+          const isAI = msg.sender === 'ai';
+          // 메시지 렌더링 시에도 aiObj를 myAIs가 아니라 roomInfoParticipants에서 찾아 exp, personality 등 활용
+          const aiObj = isAI ? roomInfoParticipants.find(ai => String(ai.personaId) === String(msg.aiId)) : null;
             const profileImg = msg.sender === 'me'
               ? user?.imageUrl || '/assets/icon-character.png'
               : isAI
@@ -568,7 +550,7 @@ const ChatMate = () => {
                       {displayName}
                       {isAI && aiObj && (
                         <span className="ml-2 text-xs text-cyan-300 font-bold">
-                          Lv.{getLevel(roomInfoParticipants.find(p => String(p.personaId) === String(msg.aiId))?.exp || 0)}
+                          Lv.{roomInfoParticipants.find(p => String(p.personaId) === String(msg.aiId))?.friendship || getLevel(roomInfoParticipants.find(p => String(p.personaId) === String(msg.aiId))?.exp || 0)}
                         </span>
                       )}
                     </span>
