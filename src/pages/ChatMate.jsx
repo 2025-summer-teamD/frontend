@@ -723,7 +723,7 @@ const ChatMate = () => {
               onKeyPress={handleKeyPress}
               placeholder="메시지를 입력하세요..."
               className="w-full bg-transparent border-none outline-none text-black placeholder-cyan-400 font-cyberpunk tracking-widest"
-              disabled={aiResponseLoading} // AI 로딩 중에는 입력 비활성화
+              disabled={aiResponseLoading}
             />
           </div>
           <button
