@@ -11,6 +11,29 @@ export function useSendMessageToAI() {
   const [error, setError] = useState(null);
   const { getToken } = useAuth();
 
+  // 1대1 채팅방인지 확인하는 함수
+  const isOneOnOneChat = useCallback(async (roomId) => {
+    try {
+      const token = await getToken();
+      const response = await fetch(`${API_BASE_URL}/chat/room-info?roomId=${roomId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        // character 필드가 있으면 1대1 채팅 (기존 구조)
+        return data.data?.character !== null && data.data?.character !== undefined;
+      }
+      return false;
+    } catch (error) {
+      console.error('1대1 채팅방 확인 실패:', error);
+      return false;
+    }
+  }, [getToken]);
+
   // sendMessage 함수에 onNewChunk 및 onVideoUrl 콜백 추가
   const sendMessage = useCallback(async (roomId, message, onNewChunk, onVideoUrl) => {
     console.log('🔥 sendMessage 시작 - roomId:', roomId, 'message:', message);
@@ -29,7 +52,11 @@ export function useSendMessageToAI() {
       const token = await getToken();
       console.log('✅ 토큰 가져오기 성공');
 
-      console.log('💬 메시지 전송 API 호출:', `${API_BASE_URL}/chat/rooms/${roomId}`);
+      // 1대1 채팅방인지 확인
+      const isOneOnOne = await isOneOnOneChat(roomId);
+      const endpoint = isOneOnOne ? `/chat/rooms/${roomId}/sse` : `/chat/rooms/${roomId}`;
+      
+      console.log(`💬 메시지 전송 API 호출 (${isOneOnOne ? '1대1 SSE' : '1대다 WebSocket'}):`, `${API_BASE_URL}${endpoint}`);
 
       const timestamp = new Date().toISOString();
       const requestData = {
@@ -46,7 +73,7 @@ export function useSendMessageToAI() {
         controller.abort();
       }, 30000); // 30초 타임아웃
 
-      const response = await fetch(`${API_BASE_URL}/chat/rooms/${roomId}`, {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -66,81 +93,92 @@ export function useSendMessageToAI() {
         throw new Error(`AI 메시지 전송 실패: ${response.status} ${response.statusText}. Error: ${errorText}`);
       }
 
-      const contentType = response.headers.get('content-type');
+      // 1대1 채팅방인 경우에만 SSE 스트리밍 처리
+      if (isOneOnOne) {
+        const contentType = response.headers.get('content-type');
 
-      if (contentType && contentType.includes('text/event-stream')) {
-        console.log('🌊 SSE 스트리밍 응답 감지');
+        if (contentType && contentType.includes('text/event-stream')) {
+          console.log('🌊 SSE 스트리밍 응답 감지');
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = ''; // 부분적으로 수신된 이벤트 라인을 위한 버퍼
-        let fullResponseAccumulated = ''; // 전체 AI 응답 누적
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = ''; // 부분적으로 수신된 이벤트 라인을 위한 버퍼
+          let fullResponseAccumulated = ''; // 전체 AI 응답 누적
 
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) {
-              console.log('✅ 스트리밍 종료 감지');
-              break;
-            }
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) {
+                console.log('✅ 스트리밍 종료 감지');
+                break;
+              }
 
-            const chunk = decoder.decode(value, { stream: true });
-            buffer += chunk;
+              const chunk = decoder.decode(value, { stream: true });
+              buffer += chunk;
 
-            // 라인별로 처리
-            const lines = buffer.split('\n');
-            buffer = lines.pop(); // 마지막 불완전한 라인은 버퍼에 남김
+              // 라인별로 처리
+              const lines = buffer.split('\n');
+              buffer = lines.pop(); // 마지막 불완전한 라인은 버퍼에 남김
 
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                const eventData = line.substring(6); // 'data: ' 제거
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  const eventData = line.substring(6); // 'data: ' 제거
 
-                if (eventData === '[DONE]') {
-                  console.log('⭐ [DONE] 이벤트 수신');
-                  // 스트림이 완전히 종료됨을 의미하므로 반복문 종료
-                  // 여기서는 이미 done=true로 루프가 종료될 것이므로 명시적으로 break는 필요 없을 수 있지만
-                  // 파싱 로직의 명확성을 위해 포함
-                  return fullResponseAccumulated; // 전체 누적된 텍스트 반환
-                }
-
-                try {
-                  const parsedData = JSON.parse(eventData);
-                  console.log('✅ SSE JSON 파싱 성공:', parsedData);
-
-                  if (parsedData.type === 'text_chunk') {
-                    // 한 글자씩 스트리밍 처리 (콜백 호출)
-                    fullResponseAccumulated += parsedData.content;
-                    if (onNewChunk) {
-                      onNewChunk(parsedData.content, fullResponseAccumulated);
-                    }
-                  } else if (parsedData.type === 'video_url') {
-                    // 영상 URL 처리 (콜백 호출)
-                    if (onVideoUrl) {
-                      onVideoUrl(parsedData.url);
-                    }
-                  } else if (parsedData.type === 'error') {
-                    // 서버에서 발생한 에러 처리
-                    setError(parsedData.message || '스트리밍 중 서버 오류가 발생했습니다.');
-                    console.error('💥 서버 스트리밍 오류:', parsedData.message);
-                    // 에러 발생 시 스트림 중단 가능
-                    return fullResponseAccumulated; // 현재까지 누적된 텍스트 반환
+                  if (eventData === '[DONE]') {
+                    console.log('⭐ [DONE] 이벤트 수신');
+                    return fullResponseAccumulated; // 전체 누적된 텍스트 반환
                   }
-                } catch (parseError) {
-                  console.error('💥 SSE JSON 파싱 에러 (invalid JSON):', parseError, '데이터:', eventData);
-                  // JSON 파싱 실패 시, 데이터는 무시하고 계속 진행
+
+                  try {
+                    const parsedData = JSON.parse(eventData);
+                    console.log('✅ SSE JSON 파싱 성공:', parsedData);
+
+                    if (parsedData.type === 'text_chunk') {
+                      // 한 글자씩 스트리밍 처리 (콜백 호출)
+                      fullResponseAccumulated += parsedData.content;
+                      if (onNewChunk) {
+                        onNewChunk(parsedData.content, fullResponseAccumulated);
+                      }
+                    } else if (parsedData.type === 'video_url') {
+                      // 영상 URL 처리 (콜백 호출)
+                      if (onVideoUrl) {
+                        onVideoUrl(parsedData.url);
+                      }
+                    } else if (parsedData.type === 'error') {
+                      // 서버에서 발생한 에러 처리
+                      setError(parsedData.message || '스트리밍 중 서버 오류가 발생했습니다.');
+                      console.error('💥 서버 스트리밍 오류:', parsedData.message);
+                      return fullResponseAccumulated; // 현재까지 누적된 텍스트 반환
+                    }
+                  } catch (parseError) {
+                    console.error('💥 SSE JSON 파싱 에러 (invalid JSON):', parseError, '데이터:', eventData);
+                  }
                 }
               }
             }
-          }
-          return fullResponseAccumulated; // 스트림이 종료된 후 최종 누적된 텍스트 반환
+            return fullResponseAccumulated; // 스트림이 종료된 후 최종 누적된 텍스트 반환
 
-        } finally {
-          reader.releaseLock();
+          } finally {
+            reader.releaseLock();
+          }
+        } else {
+          console.log('📄 일반 JSON 응답 처리 (1대1이지만 SSE가 아닌 경우)');
+          const responseText = await response.text();
+          console.log('📄 백엔드 원시 응답 텍스트:', responseText);
+
+          let result;
+          try {
+            result = JSON.parse(responseText);
+            console.log('✅ 일반 응답 JSON 파싱 성공:', result);
+            return result.data || result.message || JSON.stringify(result);
+          } catch (parseError) {
+            console.error('💥 일반 응답 JSON 파싱 에러:', parseError);
+            throw new Error(`응답 JSON 파싱 실패: ${parseError.message}. 원시 텍스트: ${responseText.substring(0, 100)}`);
+          }
         }
       } else {
-        console.log('📄 일반 JSON 또는 비-SSE 응답 처리 (예상치 못한 경우)');
-        // 이 경로는 백엔드가 SSE를 보내지 않을 경우에만 도달
-        // 만약 SSE가 항상 기대된다면 이 else 블록은 에러 처리로 간주할 수 있습니다.
+        // 1대다 채팅방인 경우 기존 WebSocket 방식 처리
+        console.log('📄 1대다 채팅방 - WebSocket 방식 처리');
         const responseText = await response.text();
         console.log('📄 백엔드 원시 응답 텍스트:', responseText);
 
@@ -148,7 +186,7 @@ export function useSendMessageToAI() {
         try {
           result = JSON.parse(responseText);
           console.log('✅ 일반 응답 JSON 파싱 성공:', result);
-          return result.data || result.message || JSON.stringify(result); // 예상치 못한 응답 처리
+          return result.data || result.message || JSON.stringify(result);
         } catch (parseError) {
           console.error('💥 일반 응답 JSON 파싱 에러:', parseError);
           throw new Error(`응답 JSON 파싱 실패: ${parseError.message}. 원시 텍스트: ${responseText.substring(0, 100)}`);
@@ -167,12 +205,11 @@ export function useSendMessageToAI() {
       console.log('🏁 setLoading(false) 호출');
       setLoading(false);
     }
-  }, [getToken]); // useCallback 의존성 배열에 getToken 추가
+  }, [getToken, isOneOnOneChat]); // useCallback 의존성 배열에 isOneOnOneChat 추가
 
   return { sendMessage, loading, error };
 }
 
-// 기존의 다른 훅들은 변경 없음
 export function useCreateChatRoom() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -319,6 +356,7 @@ export function useEnterOrCreateChatRoom() {
   return { enterOrCreateChatRoom, loading, error };
 }
 
+// 레거시 메시지 데이터 (임시로 유지)
 const chatMessages = [
   { id: 1, text: '안녕하세요!qqqqqqqqqqq', sender: 'other', time: '오후 3:45' },
 ];

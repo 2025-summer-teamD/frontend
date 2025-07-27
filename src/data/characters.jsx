@@ -3,7 +3,9 @@ import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from "@clerk/clerk-react";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+
 
 // 공통 API 호출 함수
 const apiCall = async (url, options = {}) => {
@@ -126,6 +128,14 @@ export function useMyCharacters(type = 'created') {
   const { getToken } = useAuth();
 
   const fetchMyCharacters = useCallback(async (characterType = type) => {
+    // mychats 탭에서는 캐릭터 API 호출하지 않음
+    if (characterType === 'mychats') {
+      setCharacters([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -134,7 +144,9 @@ export function useMyCharacters(type = 'created') {
         getToken,
         {}
       );
-      setCharacters(data.data || []);
+      // data가 배열인지 확인하고 적절히 설정
+      const charactersData = Array.isArray(data) ? data : (data.data || []);
+      setCharacters(charactersData);
     } catch (err) {
       const errorMessage = handleApiError(err, '캐릭터 목록을 불러오는데 실패했습니다.');
       setError(errorMessage);
@@ -210,7 +222,11 @@ export function useUpdateCharacter() {
         tag: updateData.tag || updateData.tags
       };
 
-      console.log('Updating character with data:', requestData);
+      console.log('🔍 useUpdateCharacter - API call:', {
+        url: `${API_BASE_URL}/my/characters/${characterId}`,
+        requestData,
+        characterId
+      });
 
       const data = await authenticatedApiCall(
         `${API_BASE_URL}/my/characters/${characterId}`,
@@ -221,8 +237,11 @@ export function useUpdateCharacter() {
         }
       );
 
+      console.log('✅ useUpdateCharacter - API response:', data);
+
       return data.data;
     } catch (err) {
+      console.error('❌ useUpdateCharacter - API error:', err);
       const errorMessage = handleApiError(err, '캐릭터 수정에 실패했습니다.');
       setError(errorMessage);
       throw err;

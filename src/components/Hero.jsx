@@ -1,3 +1,4 @@
+import pokemon from '/assets/gif/pokemon.gif';
 import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -16,7 +17,7 @@ const Hero = React.memo(() => {
     <section id="home" className="relative w-full h-screen overflow-hidden">
       {/* GIF 배경 */}
       <img
-        src="/assets/_ (1).gif"
+        src={pokemon}
         alt="Hero Background"
         className="absolute inset-0 w-full h-full object-cover"
         loading="lazy"
