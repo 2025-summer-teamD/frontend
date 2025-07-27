@@ -8,6 +8,7 @@ import { io } from 'socket.io-client';
 import { useMyCharacters } from '../data/characters';
 import { v4 as uuidv4 } from 'uuid';
 import NeonBackground from '../components/NeonBackground';
+import ChatMessageItem from '../components/ChatMessageItem';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -119,14 +120,14 @@ const ChatMate = () => {
   const { characters: myAIs, loading: aiLoading, fetchMyCharacters } = useMyCharacters('created');
   const [roomInfoParticipants, setRoomInfoParticipants] = useState([]);
   const hasSentInitialGreeting = useRef(false);
-  
+
   // 1대1 채팅 여부 상태
   const [isOneOnOneChat, setIsOneOnOneChat] = useState(false);
-  
+
   // SSE 연결 상태 추가
   const [sseConnectionStatus, setSseConnectionStatus] = useState('disconnected');
   const sseRef = useRef(null);
-  
+
   // WebSocket 연결 상태 추가
   const [webSocketConnectionStatus, setWebSocketConnectionStatus] = useState('disconnected');
 
@@ -198,7 +199,6 @@ const ChatMate = () => {
   // room-info API 호출 (채팅방 정보 및 참여자 목록 조회)
   useEffect(() => {
     if (!roomId || !getToken) return;
-    
       (async () => {
       try {
         const token = await getToken();
@@ -213,15 +213,15 @@ const ChatMate = () => {
               setCharacter(data.data.character);
           setRoomInfoParticipants(data.data.participants || []);
           setParticipants(data.data.participants || []); // 참여자 목록도 동기화
-          
+
           // 1대1 채팅 여부 확인 (백엔드에서 전송한 값 사용)
           const isOneOnOne = data.data.isOneOnOne || false;
           setIsOneOnOneChat(isOneOnOne);
-          
+
           // 채팅방에 처음 들어왔을 때 AI들이 자동으로 인사 (새로운 방이고 AI가 2명 이상일 때만)
           const currentMessages = getMessages(roomId);
           const chatHistory = data.data.chatHistory || [];
-          
+
           // 백엔드에서 받은 채팅 기록이 없고, 현재 메시지도 없고, AI 참여자가 2명 이상이고, 아직 인사를 보내지 않았을 때만
 
             } else {
@@ -239,31 +239,31 @@ const ChatMate = () => {
   // WebSocket 연결 (그룹 채팅용)
   useEffect(() => {
     if (!roomId || !user || isOneOnOneChat) return;
-    
+
     console.log('🔌 그룹 채팅 WebSocket 연결 시작:', { roomId, userId: user.id, isOneOnOneChat });
     setWebSocketConnectionStatus('connecting');
-    
+
     const socket = io(SOCKET_URL, { transports: ['websocket'] });
     socketRef.current = socket;
-    
+
     socket.emit('joinRoom', { roomId, userId: user.id });
     console.log('📡 joinRoom 이벤트 전송:', { roomId, userId: user.id });
-    
+
     socket.on('connect', () => {
       console.log('🔌 WebSocket 연결됨');
       setWebSocketConnectionStatus('connected');
     });
-    
+
     socket.on('disconnect', () => {
       console.log('🔌 WebSocket 연결 해제됨');
       setWebSocketConnectionStatus('disconnected');
     });
-    
+
     socket.on('connect_error', (error) => {
       console.log('🔌 WebSocket 연결 오류:', error);
       setWebSocketConnectionStatus('error');
     });
-    
+
     socket.on('receiveMessage', (msg) => {
       console.log('📨 메시지 수신:', msg);
       addMessageToRoom(roomId, {
@@ -276,11 +276,11 @@ const ChatMate = () => {
         characterId: msg.senderType === 'ai' ? msg.aiId : character?.id,
       });
     });
-    
+
     // EXP 업데이트 이벤트 수신 (그룹 채팅용)
     socket.on('expUpdated', (data) => {
       console.log('🔔 expUpdated 이벤트 수신:', data);
-      
+
       // 참여자 목록 업데이트
       setRoomInfoParticipants(prev => {
         console.log('📊 현재 참여자 목록:', prev);
@@ -298,7 +298,7 @@ const ChatMate = () => {
         console.log('📊 업데이트된 참여자 목록:', updated);
         return updated;
       });
-      
+
       // 캐릭터 목록도 함께 업데이트
       if (fetchMyCharacters) {
         console.log('🔄 캐릭터 목록 새로고침 중...');
@@ -311,13 +311,13 @@ const ChatMate = () => {
         console.log('⚠️ fetchMyCharacters 함수를 찾을 수 없음');
       }
     });
-    
+
     socket.on('participants', (data) => {
       if (Array.isArray(data.participants)) {
         setParticipants(data.participants);
       }
     });
-    
+
     return () => {
       console.log('🔌 WebSocket 연결 해제:', { roomId, userId: user.id });
       socket.emit('leaveRoom', { roomId, userId: user.id });
@@ -337,18 +337,18 @@ const ChatMate = () => {
   // 1대1 채팅용 SSE 연결
   useEffect(() => {
     if (!roomId || !user || !isOneOnOneChat) return;
-    
+
     console.log('🔌 1대1 채팅 WebSocket 연결 시작 (친밀도 업데이트용):', { roomId, userId: user.id, isOneOnOneChat });
-    
+
     // SSE 연결을 위한 WebSocket (친밀도 업데이트용)
     const friendshipSocket = io(SOCKET_URL, { transports: ['websocket'] });
     friendshipSocket.emit('joinRoom', { roomId, userId: user.id });
     console.log('📡 1대1 채팅 joinRoom 이벤트 전송:', { roomId, userId: user.id });
-    
+
     // 친밀도 업데이트 이벤트 수신 (1대1 채팅용)
     friendshipSocket.on('expUpdated', (data) => {
       console.log('🔔 1대1 채팅 expUpdated 이벤트 수신:', data);
-      
+
       // 참여자 목록 업데이트
       setRoomInfoParticipants(prev => {
         const updated = prev.map(participant => {
@@ -364,7 +364,7 @@ const ChatMate = () => {
         });
         return updated;
       });
-      
+
       // 캐릭터 목록도 함께 업데이트
       if (fetchMyCharacters) {
         console.log('🔄 캐릭터 목록 새로고침 중...');
@@ -377,7 +377,7 @@ const ChatMate = () => {
         console.log('⚠️ fetchMyCharacters 함수를 찾을 수 없음');
       }
     });
-    
+
     return () => {
       console.log('🔌 1대1 채팅 WebSocket 연결 해제:', { roomId, userId: user.id });
       friendshipSocket.emit('leaveRoom', { roomId, userId: user.id });
@@ -416,7 +416,7 @@ const ChatMate = () => {
     if (!newMessage.trim() || aiResponseLoading) return;
     const messageText = newMessage.trim();
     setNewMessage('');
-    
+
     if (isOneOnOneChat) {
       // 1대1 채팅: SSE 사용
       try {
@@ -431,7 +431,7 @@ const ChatMate = () => {
           characterId: character?.id,
         };
         addMessageToRoom(roomId, userMessage);
-        
+
         // AI 로딩 상태 시작
         setAiLoading(roomId, true);
         setSseConnectionStatus('connecting');
@@ -451,30 +451,30 @@ const ChatMate = () => {
             timestamp: new Date().toISOString()
           })
         });
-        
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         setSseConnectionStatus('connected');
-        
+
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let aiResponse = '';
-        
+
         try {
           while (true) {
             const { done, value } = await reader.read();
-            
+
             if (done) break;
-            
+
             const chunk = decoder.decode(value);
             const lines = chunk.split('\n');
-            
+
             for (const line of lines) {
               if (line.startsWith('data: ')) {
                 const data = line.slice(6); // 'data: ' 제거
-                
+
                 if (data === '[DONE]') {
                   // AI 응답 완료
                   if (aiResponse.trim()) {
@@ -501,7 +501,6 @@ const ChatMate = () => {
         } finally {
           reader.releaseLock();
         }
-
     } catch (error) {
         console.error('1대1 채팅 메시지 전송 실패:', error);
         setAiLoading(roomId, false);
@@ -542,7 +541,7 @@ const ChatMate = () => {
     const data = await res.json();
     if (data.success && data.imageUrl) {
       const imageMessage = `[이미지] ${data.imageUrl}`;
-      
+
       // 사용자 이미지 메시지 추가
       addMessageToRoom(roomId, {
         id: uuidv4(),
@@ -559,7 +558,7 @@ const ChatMate = () => {
           const token = await getToken();
       setAiLoading(roomId, true);
           setSseConnectionStatus('connecting');
-          
+
           // SSE 스트리밍 요청 (fetch 사용)
           const userName = user?.username || user?.firstName || user?.fullName || user?.id;
           const response = await fetch(`${API_BASE_URL}/chat/rooms/${roomId}/sse`, {
@@ -575,13 +574,13 @@ const ChatMate = () => {
               timestamp: new Date().toISOString()
             })
           });
-          
+
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
-          
+
           setSseConnectionStatus('connected');
-          
+
           const reader = response.body.getReader();
           const decoder = new TextDecoder();
           let aiResponse = '';
@@ -589,16 +588,16 @@ const ChatMate = () => {
       try {
             while (true) {
               const { done, value } = await reader.read();
-              
+
               if (done) break;
-              
+
               const chunk = decoder.decode(value);
               const lines = chunk.split('\n');
-              
+
               for (const line of lines) {
                 if (line.startsWith('data: ')) {
                   const data = line.slice(6); // 'data: ' 제거
-                  
+
                   if (data === '[DONE]') {
                     // AI 응답 완료
                     if (aiResponse.trim()) {
@@ -623,7 +622,7 @@ const ChatMate = () => {
       } finally {
             reader.releaseLock();
           }
-          
+
         } catch (error) {
           console.error('1대1 채팅 이미지 메시지 전송 실패:', error);
         setAiLoading(roomId, false);
@@ -658,8 +657,8 @@ const ChatMate = () => {
             {roomInfoParticipants.map((participant, index) => {
               const ai = myAIs.find(ai => String(ai.id) === String(participant.personaId));
               return (
-                <div 
-                  key={participant.personaId} 
+                <div
+                  key={participant.personaId}
                   className="w-9 h-9 rounded-full border-2 border-cyan-300 shadow-[0_0_4px_#0ff] relative"
                   style={{ zIndex: roomInfoParticipants.length - index }}
                 >
@@ -674,9 +673,9 @@ const ChatMate = () => {
           </div>
           <div className="flex items-center gap-3">
           <span className="text-cyan-100 text-lg font-bold drop-shadow-[0_0_2px_#0ff] tracking-widest font-cyberpunk">
-              {roomInfoParticipants.length > 1 
-                ? `${roomInfoParticipants.length}명의 AI와 대화` 
-                : roomInfoParticipants[0] 
+              {roomInfoParticipants.length > 1
+                ? `${roomInfoParticipants.length}명의 AI와 대화`
+                : roomInfoParticipants[0]
                   ? myAIs.find(ai => String(ai.id) === String(roomInfoParticipants[0].personaId))?.name || 'AI'
                   : '채팅방'
               }
@@ -736,7 +735,7 @@ const ChatMate = () => {
                     Lv.{roomInfoParticipants[0].friendship || 1}
                   </div>
                 </div>
-                
+
                 {/* INTIMACY 박스 */}
                 <div className="bg-white/20 border-2 border-fuchsia-400 rounded-lg px-3 py-1 text-center">
                   <div className="text-fuchsia-200 font-bold text-sm font-cyberpunk">
@@ -787,10 +786,10 @@ const ChatMate = () => {
                   </h2>
                 </div>
                 <p className="text-cyan-300 text-sm leading-relaxed tracking-wide text-center max-w-sm mx-auto">
-                  {roomInfoParticipants[0].introduction || 
-                   roomInfoParticipants[0].description || 
-                   roomInfoParticipants[0].prompt?.personality || 
-                   roomInfoParticipants[0].prompt || 
+                  {roomInfoParticipants[0].introduction ||
+                   roomInfoParticipants[0].description ||
+                   roomInfoParticipants[0].prompt?.personality ||
+                   roomInfoParticipants[0].prompt ||
                    '안녕하세요! 함께 대화해요!'}
           </p>
         </div>
@@ -823,7 +822,7 @@ const ChatMate = () => {
                   {user?.username || user?.firstName || '사용자'}
                 </span>
               </div>
-              
+
               {/* AI 참여자들 */}
               {roomInfoParticipants.map((participant, index) => {
                 // 프롬포트 정보와 exp를 participant에서 직접 사용
@@ -876,6 +875,7 @@ const ChatMate = () => {
         {/* 메시지들 */}
         <div className="space-y-4 pb-4 max-w-3xl mx-auto font-cyberpunk">
           {messages.map((msg, idx) => {
+            console.log(msg);
             const isAI = msg.sender === 'ai';
             // 메시지 렌더링 시에도 aiObj를 myAIs가 아니라 roomInfoParticipants에서 찾아 exp, personality 등 활용
             const aiObj = isAI ? roomInfoParticipants.find(ai => String(ai.personaId) === String(msg.aiId)) : null;
@@ -896,57 +896,19 @@ const ChatMate = () => {
             const prevMsg = messages[idx - 1];
             const showTime = isLast || msg.time !== nextMsg?.time || msg.sender !== "prevMsg?.sender";
             const showProfile = idx === 0 || msg.time !== prevMsg?.time || msg.sender !== "prevMsg?.sender";
-            return (
-              <div
-                key={msg.id}
-                className={`flex flex-col w-full ${msg.sender === 'me' ? 'items-end' : 'items-start'} font-cyberpunk`}
-              >
-                {showProfile && (
-                  <div className={`flex items-center mb-1 ${msg.sender === 'me' ? 'flex-row-reverse' : 'flex-row'} font-cyberpunk`}>
-                    <div className="w-8 h-8 rounded-full border-2 border-cyan-300 shadow-[0_0_3px_#0ff] flex-shrink-0 bg-gradient-to-br from-cyan-200/60 to-fuchsia-200/40">
-                      <img
-                        src={profileImg}
-                        alt=""
-                        className="w-full h-full object-cover rounded-full"
-                      />
-                    </div>
-                    <span className={`text-cyan-100 font-bold text-sm tracking-widest drop-shadow-[0_0_1px_#0ff] font-cyberpunk ${msg.sender === 'me' ? 'mr-2' : 'ml-2'}`}>
-                      {displayName}
-                      {isAI && aiObj && (
-                        <span className="ml-2 text-xs text-cyan-300 font-bold">
-                          Lv.{aiObj.friendship || 1}
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                )}
-                <div
-                  className={`max-w-[80%] sm:max-w-[70%] lg:max-w-[60%] px-4 py-3 rounded-xl break-words tracking-widest font-cyberpunk ${msg.sender === 'me'
-                    ? 'bg-cyan-100/80 border-2 border-cyan-200 text-[#1a1a2e] shadow-[0_0_4px_#0ff]'
-                    : isAI
-                      ? `${aiColor.bg} border-2 ${aiColor.border} ${aiColor.text} ${aiColor.shadow}`
-                    : 'bg-fuchsia-100/80 border-2 border-fuchsia-200 text-[#1a1a2e] shadow-[0_0_4px_#f0f]'
-                    }`}
-                  style={isAI ? { boxShadow: aiColor.shadow.replace('shadow-', '').replace('[', '').replace(']', '') } : {}}
-                >
-                  {msg.imageUrl
-                    ? <img
-                      src={msg.imageUrl.startsWith('http') ? msg.imageUrl : API_BASE_URL + msg.imageUrl}
-                      alt="전송된 이미지"
-                      className="max-w-xs rounded-lg border-2 border-cyan-200 shadow-[0_0_4px_#0ff] font-cyberpunk"
-                    />
-                    : <p className="font-cyberpunk">{msg.text}</p>
-                  }
-                </div>
-                {showTime && (
-                  <div className={`flex w-full mt-1 ${msg.sender === 'me' ? 'justify-end pr-2' : 'justify-start pl-2'}`}>
-                    <span className="text-xs text-cyan-400 font-cyberpunk">
-                      {msg.time}
-                    </span>
-                  </div>
-                )}
-              </div>
-            );
+            return (<ChatMessageItem
+              key={msg.id}
+              msg={msg}
+              showProfile={showProfile}
+              showTime={showTime}
+              profileImg={profileImg}
+              displayName={displayName}
+              isAI={isAI} // msg 객체에 senderType이 있다고 가정
+              aiObj={aiObj} // AI 캐릭터 정보 객체
+              aiColor={aiColor} // AI 말풍선 색상 설정
+              roomId={roomId} // 현재 채팅방 ID 전달
+              userId={user.id} // 현재 로그인한 사용자 ID 전달
+          />)
           })}
           <div ref={messagesEndRef} />
         </div>
