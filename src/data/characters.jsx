@@ -229,6 +229,7 @@ export function useUpdateCharacter() {
 
       // API 요청에 맞는 형태로 데이터 구성
       const requestData = {
+        name: updateData.name,
         introduction: updateData.introduction || updateData.description,
         personality: updateData.personality,
         tone: updateData.tone,

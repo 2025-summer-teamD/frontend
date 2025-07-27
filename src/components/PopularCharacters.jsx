@@ -136,29 +136,29 @@ const PopularCharacters = React.memo(({ onChatRoomCreated }) => {
     );
   }
 
-        return (
+  return (
     <SectionHeader 
       title="인기 캐릭터" 
       subtitle="복잡한 설정 없이, 인기 캐릭터와 바로 소통하세요."
     >
       
       <div className="flex items-center justify-center relative">
-        {/* 왼쪽 화살표 */}
+      {/* 왼쪽 화살표 */}
         <SlideButton
           direction="left"
-          onClick={() => setCurrentIndex(i => Math.max(0, i - cardsPerPage))}
-          disabled={currentIndex === 0}
+        onClick={() => setCurrentIndex(i => Math.max(0, i - cardsPerPage))}
+        disabled={currentIndex === 0}
           ariaLabel="이전 캐릭터들"
         />
         
-        {/* 카드 리스트 */}
+      {/* 카드 리스트 */}
         <ScrollContainer ref={containerRef}>
-          {visibleCharacters.map((character) => (
+        {visibleCharacters.map((character) => (
             <BaseCard
-              key={character.id}
+            key={character.id}
               character={character}
               onClick={() => handleStartChat(character)}
-              onKeyDown={(event) => handleKeyDown(event, character.id)}
+            onKeyDown={(event) => handleKeyDown(event, character.id)}
               className="w-[240px] h-[320px] flex-shrink-0 neon-card"
             >
               <CharacterInfo character={character} isMine={false} nameSize="text-2xl" />
@@ -169,17 +169,17 @@ const PopularCharacters = React.memo(({ onChatRoomCreated }) => {
                 characterId={character.id} 
               />
             </BaseCard>
-          ))}
+        ))}
         </ScrollContainer>
         
-        {/* 오른쪽 화살표 */}
+      {/* 오른쪽 화살표 */}
         <SlideButton
           direction="right"
-          onClick={() => setCurrentIndex(i => Math.min(maxIndex, i + cardsPerPage))}
-          disabled={currentIndex >= maxIndex}
+        onClick={() => setCurrentIndex(i => Math.min(maxIndex, i + cardsPerPage))}
+        disabled={currentIndex >= maxIndex}
           ariaLabel="다음 캐릭터들"
         />
-      </div>
+    </div>
       
       <LoadingOverlay isVisible={chatLoading} message="채팅방 생성 중..." />
     </SectionHeader>

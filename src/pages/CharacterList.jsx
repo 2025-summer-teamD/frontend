@@ -140,7 +140,7 @@ export default function CharacterList() {
     if (tab === 'liked') {
       fetchLikedCharacters();
     } else {
-      fetchMyCharacters(tab);
+    fetchMyCharacters(tab);
     }
   }, [tab, fetchMyCharacters]);
 
@@ -155,13 +155,13 @@ export default function CharacterList() {
     }
     
     return charactersToFilter.filter(character => {
-      const keyword = searchQuery.toLowerCase();
-      return (
+    const keyword = searchQuery.toLowerCase();
+    return (
         character.name.toLowerCase().includes(keyword) ||
         (character.description && character.description.toLowerCase().includes(keyword)) ||
         (character.introduction && character.introduction.toLowerCase().includes(keyword))
-      );
-    });
+    );
+  });
   };
 
   const filteredCharacters = getFilteredCharacters();
@@ -201,7 +201,7 @@ export default function CharacterList() {
       if (tab === 'liked') {
         await fetchLikedCharacters();
       } else {
-        await fetchMyCharacters();
+      await fetchMyCharacters();
       }
     } catch (error) {
       console.error('좋아요 토글 실패:', error);
@@ -252,7 +252,7 @@ export default function CharacterList() {
       const token = await getToken();
       // Use character.id consistently (backend returns id field)
       const characterId = character?.id;
-      
+
       if (!characterId) {
         throw new Error('캐릭터 ID를 찾을 수 없습니다.');
       }
@@ -364,33 +364,22 @@ export default function CharacterList() {
         if (tab === 'liked') {
           await fetchLikedCharacters();
         } else {
-          await fetchMyCharacters();
+        await fetchMyCharacters();
         }
       } else {
         // 수정된 경우
         console.log('Character updated successfully:', updatedCharacter);
         alert('캐릭터 정보가 성공적으로 업데이트되었습니다!');
 
-        // 로컬 상태에서 해당 캐릭터 업데이트
+        // 목록 새로고침 (API에서 최신 데이터를 다시 가져옴)
         if (tab === 'liked') {
-          setLikedCharacters(prevCharacters =>
-            prevCharacters.map(char =>
-              (char.id) === (updatedCharacter.id)
-                ? updatedCharacter
-                : char
-            )
-          );
+          await fetchLikedCharacters();
         } else {
-          setCharacters(prevCharacters =>
-            prevCharacters.map(char =>
-              (char.id) === (updatedCharacter.id)
-                ? updatedCharacter
-                : char
-            )
-          );
+          await fetchMyCharacters();
         }
 
-        // editingCharacter 상태를 업데이트된 데이터로 설정
+        // 수정 모달 닫고 프로필 모달로 전환
+        setEditingModalCharacter(null);
         setEditingCharacter(updatedCharacter);
       }
     } catch (error) {
@@ -465,19 +454,19 @@ export default function CharacterList() {
               message="커뮤니티에서 원하는 캐릭터를 찜하세요!"
             />
           ) : (
-            <EmptyState />
+        <EmptyState />
           )
-        ) : (
-          <CharacterGrid
-            characters={showCharacters.map(char => ({
-              ...char,
-              imageUrl: getSafeImageUrl(char.imageUrl || char.image || '')
-            }))}
-            myId={userId}
-            tab={tab}
-            likedIds={likedIds}
-            onLikeToggle={handleLikeToggle}
-            onEdit={handleEditCharacter}
+      ) : (
+        <CharacterGrid
+          characters={showCharacters.map(char => ({
+            ...char,
+            imageUrl: getSafeImageUrl(char.imageUrl || char.image || '')
+          }))}
+          myId={userId}
+          tab={tab}
+          likedIds={likedIds}
+          onLikeToggle={handleLikeToggle}
+          onEdit={handleEditCharacter}
             onDelete={handleDeleteCharacter}
             onSelect={handleSelectCharacter}
           />
@@ -637,7 +626,7 @@ export default function CharacterList() {
       {editingModalCharacter && (
         <CharacterEditModal
           character={editingModalCharacter}
-          liked={likedIds.includes(editingModalCharacter.id)}
+          liked={false}
           onClose={() => {
             setEditingModalCharacter(null);
             resetCharacter(); // 상세 정보 리셋

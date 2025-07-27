@@ -5,12 +5,15 @@ import { Heart as OutlineHeart, Heart as SolidHeart } from 'lucide-react';
 import { getSafeImageUrl } from '../utils/imageUtils';
 import { useAuth } from '@clerk/clerk-react';
 import { toggleLike } from '../data/characters';
+import { useEnterOrCreateChatRoom } from '../data/chatMessages';
 
 // 재사용 가능한 캐릭터 헤더 컴포넌트
 export const CharacterHeader = ({ character, liked, onLikeToggle, showLikeButton = true }) => {
   const characterId = character.id;
+  const { userId } = useAuth();
   
-
+  // Determine if character is created by current user
+  const isCharacterCreatedByMe = character?.clerkId === userId;
 
   const handleLikeToggle = () => {
     if (onLikeToggle) {
@@ -33,8 +36,13 @@ export const CharacterHeader = ({ character, liked, onLikeToggle, showLikeButton
         )}
       </div>
       <div>
-        <h1 className="text-2xl font-semibold text-white mb-1">{character.name}</h1>
-        <p className="text-gray-400 text-sm mb-3">By. {character.creatorName || '알 수 없음'}</p>
+        <h1 className="text-2xl font-semibold text-white mb-1">{character?.name || ''}</h1>
+        <p className="text-gray-400 text-sm mb-1">By. {character?.creatorName || '알 수 없음'}</p>
+        {isCharacterCreatedByMe ? (
+          <p className="text-yellow-400 text-xs font-mono mb-3">내가 만든 캐릭터</p>
+        ) : (
+          <div className="mb-3"></div>
+        )}
       </div>
       {showLikeButton && (
         <>
@@ -183,10 +191,31 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
   const isMyCharacter = origin === 'my';
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [chatLoading, setChatLoading] = useState(false);
   const { getToken, userId } = useAuth();
+  const { enterOrCreateChatRoom } = useEnterOrCreateChatRoom();
 
   // Determine if character is created by current user
   const isCharacterCreatedByMe = character?.clerkId === userId;
+
+  // 채팅 시작 함수
+  const handleStartChat = async () => {
+    setChatLoading(true);
+    try {
+      const characterId = character.id;
+      const { roomId, character: updatedCharacter, chatHistory, isNewRoom } = await enterOrCreateChatRoom(characterId);
+      
+      console.log(isNewRoom ? '🆕 새 채팅방 생성됨' : '🔄 기존 채팅방 입장 (히스토리 ' + chatHistory.length + '개)');
+
+      navigate(`/chatMate/${roomId}`, {
+        state: { character: updatedCharacter, chatHistory: chatHistory, roomId: roomId }
+      });
+    } catch (error) {
+      alert('채팅방 처리에 실패했습니다: ' + error.message);
+    } finally {
+      setChatLoading(false);
+    }
+  };
 
   // Handle like/unlike functionality
   const handleLikeToggle = async () => {
@@ -282,14 +311,33 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
               수정하기
             </button>
           )}
-          {/* 찜하기/찜취소하기 버튼 */}
+          
+          {/* 1:1 채팅하기 버튼 - 모든 캐릭터에 대해 표시 */}
           <button
-            onClick={handleLikeToggle}
-            className={buttonConfig.className}
-            disabled={buttonConfig.disabled || loading}
-            style={buttonConfig.disabled ? {} : {textShadow:'0 0 4px #0ff, 0 0 8px #f0f', boxShadow:'0 0 8px #0ff, 0 0 16px #f0f'}}>
-            {loading ? '처리 중...' : buttonConfig.text}
+            onClick={handleStartChat}
+            disabled={chatLoading}
+            className="w-full bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600 text-purple-100 font-bold py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2 shadow-[0_0_8px_#f0f,0_0_16px_#0ff] animate-neonPulse"
+            style={{textShadow:'0 0 4px #f0f, 0 0 8px #0ff', boxShadow:'0 0 8px #f0f, 0 0 16px #0ff'}}>
+            {chatLoading ? '채팅방 생성 중...' : (
+              <>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                1:1 채팅하기
+              </>
+            )}
           </button>
+          
+          {/* 찜하기/찜취소하기 버튼 - 내가 만든 캐릭터가 아닐 때만 표시 */}
+          {!isCharacterCreatedByMe && (
+            <button
+              onClick={handleLikeToggle}
+              className={buttonConfig.className}
+              disabled={buttonConfig.disabled || loading}
+              style={buttonConfig.disabled ? {} : {textShadow:'0 0 4px #0ff, 0 0 8px #f0f', boxShadow:'0 0 8px #0ff, 0 0 16px #f0f'}}>
+              {loading ? '처리 중...' : buttonConfig.text}
+            </button>
+          )}
           <button
             onClick={onClose}
             className="w-full bg-black/40 glass border-2 border-fuchsia-700 hover:border-cyan-700 text-cyan-100 font-bold py-3 px-6 rounded-2xl transition-colors duration-200 shadow-[0_0_4px_#f0f,0_0_8px_#0ff]"
