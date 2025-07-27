@@ -53,6 +53,25 @@ export const ChatMessagesProvider = ({ children }) => {
     });
   }, []);
 
+  // AI 응답 메시지를 특정 roomId에 추가 (1대1 채팅용)
+  const addAiResponseToRoom = useCallback((roomId, aiResponseText, characterId = null, aiName = null) => {
+    console.log(`🤖 채팅방 ${roomId}에 AI 응답 추가:`, aiResponseText);
+    const aiMessage = {
+      id: Date.now(),
+      text: aiResponseText,
+      sender: 'ai', // AI가 보낸 것이므로 'ai'
+      aiId: characterId ? String(characterId) : undefined, // AI ID 설정
+      aiName: aiName, // AI 이름 설정
+      time: new Date().toLocaleTimeString('ko-KR', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      }),
+      characterId: characterId, // 캐릭터 ID (선택적)
+    };
+    addMessageToRoom(roomId, aiMessage);
+  }, [addMessageToRoom]);
+
   // --- Streaming Specific Functions ---
 
   // ⭐ AI 스트리밍 중인 메시지를 업데이트하는 함수
@@ -121,8 +140,7 @@ export const ChatMessagesProvider = ({ children }) => {
     getMessages,          // 특정 방 메시지 가져오기
     setMessagesForRoom,   // 특정 방 메시지 초기 설정
     addMessageToRoom,     // 일반 메시지 추가
-    // addAiResponseToRoom 은 스트리밍 방식에서는 사용되지 않으므로 제거하거나 주석 처리
-    // addAiResponseToRoom,
+    addAiResponseToRoom,  // AI 응답 메시지 추가 (1대1 채팅용)
     getAiLoading,         // AI 로딩 상태 가져오기
     setAiLoading,         // AI 로딩 상태 설정
     updateStreamingAiMessage, // ⭐ 스트리밍 AI 메시지 업데이트

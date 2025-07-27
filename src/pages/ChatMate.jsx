@@ -10,7 +10,8 @@ import NeonBackground from '../components/NeonBackground';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-// 레벨/게이지 계산 및 네온 게이지 컴포넌트
+// 레벨 계산 함수 (백엔드와 동일한 로직 - 10레벨 시스템)
+// 백엔드에서는 이미 friendship 필드에 레벨이 저장되어 있으므로 이 함수는 fallback용
 function getLevel(exp) {
   // 10레벨 시스템: 각 레벨업에 필요한 경험치가 1씩 증가
   // 1레벨: 0exp, 2레벨: 1exp, 3레벨: 3exp, 4레벨: 6exp, 5레벨: 10exp
@@ -27,38 +28,42 @@ function getLevel(exp) {
   return 1; // exp가 0일 때 레벨 1
 }
 
+// 다음 레벨까지 필요한 경험치 계산
 function getExpForNextLevel(level) {
-  // 각 레벨별 필요 누적 경험치
+  // 백엔드와 동일한 경험치 테이블
   const expTable = [0, 0, 1, 3, 6, 10, 15, 21, 28, 36, 45];
   return expTable[level] || 0;
 }
 
+// 현재 레벨의 시작 경험치 계산
 function getExpBase(level) {
-  // 현재 레벨의 기준 누적 경험치
+  // 백엔드와 동일한 경험치 테이블
   const expTable = [0, 0, 0, 1, 3, 6, 10, 15, 21, 28, 36];
   return expTable[level] || 0;
 }
 
+// 현재 레벨에서 필요한 경험치 계산
 function getExpForCurrentLevel(level) {
-  // 현재 레벨에서 다음 레벨까지 필요한 경험치
+  // 백엔드와 동일한 경험치 테이블
   const expTable = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
   return expTable[level] || 1;
 }
 
-function LevelExpGauge({ exp }) {
-  const level = getLevel(exp);
+// 경험치 게이지 컴포넌트 (백엔드 friendship 필드 사용)
+function LevelExpGauge({ exp, friendship }) {
+  // 백엔드에서 전송한 friendship을 우선 사용, 없으면 exp로 계산
+  const level = friendship || getLevel(exp);
   const expBase = getExpBase(level);
   const expNext = getExpForNextLevel(level + 1);
   const expInLevel = exp - expBase;
   const expMax = expNext - expBase;
   const percent = expMax ? Math.min(100, Math.round((expInLevel / expMax) * 100)) : 100;
+
   return (
-    <>
-      <div className="flex gap-2 items-center text-cyan-200 font-bold font-cyberpunk text-xs tracking-widest">
-        <span>Lv.{level}</span>
-        <span>친밀도:{exp}</span>
-      </div>
-      <div className="w-32 h-3 bg-black/60 border border-cyan-700 rounded-full shadow-[0_0_4px_#0ff] relative overflow-hidden">
+    <div className="flex flex-col items-center gap-1">
+      <span>Lv.{level}</span>
+      <span>친밀도:{exp}</span>
+      <div className="w-32 h-2 bg-black/60 border border-cyan-700 rounded-full shadow-[0_0_4px_#0ff] relative overflow-hidden">
         <div
           className="h-full bg-cyan-400"
           style={{
@@ -67,11 +72,11 @@ function LevelExpGauge({ exp }) {
             transition: 'width 0.4s cubic-bezier(.4,2,.6,1)'
           }}
         />
-        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs text-cyan-100 font-bold drop-shadow-[0_0_2px_#0ff]">
-          {expInLevel}/{expMax}
-        </span>
       </div>
-    </>
+      <span className="text-xs text-cyan-300">
+        {expInLevel}/{expMax}
+      </span>
+    </div>
   );
 }
 
@@ -110,13 +115,19 @@ const ChatMate = () => {
   // 소켓 상태
   const socketRef = useRef(null);
   const [participants, setParticipants] = useState([]);
-  const { characters: myAIs, loading: aiLoading } = useMyCharacters('created');
+  const { characters: myAIs, loading: aiLoading, fetchMyCharacters } = useMyCharacters('created');
   const [roomInfoParticipants, setRoomInfoParticipants] = useState([]);
   const hasSentInitialGreeting = useRef(false);
   
-  // SSE 연결 상태 확인
-  const [sseConnectionStatus, setSseConnectionStatus] = useState('disconnected'); // 'connected', 'disconnected', 'connecting'
+  // 1대1 채팅 여부 상태
   const [isOneOnOneChat, setIsOneOnOneChat] = useState(false);
+  
+  // SSE 연결 상태 추가
+  const [sseConnectionStatus, setSseConnectionStatus] = useState('disconnected');
+  const sseRef = useRef(null);
+  
+  // WebSocket 연결 상태 추가
+  const [webSocketConnectionStatus, setWebSocketConnectionStatus] = useState('disconnected');
 
   // 이전 대화기록을 메시지 형식으로 변환하는 함수
   const convertChatHistoryToMessages = (chatHistory, characterData) => {
@@ -201,16 +212,9 @@ const ChatMate = () => {
           setRoomInfoParticipants(data.data.participants || []);
           setParticipants(data.data.participants || []); // 참여자 목록도 동기화
           
-          // 1대1 채팅 여부 확인
-          const isOneOnOne = data.data.character !== null && data.data.character !== undefined;
+          // 1대1 채팅 여부 확인 (백엔드에서 전송한 값 사용)
+          const isOneOnOne = data.data.isOneOnOne || false;
           setIsOneOnOneChat(isOneOnOne);
-          
-          // SSE 연결 상태 업데이트 (1대1 채팅인 경우에만)
-          if (isOneOnOne) {
-            setSseConnectionStatus('connected');
-          } else {
-            setSseConnectionStatus('disconnected');
-          }
           
           // 채팅방에 처음 들어왔을 때 AI들이 자동으로 인사 (새로운 방이고 AI가 2명 이상일 때만)
           const currentMessages = getMessages(roomId);
@@ -230,19 +234,36 @@ const ChatMate = () => {
     })();
   }, [roomId, getToken]);
 
-  // 소켓 연결 및 이벤트 등록 (단 하나만 남김)
+  // WebSocket 연결 (그룹 채팅용)
   useEffect(() => {
-    if (!roomId || !user) return;
+    if (!roomId || !user || isOneOnOneChat) return;
+    
+    console.log('🔌 그룹 채팅 WebSocket 연결 시작:', { roomId, userId: user.id, isOneOnOneChat });
+    setWebSocketConnectionStatus('connecting');
+    
     const socket = io(SOCKET_URL, { transports: ['websocket'] });
     socketRef.current = socket;
-    socket.emit('joinRoom', { roomId, userId: user.id });
     
-    // 채팅방 입장 시 unreadCount 초기화 이벤트 수신
-    socket.on('roomJoined', (data) => {
-      console.log('채팅방 입장됨, unreadCount 초기화:', data);
+    socket.emit('joinRoom', { roomId, userId: user.id });
+    console.log('📡 joinRoom 이벤트 전송:', { roomId, userId: user.id });
+    
+    socket.on('connect', () => {
+      console.log('🔌 WebSocket 연결됨');
+      setWebSocketConnectionStatus('connected');
     });
     
-    socket.on('receiveMessage', async (msg) => {
+    socket.on('disconnect', () => {
+      console.log('🔌 WebSocket 연결 해제됨');
+      setWebSocketConnectionStatus('disconnected');
+    });
+    
+    socket.on('connect_error', (error) => {
+      console.log('🔌 WebSocket 연결 오류:', error);
+      setWebSocketConnectionStatus('error');
+    });
+    
+    socket.on('receiveMessage', (msg) => {
+      console.log('📨 메시지 수신:', msg);
       addMessageToRoom(roomId, {
         id: uuidv4(),
         text: msg.message,
@@ -254,19 +275,20 @@ const ChatMate = () => {
       });
     });
     
-    // EXP 업데이트 이벤트 수신
+    // EXP 업데이트 이벤트 수신 (그룹 채팅용)
     socket.on('expUpdated', (data) => {
       console.log('🔔 expUpdated 이벤트 수신:', data);
+      
+      // 참여자 목록 업데이트
       setRoomInfoParticipants(prev => {
         console.log('📊 현재 참여자 목록:', prev);
         const updated = prev.map(participant => {
           if (String(participant.personaId) === String(data.personaId)) {
-            console.log(`✅ ${participant.name || participant.personaId} 친밀도 업데이트: ${participant.exp || 0} → ${data.newExp}`);
+            console.log(`✅ ${participant.name || participant.personaId} 친밀도 업데이트: ${participant.exp || 0} → ${data.newExp}, 레벨: ${participant.friendship || 1} → ${data.newLevel}`);
             return {
               ...participant,
               exp: data.newExp,
-              // 백엔드에서 전송한 레벨 사용 (없으면 계산)
-              friendship: data.newLevel || getLevel(data.newExp)
+              friendship: data.newLevel
             };
           }
           return participant;
@@ -274,6 +296,18 @@ const ChatMate = () => {
         console.log('📊 업데이트된 참여자 목록:', updated);
         return updated;
       });
+      
+      // 캐릭터 목록도 함께 업데이트
+      if (fetchMyCharacters) {
+        console.log('🔄 캐릭터 목록 새로고침 중...');
+        fetchMyCharacters('created').then(() => {
+          console.log('✅ 캐릭터 목록 새로고침 완료');
+        }).catch(error => {
+          console.error('❌ 캐릭터 목록 새로고침 실패:', error);
+        });
+      } else {
+        console.log('⚠️ fetchMyCharacters 함수를 찾을 수 없음');
+      }
     });
     
     socket.on('participants', (data) => {
@@ -281,11 +315,65 @@ const ChatMate = () => {
         setParticipants(data.participants);
       }
     });
+    
     return () => {
+      console.log('🔌 WebSocket 연결 해제:', { roomId, userId: user.id });
       socket.emit('leaveRoom', { roomId, userId: user.id });
       socket.disconnect();
+      setWebSocketConnectionStatus('disconnected');
     };
-  }, [roomId, user]);
+  }, [roomId, user, isOneOnOneChat, fetchMyCharacters]);
+
+  // 1대1 채팅용 SSE 연결
+  useEffect(() => {
+    if (!roomId || !user || !isOneOnOneChat) return;
+    
+    console.log('🔌 1대1 채팅 WebSocket 연결 시작 (친밀도 업데이트용):', { roomId, userId: user.id, isOneOnOneChat });
+    
+    // SSE 연결을 위한 WebSocket (친밀도 업데이트용)
+    const friendshipSocket = io(SOCKET_URL, { transports: ['websocket'] });
+    friendshipSocket.emit('joinRoom', { roomId, userId: user.id });
+    console.log('📡 1대1 채팅 joinRoom 이벤트 전송:', { roomId, userId: user.id });
+    
+    // 친밀도 업데이트 이벤트 수신 (1대1 채팅용)
+    friendshipSocket.on('expUpdated', (data) => {
+      console.log('🔔 1대1 채팅 expUpdated 이벤트 수신:', data);
+      
+      // 참여자 목록 업데이트
+      setRoomInfoParticipants(prev => {
+        const updated = prev.map(participant => {
+          if (String(participant.personaId) === String(data.personaId)) {
+            console.log(`✅ ${participant.name || participant.personaId} 친밀도 업데이트: ${participant.exp || 0} → ${data.newExp}, 레벨: ${participant.friendship || 1} → ${data.newLevel}`);
+            return {
+              ...participant,
+              exp: data.newExp,
+              friendship: data.newLevel
+            };
+          }
+          return participant;
+        });
+        return updated;
+      });
+      
+      // 캐릭터 목록도 함께 업데이트
+      if (fetchMyCharacters) {
+        console.log('🔄 캐릭터 목록 새로고침 중...');
+        fetchMyCharacters('created').then(() => {
+          console.log('✅ 캐릭터 목록 새로고침 완료');
+        }).catch(error => {
+          console.error('❌ 캐릭터 목록 새로고침 실패:', error);
+        });
+      } else {
+        console.log('⚠️ fetchMyCharacters 함수를 찾을 수 없음');
+      }
+    });
+    
+    return () => {
+      console.log('🔌 1대1 채팅 WebSocket 연결 해제:', { roomId, userId: user.id });
+      friendshipSocket.emit('leaveRoom', { roomId, userId: user.id });
+      friendshipSocket.disconnect();
+    };
+  }, [roomId, user, isOneOnOneChat, fetchMyCharacters]);
 
   // 더미 데이터 삭제: character가 바뀌어도 messages는 빈 배열 유지
 
@@ -313,35 +401,114 @@ const ChatMate = () => {
   if (error) return <div className="text-red-500 p-8">{error}</div>;
   if (!character) return null;
 
-  // 메시지 전송은 소켓 emit만 사용
+  // 메시지 전송 함수 수정
   const sendMessage = async () => {
     if (!newMessage.trim() || aiResponseLoading) return;
     const messageText = newMessage.trim();
     setNewMessage('');
     
-    // 1대1 채팅인 경우 SSE 연결 상태 확인
     if (isOneOnOneChat) {
-      setSseConnectionStatus('connecting');
-    }
-    
-    // addMessageToRoom(roomId, { ... }) // 이 부분 삭제!
-    if (socketRef.current) {
-      // 사용자 이름 결정 (username > firstName > name > userId 순서)
-      const userName = user?.username || user?.firstName || user?.fullName || user?.id;
-      socketRef.current.emit('sendMessage', {
-        roomId,
-        message: messageText,
-        senderType: 'user',
-        senderId: user.id,
-        userName: userName, // 사용자 이름 추가
-        timestamp: new Date().toISOString()
-      });
-      
-      // 1대1 채팅인 경우 SSE 연결 상태를 connected로 업데이트
-      if (isOneOnOneChat) {
-        setTimeout(() => {
-          setSseConnectionStatus('connected');
-        }, 1000);
+      // 1대1 채팅: SSE 사용
+      try {
+        const token = await getToken();
+        
+        // 사용자 메시지를 먼저 추가
+        const userMessage = {
+          id: uuidv4(),
+          text: messageText,
+          sender: 'me',
+          time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
+          characterId: character?.id,
+        };
+        addMessageToRoom(roomId, userMessage);
+        
+        // AI 로딩 상태 시작
+        setAiLoading(roomId, true);
+        setSseConnectionStatus('connecting');
+        
+        // SSE 스트리밍 요청 (fetch 사용)
+        const userName = user?.username || user?.firstName || user?.fullName || user?.id;
+        const response = await fetch(`${API_BASE_URL}/chat/rooms/${roomId}/sse`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: messageText,
+            sender: user.id,
+            userName: userName,
+            timestamp: new Date().toISOString()
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        setSseConnectionStatus('connected');
+        
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let aiResponse = '';
+        
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            
+            if (done) break;
+            
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
+            
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6); // 'data: ' 제거
+                
+                if (data === '[DONE]') {
+                  // AI 응답 완료
+                  if (aiResponse.trim()) {
+                    // 1대1 채팅에서는 첫 번째 AI 참여자의 정보를 사용
+                    const aiParticipant = roomInfoParticipants.find(p => p.personaId);
+                    addAiResponseToRoom(roomId, aiResponse.trim(), character?.id, aiParticipant?.name);
+                  }
+                  setAiLoading(roomId, false);
+                  setSseConnectionStatus('disconnected');
+                  return;
+                } else {
+                  try {
+                    const parsedData = JSON.parse(data);
+                    if (parsedData.type === 'text_chunk') {
+                      aiResponse += parsedData.content;
+                    }
+                  } catch (e) {
+                    // JSON 파싱 실패 시 무시
+                  }
+                }
+              }
+            }
+          }
+        } finally {
+          reader.releaseLock();
+        }
+        
+      } catch (error) {
+        console.error('1대1 채팅 메시지 전송 실패:', error);
+        setAiLoading(roomId, false);
+        setSseConnectionStatus('error');
+      }
+    } else {
+      // 그룹 채팅: WebSocket 사용
+      if (socketRef.current) {
+        const userName = user?.username || user?.firstName || user?.fullName || user?.id;
+        socketRef.current.emit('sendMessage', {
+          roomId,
+          message: messageText,
+          senderType: 'user',
+          senderId: user.id,
+          userName: userName,
+          timestamp: new Date().toISOString()
+        });
       }
     }
   };
@@ -364,33 +531,107 @@ const ChatMate = () => {
     });
     const data = await res.json();
     if (data.success && data.imageUrl) {
+      const imageMessage = `[이미지] ${data.imageUrl}`;
+      
+      // 사용자 이미지 메시지 추가
       addMessageToRoom(roomId, {
         id: uuidv4(),
-        text: '',
+        text: imageMessage,
         imageUrl: data.imageUrl,
         sender: 'me',
         time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
-        characterId: character.id,
+        characterId: character?.id,
       });
-      // AI에게도 이미지 메시지 전송
-      setAiLoading(roomId, true);
-      try {
-        // 프롬프트에 이미지 URL을 명시적으로 포함
-        const aiResponse = await fetch(`${API_BASE_URL}/chat/ai-response?roomId=${roomId}&message=[이미지] ${data.imageUrl}`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${await getToken()}`,
-            'Content-Type': 'application/json'
+      
+      if (isOneOnOneChat) {
+        // 1대1 채팅: SSE 사용
+        try {
+          const token = await getToken();
+          setAiLoading(roomId, true);
+          setSseConnectionStatus('connecting');
+          
+          // SSE 스트리밍 요청 (fetch 사용)
+          const userName = user?.username || user?.firstName || user?.fullName || user?.id;
+          const response = await fetch(`${API_BASE_URL}/chat/rooms/${roomId}/sse`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              message: imageMessage,
+              sender: user.id,
+              userName: userName,
+              timestamp: new Date().toISOString()
+            })
+          });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
           }
-        })
-          .then(res => res.json())
-          .then(data => data.content);
-        addAiResponseToRoom(roomId, aiResponse);
-      } catch (e) {
-        console.error('AI 이미지 답변 생성 에러:', e);
-        addAiResponseToRoom(roomId, '이미지에 대한 답변 생성에 실패했습니다.');
-      } finally {
-        setAiLoading(roomId, false);
+          
+          setSseConnectionStatus('connected');
+          
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let aiResponse = '';
+          
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              
+              if (done) break;
+              
+              const chunk = decoder.decode(value);
+              const lines = chunk.split('\n');
+              
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  const data = line.slice(6); // 'data: ' 제거
+                  
+                  if (data === '[DONE]') {
+                    // AI 응답 완료
+                    if (aiResponse.trim()) {
+                      addAiResponseToRoom(roomId, aiResponse.trim(), character?.id);
+                    }
+                    setAiLoading(roomId, false);
+                    setSseConnectionStatus('disconnected');
+                    return;
+                  } else {
+                    try {
+                      const parsedData = JSON.parse(data);
+                      if (parsedData.type === 'text_chunk') {
+                        aiResponse += parsedData.content;
+                      }
+                    } catch (e) {
+                      // JSON 파싱 실패 시 무시
+                    }
+                  }
+                }
+              }
+            }
+          } finally {
+            reader.releaseLock();
+          }
+          
+        } catch (error) {
+          console.error('1대1 채팅 이미지 메시지 전송 실패:', error);
+          setAiLoading(roomId, false);
+          setSseConnectionStatus('error');
+        }
+      } else {
+        // 그룹 채팅: WebSocket 사용
+        if (socketRef.current) {
+          const userName = user?.username || user?.firstName || user?.fullName || user?.id;
+          socketRef.current.emit('sendMessage', {
+            roomId,
+            message: imageMessage,
+            senderType: 'user',
+            senderId: user.id,
+            senderName: userName,
+            timestamp: new Date().toISOString()
+          });
+        }
       }
     } else {
       alert('이미지 업로드 실패');
@@ -430,48 +671,59 @@ const ChatMate = () => {
                   : '채팅방'
               }
             </span>
-            {/* SSE 연결 상태 표시 (1대1 채팅인 경우에만) */}
-            {isOneOnOneChat && (
-              <div className="flex items-center gap-2">
-                <div className={`w-3 h-3 rounded-full ${
-                  sseConnectionStatus === 'connected' 
-                    ? 'bg-green-400 shadow-[0_0_4px_#0f0]' 
-                    : sseConnectionStatus === 'connecting'
-                    ? 'bg-yellow-400 shadow-[0_0_4px_#ff0]'
-                    : 'bg-red-400 shadow-[0_0_4px_#f00]'
-                }`} />
-                <span className={`text-xs font-bold ${
-                  sseConnectionStatus === 'connected' 
-                    ? 'text-green-400' 
-                    : sseConnectionStatus === 'connecting'
-                    ? 'text-yellow-400'
-                    : 'text-red-400'
-                }`}>
-                  {sseConnectionStatus === 'connected' 
-                    ? 'SSE 연결됨' 
-                    : sseConnectionStatus === 'connecting'
-                    ? 'SSE 연결 중'
-                    : 'SSE 연결 안됨'
-                  }
-                </span>
-              </div>
-            )}
-            {/* 단체 채팅 상태 표시 */}
-            {!isOneOnOneChat && roomInfoParticipants.length > 1 && (
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-blue-400 shadow-[0_0_4px_#00f]" />
-                <span className="text-xs font-bold text-blue-400">
-                  WebSocket 연결됨
-                </span>
-              </div>
-            )}
+            {/* 연결 상태 표시 */}
+            <div className="flex items-center gap-2">
+              {isOneOnOneChat ? (
+                // SSE 연결 상태
+                <>
+                  <div className={`w-3 h-3 rounded-full ${
+                    sseConnectionStatus === 'connected' ? 'bg-green-400 shadow-[0_0_4px_#0f0]' :
+                    sseConnectionStatus === 'connecting' ? 'bg-yellow-400 shadow-[0_0_4px_#ff0]' :
+                    sseConnectionStatus === 'error' ? 'bg-red-400 shadow-[0_0_4px_#f00]' :
+                    'bg-gray-400'
+                  }`} />
+                  <span className={`text-xs font-bold ${
+                    sseConnectionStatus === 'connected' ? 'text-green-400' :
+                    sseConnectionStatus === 'connecting' ? 'text-yellow-400' :
+                    sseConnectionStatus === 'error' ? 'text-red-400' :
+                    'text-gray-400'
+                  }`}>
+                    {sseConnectionStatus === 'connected' ? 'SSE 연결됨' :
+                     sseConnectionStatus === 'connecting' ? 'SSE 연결 중' :
+                     sseConnectionStatus === 'error' ? 'SSE 연결 오류' :
+                     'SSE 연결 안됨'}
+                  </span>
+                </>
+              ) : (
+                // WebSocket 연결 상태
+                <>
+                  <div className={`w-3 h-3 rounded-full ${
+                    webSocketConnectionStatus === 'connected' ? 'bg-green-400 shadow-[0_0_4px_#0f0]' :
+                    webSocketConnectionStatus === 'connecting' ? 'bg-yellow-400 shadow-[0_0_4px_#ff0]' :
+                    webSocketConnectionStatus === 'error' ? 'bg-red-400 shadow-[0_0_4px_#f00]' :
+                    'bg-gray-400'
+                  }`} />
+                  <span className={`text-xs font-bold ${
+                    webSocketConnectionStatus === 'connected' ? 'text-green-400' :
+                    webSocketConnectionStatus === 'connecting' ? 'text-yellow-400' :
+                    webSocketConnectionStatus === 'error' ? 'text-red-400' :
+                    'text-gray-400'
+                  }`}>
+                    {webSocketConnectionStatus === 'connected' ? 'WebSocket 연결됨' :
+                     webSocketConnectionStatus === 'connecting' ? 'WebSocket 연결 중' :
+                     webSocketConnectionStatus === 'error' ? 'WebSocket 연결 오류' :
+                     'WebSocket 연결 안됨'}
+                  </span>
+                </>
+              )}
+            </div>
             {/* 레벨과 친밀도 박스 - 첫 번째 AI 기준 */}
             {roomInfoParticipants[0] && (
               <div className="flex gap-2">
                 {/* LEVEL 박스 */}
                 <div className="bg-white/20 border-2 border-yellow-400 rounded-lg px-3 py-1 text-center">
                   <div className="text-yellow-200 font-bold text-sm font-cyberpunk">
-                    Lv.{getLevel(roomInfoParticipants[0].exp || 0)}
+                    Lv.{roomInfoParticipants[0].friendship || 1}
                   </div>
                 </div>
                 
@@ -492,26 +744,11 @@ const ChatMate = () => {
               <div
                 className="h-full bg-cyan-400"
                 style={{
-                  width: `${(() => {
-                    const level = getLevel(roomInfoParticipants[0].exp || 0);
-                    const expBase = getExpBase(level);
-                    const expForCurrentLevel = getExpForCurrentLevel(level);
-                    const expInLevel = (roomInfoParticipants[0].exp || 0) - expBase;
-                    return expForCurrentLevel ? Math.min(100, Math.round((expInLevel / expForCurrentLevel) * 100)) : 100;
-                  })()}%`,
-                  boxShadow: '0 0 8px #0ff, 0 0 16px #0ff',
+                  width: `${Math.min(100, Math.round(((roomInfoParticipants[0].exp || 0) / 45) * 100))}%`,
+                  boxShadow: '0 0 4px #0ff, 0 0 8px #0ff',
                   transition: 'width 0.4s cubic-bezier(.4,2,.6,1)'
                 }}
               />
-              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs text-cyan-100 font-bold drop-shadow-[0_0_2px_#0ff]">
-                {(() => {
-                  const level = getLevel(roomInfoParticipants[0].exp || 0);
-                  const expBase = getExpBase(level);
-                  const expForCurrentLevel = getExpForCurrentLevel(level);
-                  const expInLevel = (roomInfoParticipants[0].exp || 0) - expBase;
-                  return `${expInLevel}/${expForCurrentLevel}`;
-                })()}
-              </span>
             </div>
           </div>
         )}
@@ -555,7 +792,7 @@ const ChatMate = () => {
                 ...participant,
                 ...myAIs.find(ai => String(ai.id) === String(participant.personaId))
               };
-              // 새로운 친밀도 시스템: friendship이 레벨을 나타냄
+              // 백엔드에서 전송한 friendship을 우선 사용
               const level = ai.friendship || 1;
               const expBase = getExpBase(level);
               const expForCurrentLevel = getExpForCurrentLevel(level);

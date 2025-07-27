@@ -3,20 +3,23 @@ import React from 'react';
 // 캐릭터 정보 표시 컴포넌트
 const CharacterInfo = ({ character, isMine, nameSize = "", showLevel = false }) => {
   return (
-    <>
-      <h3 className={`font-bold truncate text-cyan-200 drop-shadow-[0_0_4px_#0ff] ${nameSize}`} style={{fontFamily:'Share Tech Mono, monospace'}}>
-        {character.name}
-      </h3>
-      {isMine && showLevel ? (
-        <p className="text-xs text-yellow-300 truncate font-bold" style={{fontFamily:'Share Tech Mono, monospace', textShadow:'0 0 4px #ffff00, 0 0 8px #ffff00'}}>
-          Lv.{character.level || 1}
-        </p>
-      ) : (
-        <p className="text-xs text-fuchsia-300 truncate drop-shadow-[0_0_2px_#f0f]" style={{fontFamily:'Share Tech Mono, monospace'}}>
-          {character.introduction || character.description}
+    <div className="flex flex-col">
+      <div className="flex items-center gap-2">
+        {showLevel ? (
+          <span className="text-xs bg-fuchsia-500 text-fuchsia-900 px-2 py-1 rounded font-bold">
+            Lv.{character.friendship || 1}
+          </span>
+        ) : null}
+        <span className={`font-bold text-white ${nameSize}`}>
+          {character.name}
+        </span>
+      </div>
+      {character.introduction && (
+        <p className="text-gray-300 text-sm mt-1 line-clamp-2">
+          {character.introduction}
         </p>
       )}
-    </>
+    </div>
   );
 };
 

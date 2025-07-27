@@ -126,38 +126,51 @@ export function useMyCharacters(type = 'created') {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { getToken } = useAuth();
+  const [refreshTimestamp, setRefreshTimestamp] = useState(Date.now());
 
-  const fetchMyCharacters = useCallback(async (characterType = type) => {
-    // mychats 탭에서는 캐릭터 API 호출하지 않음
+  const fetchCharacters = async (characterType = type) => {
+    // 'mychats' 타입인 경우 API 호출하지 않고 빈 배열 반환
     if (characterType === 'mychats') {
       setCharacters([]);
       setLoading(false);
       setError(null);
-      return;
+      return [];
     }
 
     try {
       setLoading(true);
       setError(null);
+      
+      // 캐시 강제 새로고침을 위한 타임스탬프 추가
+      const timestamp = Date.now();
       const data = await authenticatedApiCall(
-        `${API_BASE_URL}/my/characters?type=${characterType}`,
+        `${API_BASE_URL}/my/characters?type=${characterType}&_t=${timestamp}`,
         getToken,
         {}
       );
-      // data가 배열인지 확인하고 적절히 설정
-      const charactersData = Array.isArray(data) ? data : (data.data || []);
-      setCharacters(charactersData);
+      
+      console.log('✅ useMyCharacters - API response:', data);
+      setCharacters(data.data);
+      return data.data;
     } catch (err) {
+      console.error('❌ useMyCharacters - API error:', err);
       const errorMessage = handleApiError(err, '캐릭터 목록을 불러오는데 실패했습니다.');
       setError(errorMessage);
+      throw err;
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchMyCharacters = useCallback(async (characterType = type) => {
+    // 강제 새로고침을 위한 타임스탬프 업데이트
+    setRefreshTimestamp(Date.now());
+    return await fetchCharacters(characterType);
   }, [getToken, type]);
 
   useEffect(() => {
-    fetchMyCharacters();
-  }, [fetchMyCharacters]);
+    fetchCharacters();
+  }, [type, refreshTimestamp]);
 
   return { characters, loading, error, fetchMyCharacters, setCharacters };
 }
