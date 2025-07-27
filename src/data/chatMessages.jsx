@@ -288,36 +288,10 @@ export function useEnterOrCreateChatRoom() {
 
       const token = await getToken();
 
-      // 1단계: 먼저 기존 채팅방 조회 시도 (GET)
-      console.log('📖 1단계: 기존 채팅방 조회 시도...');
-      try {
-        const getResponse = await fetch(`${API_BASE_URL}/chat/rooms?characterId=${characterId}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (getResponse.ok) {
-          const getData = await getResponse.json();
-          console.log('✅ 기존 채팅방 발견! 히스토리와 함께 입장:', getData);
-
-          return {
-            roomId: getData.data.roomId,
-            character: getData.data.character,
-            chatHistory: getData.data.chatHistory || [],
-            isNewRoom: false
-          };
-        }
-      } catch (getError) {
-        console.log('📖 기존 채팅방 없음, 새로 생성 진행...');
-      }
-
-      // 2단계: 기존 채팅방이 없으면 새로 생성 (POST)
-      console.log('🆕 2단계: 새 채팅방 생성...');
+      // 1대1 채팅방 생성/입장 (POST)
+      console.log('🆕 1대1 채팅방 생성/입장 시도...');
       const requestData = {
-        characterId: characterId
+        personaId: characterId
       };
 
       const postResponse = await fetch(`${API_BASE_URL}/chat/rooms`, {
@@ -330,19 +304,26 @@ export function useEnterOrCreateChatRoom() {
       });
 
       if (!postResponse.ok) {
-        const errorText = await postResponse.text();
-        console.error('💥 새 채팅방 생성 실패:', errorText);
-        throw new Error(errorText || '채팅방 생성에 실패했습니다.');
+        let errorMessage = '채팅방 생성에 실패했습니다.';
+        try {
+          const errorData = await postResponse.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          const errorText = await postResponse.text();
+          errorMessage = errorText || errorMessage;
+        }
+        console.error('💥 1대1 채팅방 생성 실패:', errorMessage);
+        throw new Error(errorMessage);
       }
 
       const postData = await postResponse.json();
-      console.log('✅ 새 채팅방 생성 완료:', postData);
+      console.log('✅ 1대1 채팅방 생성 완료:', postData);
 
       return {
-        roomId: postData.data.id,
+        roomId: postData.data.roomId,
         character: postData.data.character,
         chatHistory: postData.data.chatHistory || [],
-        isNewRoom: true
+        isNewRoom: postData.data.isNewRoom || true
       };
     } catch (err) {
       console.error('💥 채팅방 입장/생성 에러:', err);

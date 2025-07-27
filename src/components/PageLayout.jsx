@@ -29,8 +29,8 @@ const PageLayout = ({
     <NeonBackground 
       className={className}
       style={{
-        overflow: 'hidden',
-        boxShadow: '0 0 80px 10px #0ff, 0 0 160px 40px #f0f',
+      overflow: 'hidden',
+      boxShadow: '0 0 80px 10px #0ff, 0 0 160px 40px #f0f',
       }}
     >
       <main className="relative z-10 max-w-screen-xl mx-auto px-6 py-8">

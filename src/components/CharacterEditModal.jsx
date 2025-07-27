@@ -219,6 +219,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
 
       // API를 통해 캐릭터 수정
       const updatedCharacter = await updateCharacter(characterId, {
+        name: formData.name,
         introduction: formData.description,
         personality: formData.personality,
         tone: formData.tone,

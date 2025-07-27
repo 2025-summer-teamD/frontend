@@ -3,6 +3,7 @@ import { useLocation, useParams } from 'react-router-dom';
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { useChatMessages } from '../contexts/ChatMessagesContext';
 import { FiPaperclip } from 'react-icons/fi';
+import { IoGameController } from 'react-icons/io5';
 import { io } from 'socket.io-client';
 import { useMyCharacters } from '../data/characters';
 import { v4 as uuidv4 } from 'uuid';
@@ -74,9 +75,9 @@ function LevelExpGauge({ exp, friendship }) {
         />
       </div>
       <span className="text-xs text-cyan-300">
-        {expInLevel}/{expMax}
-      </span>
-    </div>
+          {expInLevel}/{expMax}
+        </span>
+      </div>
   );
 }
 
@@ -136,8 +137,8 @@ const ChatMate = () => {
     }
 
     return chatHistory.map(item => ({
-      id: item.id,
-      text: item.text,
+        id: item.id,
+        text: item.text,
       sender: item.senderType === 'user' && item.senderId === user.id ? 'me' : (item.senderType === 'ai' ? 'ai' : 'other'),
       aiId: item.aiId ?? (item.senderType === 'ai' ? item.senderId : undefined),
       aiName: item.aiName ?? undefined,
@@ -163,6 +164,7 @@ const ChatMate = () => {
   const messagesEndRef = useRef(null);
   const isInitialMount = useRef(true);
   const [showAttachModal, setShowAttachModal] = useState(false);
+  const [showGameModal, setShowGameModal] = useState(false);
   const fileInputRef = useRef(null);
 
   // 🆕 사이드바 채팅방 전환 감지: state 변경 시 상태 업데이트
@@ -197,7 +199,7 @@ const ChatMate = () => {
   useEffect(() => {
     if (!roomId || !getToken) return;
     
-    (async () => {
+      (async () => {
       try {
         const token = await getToken();
         const response = await fetch(`${API_BASE_URL}/chat/room-info?roomId=${roomId}`, {
@@ -207,8 +209,8 @@ const ChatMate = () => {
           }
         });
         const data = await response.json();
-        if (data.success && data.data && data.data.character) {
-          setCharacter(data.data.character);
+            if (data.success && data.data && data.data.character) {
+              setCharacter(data.data.character);
           setRoomInfoParticipants(data.data.participants || []);
           setParticipants(data.data.participants || []); // 참여자 목록도 동기화
           
@@ -222,16 +224,16 @@ const ChatMate = () => {
           
           // 백엔드에서 받은 채팅 기록이 없고, 현재 메시지도 없고, AI 참여자가 2명 이상이고, 아직 인사를 보내지 않았을 때만
 
-        } else {
-          setError('존재하지 않거나 삭제된 채팅방입니다.');
-        }
+            } else {
+              setError('존재하지 않거나 삭제된 채팅방입니다.');
+            }
       } catch (error) {
         console.error('❌ room-info API 호출 실패:', error);
-        setError('존재하지 않거나 삭제된 채팅방입니다.');
+            setError('존재하지 않거나 삭제된 채팅방입니다.');
       } finally {
         setLoading(false);
       }
-    })();
+      })();
   }, [roomId, getToken]);
 
   // WebSocket 연결 (그룹 채팅용)
@@ -324,6 +326,14 @@ const ChatMate = () => {
     };
   }, [roomId, user, isOneOnOneChat, fetchMyCharacters]);
 
+  // 캐릭터 데이터 디버깅
+  useEffect(() => {
+    if (isOneOnOneChat && roomInfoParticipants.length > 0) {
+      console.log('🔍 1대1 채팅 캐릭터 데이터:', roomInfoParticipants[0]);
+      console.log('🔍 Available fields:', Object.keys(roomInfoParticipants[0]));
+    }
+  }, [isOneOnOneChat, roomInfoParticipants]);
+
   // 1대1 채팅용 SSE 연결
   useEffect(() => {
     if (!roomId || !user || !isOneOnOneChat) return;
@@ -411,12 +421,12 @@ const ChatMate = () => {
       // 1대1 채팅: SSE 사용
       try {
         const token = await getToken();
-        
+
         // 사용자 메시지를 먼저 추가
         const userMessage = {
           id: uuidv4(),
-          text: messageText,
-          sender: 'me',
+      text: messageText,
+      sender: 'me',
           time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
           characterId: character?.id,
         };
@@ -425,7 +435,7 @@ const ChatMate = () => {
         // AI 로딩 상태 시작
         setAiLoading(roomId, true);
         setSseConnectionStatus('connecting');
-        
+
         // SSE 스트리밍 요청 (fetch 사용)
         const userName = user?.username || user?.firstName || user?.fullName || user?.id;
         const response = await fetch(`${API_BASE_URL}/chat/rooms/${roomId}/sse`, {
@@ -480,7 +490,7 @@ const ChatMate = () => {
                     const parsedData = JSON.parse(data);
                     if (parsedData.type === 'text_chunk') {
                       aiResponse += parsedData.content;
-                    }
+            }
                   } catch (e) {
                     // JSON 파싱 실패 시 무시
                   }
@@ -491,8 +501,8 @@ const ChatMate = () => {
         } finally {
           reader.releaseLock();
         }
-        
-      } catch (error) {
+
+    } catch (error) {
         console.error('1대1 채팅 메시지 전송 실패:', error);
         setAiLoading(roomId, false);
         setSseConnectionStatus('error');
@@ -542,12 +552,12 @@ const ChatMate = () => {
         time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
         characterId: character?.id,
       });
-      
+
       if (isOneOnOneChat) {
         // 1대1 채팅: SSE 사용
         try {
           const token = await getToken();
-          setAiLoading(roomId, true);
+      setAiLoading(roomId, true);
           setSseConnectionStatus('connecting');
           
           // SSE 스트리밍 요청 (fetch 사용)
@@ -575,8 +585,8 @@ const ChatMate = () => {
           const reader = response.body.getReader();
           const decoder = new TextDecoder();
           let aiResponse = '';
-          
-          try {
+
+      try {
             while (true) {
               const { done, value } = await reader.read();
               
@@ -593,7 +603,7 @@ const ChatMate = () => {
                     // AI 응답 완료
                     if (aiResponse.trim()) {
                       addAiResponseToRoom(roomId, aiResponse.trim(), character?.id);
-                    }
+          }
                     setAiLoading(roomId, false);
                     setSseConnectionStatus('disconnected');
                     return;
@@ -603,20 +613,20 @@ const ChatMate = () => {
                       if (parsedData.type === 'text_chunk') {
                         aiResponse += parsedData.content;
                       }
-                    } catch (e) {
+      } catch (e) {
                       // JSON 파싱 실패 시 무시
                     }
                   }
                 }
               }
             }
-          } finally {
+      } finally {
             reader.releaseLock();
           }
           
         } catch (error) {
           console.error('1대1 채팅 이미지 메시지 전송 실패:', error);
-          setAiLoading(roomId, false);
+        setAiLoading(roomId, false);
           setSseConnectionStatus('error');
         }
       } else {
@@ -653,17 +663,17 @@ const ChatMate = () => {
                   className="w-9 h-9 rounded-full border-2 border-cyan-300 shadow-[0_0_4px_#0ff] relative"
                   style={{ zIndex: roomInfoParticipants.length - index }}
                 >
-                  <img
+            <img
                     src={ai?.imageUrl || '/assets/icon-character.png'}
                     alt={ai?.name || `AI#${participant.personaId}`}
-                    className="w-full h-full object-cover rounded-full"
-                  />
+              className="w-full h-full object-cover rounded-full"
+            />
                 </div>
               );
             })}
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-cyan-100 text-lg font-bold drop-shadow-[0_0_2px_#0ff] tracking-widest font-cyberpunk">
+          <span className="text-cyan-100 text-lg font-bold drop-shadow-[0_0_2px_#0ff] tracking-widest font-cyberpunk">
               {roomInfoParticipants.length > 1 
                 ? `${roomInfoParticipants.length}명의 AI와 대화` 
                 : roomInfoParticipants[0] 
@@ -713,7 +723,7 @@ const ChatMate = () => {
                      webSocketConnectionStatus === 'connecting' ? 'WebSocket 연결 중' :
                      webSocketConnectionStatus === 'error' ? 'WebSocket 연결 오류' :
                      'WebSocket 연결 안됨'}
-                  </span>
+          </span>
                 </>
               )}
             </div>
@@ -759,80 +769,110 @@ const ChatMate = () => {
         className="flex-1 px-4 overflow-y-auto no-scrollbar sm:px-6 md:px-8 lg:px-12 pb-28 font-cyberpunk relative z-10"
       >
         {/* 프로필 */}
+        {isOneOnOneChat ? (
+          /* 1대1 채팅: 간단한 캐릭터 설명만 표시 */
         <div className="flex flex-col items-center my-6 text-center font-cyberpunk">
-          {/* 참여자 목록 제목 */}
-          <div className="mb-6">
-            <span className="text-lg text-cyan-300 font-bold drop-shadow-[0_0_2px_#0ff] tracking-widest">참여자 목록</span>
+            {roomInfoParticipants.length > 0 && (
+              <div className="max-w-md mx-auto">
+                <div className="flex flex-col items-center mb-4">
+                  <div className="w-24 h-24 rounded-full border-2 border-cyan-300 shadow-[0_0_6px_#0ff] mb-3">
+            <img
+                      src={roomInfoParticipants[0].imageUrl}
+                      alt={roomInfoParticipants[0].name}
+              className="w-full h-full object-cover rounded-full"
+            />
           </div>
-          {/* 여러 캐릭터 카드 + 내 프로필 */}
-          <div className="flex flex-wrap justify-center gap-6 w-full max-w-4xl">
-            {/* 내 프로필 */}
-            <div className="flex flex-col items-center">
-              <div className="relative">
-                <div className="w-20 h-20 rounded-full border-2 border-cyan-300 shadow-[0_0_6px_#0ff] mb-2">
-                  <img
-                    src={user?.imageUrl || '/assets/icon-character.png'}
-                    alt="나"
-                    className="w-full h-full object-cover rounded-full"
-                  />
+                  <h2 className="text-xl text-cyan-100 font-bold drop-shadow-[0_0_2px_#0ff] tracking-widest mb-2">
+                    {roomInfoParticipants[0].name}
+                  </h2>
                 </div>
-                <div className="absolute -top-2 -right-2 w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center border border-cyan-300 shadow-[0_0_4px_#0ff]">
-                  <span className="text-sm font-bold text-cyan-900">나</span>
-                </div>
-              </div>
-              <span className="text-sm font-bold text-cyan-100 mb-1 drop-shadow-[0_0_2px_#0ff] tracking-widest font-cyberpunk">
-                {user?.username || user?.firstName || '사용자'}
-              </span>
+                <p className="text-cyan-300 text-sm leading-relaxed tracking-wide text-center max-w-sm mx-auto">
+                  {roomInfoParticipants[0].introduction || 
+                   roomInfoParticipants[0].description || 
+                   roomInfoParticipants[0].prompt?.personality || 
+                   roomInfoParticipants[0].prompt || 
+                   '안녕하세요! 함께 대화해요!'}
+          </p>
+        </div>
+            )}
+          </div>
+        ) : (
+          /* 단체 채팅: 기존 참여자 목록 표시 */
+          <div className="flex flex-col items-center my-6 text-center font-cyberpunk">
+            {/* 참여자 목록 제목 */}
+            <div className="mb-6">
+              <span className="text-lg text-cyan-300 font-bold drop-shadow-[0_0_2px_#0ff] tracking-widest">참여자 목록</span>
             </div>
-            
-            {/* AI 참여자들 */}
-            {roomInfoParticipants.map((participant, index) => {
-              // 프롬포트 정보와 exp를 participant에서 직접 사용
-              const ai = {
-                ...participant,
-                ...myAIs.find(ai => String(ai.id) === String(participant.personaId))
-              };
-              // 백엔드에서 전송한 friendship을 우선 사용
-              const level = ai.friendship || 1;
-              const expBase = getExpBase(level);
-              const expForCurrentLevel = getExpForCurrentLevel(level);
-              const expInLevel = (ai.exp || 0) - expBase;
-              const percent = expForCurrentLevel ? Math.min(100, Math.round((expInLevel / expForCurrentLevel) * 100)) : 100;
-              return (
-                <div key={ai.personaId} className="flex flex-col items-center">
-                  <div className="relative">
-                    <div className="w-20 h-20 rounded-full border-2 border-cyan-300 shadow-[0_0_6px_#0ff] mb-2">
-                      <img
-                        src={ai.imageUrl}
-                        alt={ai.name}
-                        className="w-full h-full object-cover rounded-full"
-                      />
-                    </div>
-                    <div className="absolute -top-2 -right-2 w-8 h-8 bg-fuchsia-500 rounded-full flex items-center justify-center border border-fuchsia-300 shadow-[0_0_4px_#f0f]">
-                      <span className="text-sm font-bold text-fuchsia-900">Lv.{level}</span>
-                    </div>
-                  </div>
-                  <span className="text-sm font-bold text-cyan-100 mb-2 drop-shadow-[0_0_2px_#0ff] tracking-widest font-cyberpunk">
-                    {ai.name}
-                  </span>
-                  <div className="w-20 h-2 bg-black/60 border border-cyan-700 rounded-full shadow-[0_0_4px_#0ff] relative overflow-hidden">
-                    <div
-                      className="h-full bg-cyan-400"
-                      style={{
-                        width: `${percent}%`,
-                        boxShadow: '0 0 4px #0ff, 0 0 8px #0ff',
-                        transition: 'width 0.4s cubic-bezier(.4,2,.6,1)'
-                      }}
+            {/* 여러 캐릭터 카드 + 내 프로필 */}
+            <div className="flex flex-wrap justify-center gap-6 w-full max-w-4xl">
+              {/* 내 프로필 */}
+              <div className="flex flex-col items-center">
+                <div className="relative">
+                  <div className="w-20 h-20 rounded-full border-2 border-cyan-300 shadow-[0_0_6px_#0ff] mb-2">
+                    <img
+                      src={user?.imageUrl || '/assets/icon-character.png'}
+                      alt="나"
+                      className="w-full h-full object-cover rounded-full"
                     />
                   </div>
-                  <span className="text-xs text-cyan-300 mt-1 font-bold">
-                    {ai.exp || 0}
-                  </span>
+                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center border border-cyan-300 shadow-[0_0_4px_#0ff]">
+                    <span className="text-sm font-bold text-cyan-900">나</span>
+                  </div>
                 </div>
-              );
-            })}
+                <span className="text-sm font-bold text-cyan-100 mb-1 drop-shadow-[0_0_2px_#0ff] tracking-widest font-cyberpunk">
+                  {user?.username || user?.firstName || '사용자'}
+                </span>
+              </div>
+              
+              {/* AI 참여자들 */}
+              {roomInfoParticipants.map((participant, index) => {
+                // 프롬포트 정보와 exp를 participant에서 직접 사용
+                const ai = {
+                  ...participant,
+                  ...myAIs.find(ai => String(ai.id) === String(participant.personaId))
+                };
+                // 백엔드에서 전송한 friendship을 우선 사용
+                const level = ai.friendship || 1;
+                const expBase = getExpBase(level);
+                const expForCurrentLevel = getExpForCurrentLevel(level);
+                const expInLevel = (ai.exp || 0) - expBase;
+                const percent = expForCurrentLevel ? Math.min(100, Math.round((expInLevel / expForCurrentLevel) * 100)) : 100;
+                return (
+                  <div key={ai.personaId} className="flex flex-col items-center">
+                    <div className="relative">
+                      <div className="w-20 h-20 rounded-full border-2 border-cyan-300 shadow-[0_0_6px_#0ff] mb-2">
+                        <img
+                          src={ai.imageUrl}
+                          alt={ai.name}
+                          className="w-full h-full object-cover rounded-full"
+                        />
+                      </div>
+                      <div className="absolute -top-2 -right-2 w-8 h-8 bg-fuchsia-500 rounded-full flex items-center justify-center border border-fuchsia-300 shadow-[0_0_4px_#f0f]">
+                        <span className="text-sm font-bold text-fuchsia-900">Lv.{level}</span>
+                      </div>
+                    </div>
+                    <span className="text-sm font-bold text-cyan-100 mb-2 drop-shadow-[0_0_2px_#0ff] tracking-widest font-cyberpunk">
+                      {ai.name}
+                    </span>
+                    <div className="w-20 h-2 bg-black/60 border border-cyan-700 rounded-full shadow-[0_0_4px_#0ff] relative overflow-hidden">
+                      <div
+                        className="h-full bg-cyan-400"
+                        style={{
+                          width: `${percent}%`,
+                          boxShadow: '0 0 4px #0ff, 0 0 8px #0ff',
+                          transition: 'width 0.4s cubic-bezier(.4,2,.6,1)'
+                        }}
+                      />
+                    </div>
+                    <span className="text-xs text-cyan-300 mt-1 font-bold">
+                      {ai.exp || 0}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
         {/* 메시지들 */}
         <div className="space-y-4 pb-4 max-w-3xl mx-auto font-cyberpunk">
           {messages.map((msg, idx) => {
@@ -885,7 +925,7 @@ const ChatMate = () => {
                     ? 'bg-cyan-100/80 border-2 border-cyan-200 text-[#1a1a2e] shadow-[0_0_4px_#0ff]'
                     : isAI
                       ? `${aiColor.bg} border-2 ${aiColor.border} ${aiColor.text} ${aiColor.shadow}`
-                      : 'bg-fuchsia-100/80 border-2 border-fuchsia-200 text-[#1a1a2e] shadow-[0_0_4px_#f0f]'
+                    : 'bg-fuchsia-100/80 border-2 border-fuchsia-200 text-[#1a1a2e] shadow-[0_0_4px_#f0f]'
                     }`}
                   style={isAI ? { boxShadow: aiColor.shadow.replace('shadow-', '').replace('[', '').replace(']', '') } : {}}
                 >
@@ -917,14 +957,81 @@ const ChatMate = () => {
           <div className="relative">
             <button
               className="text-cyan-400 hover:text-fuchsia-400 p-2 text-xl drop-shadow-[0_0_2px_#0ff] font-cyberpunk"
+              aria-label="게임 메뉴"
+              onClick={() => {
+                setShowAttachModal(false); // 다른 모달 닫기
+                setShowGameModal(v => !v);
+              }}
+            >
+              <IoGameController />
+            </button>
+            {/* 게임 모달: 게임버튼 위에 작게 */}
+            {showGameModal && (
+              <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-50 bg-blue-900/50 border-2 border-cyan-200 rounded-xl shadow-[0_0_4px_#0ff] p-4 flex flex-col items-center w-64 animate-fadeIn font-cyberpunk">
+                <div className="text-cyan-300 font-bold mb-3 text-lg drop-shadow-[0_0_2px_#0ff] tracking-widest">게임 선택</div>
+                <div className="space-y-2 w-full">
+                  <button
+                    className="w-full bg-gradient-to-r from-cyan-200 to-fuchsia-200 hover:from-cyan-100 hover:to-fuchsia-100 text-[#1a1a2e] px-4 py-2 rounded-full font-cyberpunk font-bold transition-all shadow-[0_0_2px_#0ff]"
+                    onClick={() => {
+                      // 끝말잇기 게임 시작 메시지 전송
+                      setNewMessage('[GAME:끝말잇기] 끝말잇기 게임을 시작하고 싶어요!');
+                      setShowGameModal(false);
+                      // 자동으로 메시지 전송
+                      setTimeout(() => {
+                        sendMessage();
+                      }, 100);
+                    }}
+                  >
+                    끝말잇기
+                  </button>
+                  <button
+                    className="w-full bg-gradient-to-r from-green-200 to-blue-200 hover:from-green-100 hover:to-blue-100 text-[#1a1a2e] px-4 py-2 rounded-full font-cyberpunk font-bold transition-all shadow-[0_0_2px_#0ff]"
+                    onClick={() => {
+                      // 스무고개 게임 시작 메시지 전송
+                      setNewMessage('[GAME:스무고개] 스무고개 게임을 시작하고 싶어요!');
+                      setShowGameModal(false);
+                      // 자동으로 메시지 전송
+                      setTimeout(() => {
+                        sendMessage();
+                      }, 100);
+                    }}
+                  >
+                    스무고개
+                  </button>
+                  <button
+                    className="w-full bg-gradient-to-r from-purple-200 to-pink-200 hover:from-purple-100 hover:to-pink-100 text-[#1a1a2e] px-4 py-2 rounded-full font-cyberpunk font-bold transition-all shadow-[0_0_2px_#0ff]"
+                    onClick={() => {
+                      // TODO: 밸런스 게임 시작
+                      console.log('밸런스 게임 시작');
+                      setShowGameModal(false);
+                    }}
+                  >
+                    밸런스 게임
+                  </button>
+                </div>
+                <button
+                  className="mt-3 text-cyan-400 hover:text-fuchsia-400 font-cyberpunk font-bold text-base transition-colors"
+                  onClick={() => setShowGameModal(false)}
+                >
+                  닫기
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="relative">
+            <button
+              className="text-cyan-400 hover:text-fuchsia-400 p-2 text-xl drop-shadow-[0_0_2px_#0ff] font-cyberpunk"
               aria-label="파일 첨부"
-              onClick={() => setShowAttachModal(v => !v)}
+              onClick={() => {
+                setShowGameModal(false); // 다른 모달 닫기
+                setShowAttachModal(v => !v);
+              }}
             >
               <FiPaperclip />
             </button>
             {/* 첨부 모달: 클립버튼 위에 작게 */}
             {showAttachModal && (
-              <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-50 bg-black/80 glass border-2 border-cyan-200 rounded-xl shadow-[0_0_4px_#0ff] p-4 flex flex-col items-center w-56 backdrop-blur-sm animate-fadeIn font-cyberpunk">
+              <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-50 bg-blue-900/50 border-2 border-cyan-200 rounded-xl shadow-[0_0_4px_#0ff] p-4 flex flex-col items-center w-56 animate-fadeIn font-cyberpunk">
                 <button
                   className="bg-gradient-to-r from-cyan-200 to-fuchsia-200 hover:from-cyan-100 hover:to-fuchsia-100 text-[#1a1a2e] px-4 py-2 rounded-full font-cyberpunk font-bold transition-all shadow-[0_0_2px_#0ff]"
                   onClick={() => fileInputRef.current.click()}
@@ -959,7 +1066,7 @@ const ChatMate = () => {
               onChange={e => setNewMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="메시지를 입력하세요..."
-              className="w-full bg-transparent border-none outline-none text-black placeholder-cyan-400 font-cyberpunk tracking-widest"
+              className="w-full bg-transparent border-none outline-none text-white placeholder-cyan-400 font-cyberpunk tracking-widest"
               disabled={aiResponseLoading}
             />
           </div>
