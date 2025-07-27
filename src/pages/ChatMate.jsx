@@ -6,27 +6,45 @@ import { FiPaperclip } from 'react-icons/fi';
 import { io } from 'socket.io-client';
 import { useMyCharacters } from '../data/characters';
 import { v4 as uuidv4 } from 'uuid';
+import NeonBackground from '../components/NeonBackground';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // 레벨/게이지 계산 및 네온 게이지 컴포넌트
 function getLevel(exp) {
-  // 친밀도 1,2,3,4,5 쌓일 때마다 레벨업
-  if (exp >= 20) return 5;
-  if (exp >= 15) return 4;
-  if (exp >= 10) return 3;
-  if (exp >= 5) return 2;
-  if (exp >= 1) return 1;
-  return 1; // exp가 0이거나 음수일 때도 레벨 1을 반환 (friendship 기본값과 일치)
+  // 10레벨 시스템: 각 레벨업에 필요한 경험치가 1씩 증가
+  // 1레벨: 0exp, 2레벨: 1exp, 3레벨: 3exp, 4레벨: 6exp, 5레벨: 10exp
+  // 6레벨: 15exp, 7레벨: 21exp, 8레벨: 28exp, 9레벨: 36exp, 10레벨: 45exp
+  if (exp >= 45) return 10;
+  if (exp >= 36) return 9;
+  if (exp >= 28) return 8;
+  if (exp >= 21) return 7;
+  if (exp >= 15) return 6;
+  if (exp >= 10) return 5;
+  if (exp >= 6) return 4;
+  if (exp >= 3) return 3;
+  if (exp >= 1) return 2;
+  return 1; // exp가 0일 때 레벨 1
 }
+
 function getExpForNextLevel(level) {
-  // 각 레벨별 필요 친밀도: 1레벨(1), 2레벨(5), 3레벨(10), 4레벨(15), 5레벨(20)
-  return [0, 1, 5, 10, 15, 20][level] || 0;
+  // 각 레벨별 필요 누적 경험치
+  const expTable = [0, 0, 1, 3, 6, 10, 15, 21, 28, 36, 45];
+  return expTable[level] || 0;
 }
+
 function getExpBase(level) {
-  // 누적 기준 exp
-  return [0, 0, 1, 5, 10, 15][level] || 0;
+  // 현재 레벨의 기준 누적 경험치
+  const expTable = [0, 0, 0, 1, 3, 6, 10, 15, 21, 28, 36];
+  return expTable[level] || 0;
 }
+
+function getExpForCurrentLevel(level) {
+  // 현재 레벨에서 다음 레벨까지 필요한 경험치
+  const expTable = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  return expTable[level] || 1;
+}
+
 function LevelExpGauge({ exp }) {
   const level = getLevel(exp);
   const expBase = getExpBase(level);
@@ -95,6 +113,10 @@ const ChatMate = () => {
   const { characters: myAIs, loading: aiLoading } = useMyCharacters('created');
   const [roomInfoParticipants, setRoomInfoParticipants] = useState([]);
   const hasSentInitialGreeting = useRef(false);
+  
+  // SSE 연결 상태 확인
+  const [sseConnectionStatus, setSseConnectionStatus] = useState('disconnected'); // 'connected', 'disconnected', 'connecting'
+  const [isOneOnOneChat, setIsOneOnOneChat] = useState(false);
 
   // 이전 대화기록을 메시지 형식으로 변환하는 함수
   const convertChatHistoryToMessages = (chatHistory, characterData) => {
@@ -179,60 +201,23 @@ const ChatMate = () => {
           setRoomInfoParticipants(data.data.participants || []);
           setParticipants(data.data.participants || []); // 참여자 목록도 동기화
           
+          // 1대1 채팅 여부 확인
+          const isOneOnOne = data.data.character !== null && data.data.character !== undefined;
+          setIsOneOnOneChat(isOneOnOne);
+          
+          // SSE 연결 상태 업데이트 (1대1 채팅인 경우에만)
+          if (isOneOnOne) {
+            setSseConnectionStatus('connected');
+          } else {
+            setSseConnectionStatus('disconnected');
+          }
+          
           // 채팅방에 처음 들어왔을 때 AI들이 자동으로 인사 (새로운 방이고 AI가 2명 이상일 때만)
           const currentMessages = getMessages(roomId);
           const chatHistory = data.data.chatHistory || [];
           
           // 백엔드에서 받은 채팅 기록이 없고, 현재 메시지도 없고, AI 참여자가 2명 이상이고, 아직 인사를 보내지 않았을 때만
-          const hasGreetedKey = `room_${roomId}_greeted`;
-          const hasGreeted = localStorage.getItem(hasGreetedKey);
-          
-          if (currentMessages.length === 0 && 
-              chatHistory.length === 0 && 
-              data.data.participants && 
-              data.data.participants.length > 1 && 
-              !hasSentInitialGreeting.current &&
-              !hasGreeted) {
-            hasSentInitialGreeting.current = true;
-            localStorage.setItem(hasGreetedKey, 'true');
-            
-            // AI 자동 인사 요청
-            setTimeout(async () => {
-              try {
-                const token = await getToken();
-                const response = await fetch(`${API_BASE_URL}/chat/rooms/${roomId}/greetings`, {
-                  method: 'POST',
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                  }
-                });
-                
-                const greetingData = await response.json();
-                
-                if (greetingData.success && greetingData.data.greetings) {
-                  // 각 AI의 인사 메시지를 소켓으로 전송
-                  greetingData.data.greetings.forEach((greeting, index) => {
-                    setTimeout(() => {
-                      if (socketRef.current) {
-                        socketRef.current.emit('sendMessage', {
-                          roomId,
-                          message: greeting.message,
-                          senderType: 'ai',
-                          senderId: greeting.personaId,
-                          aiName: greeting.personaName,
-                          aiId: greeting.personaId,
-                          timestamp: greeting.timestamp
-                        });
-                      }
-                    }, index * 2000); // 각 AI가 2초 간격으로 인사
-                  });
-                }
-              } catch (error) {
-                console.error('❌ AI 자동 인사 요청 실패:', error);
-              }
-            }, 2000); // 2초 후 AI 인사 시작
-          }
+
         } else {
           setError('존재하지 않거나 삭제된 채팅방입니다.');
         }
@@ -271,9 +256,12 @@ const ChatMate = () => {
     
     // EXP 업데이트 이벤트 수신
     socket.on('expUpdated', (data) => {
+      console.log('🔔 expUpdated 이벤트 수신:', data);
       setRoomInfoParticipants(prev => {
-        return prev.map(participant => {
+        console.log('📊 현재 참여자 목록:', prev);
+        const updated = prev.map(participant => {
           if (String(participant.personaId) === String(data.personaId)) {
+            console.log(`✅ ${participant.name || participant.personaId} 친밀도 업데이트: ${participant.exp || 0} → ${data.newExp}`);
             return {
               ...participant,
               exp: data.newExp,
@@ -283,6 +271,8 @@ const ChatMate = () => {
           }
           return participant;
         });
+        console.log('📊 업데이트된 참여자 목록:', updated);
+        return updated;
       });
     });
     
@@ -318,8 +308,6 @@ const ChatMate = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-
-
   // 조건부 렌더링은 모든 Hook 선언 이후에 위치해야 함
   if (loading) return <div className="text-white p-8">캐릭터 정보를 불러오는 중...</div>;
   if (error) return <div className="text-red-500 p-8">{error}</div>;
@@ -330,6 +318,12 @@ const ChatMate = () => {
     if (!newMessage.trim() || aiResponseLoading) return;
     const messageText = newMessage.trim();
     setNewMessage('');
+    
+    // 1대1 채팅인 경우 SSE 연결 상태 확인
+    if (isOneOnOneChat) {
+      setSseConnectionStatus('connecting');
+    }
+    
     // addMessageToRoom(roomId, { ... }) // 이 부분 삭제!
     if (socketRef.current) {
       // 사용자 이름 결정 (username > firstName > name > userId 순서)
@@ -342,6 +336,13 @@ const ChatMate = () => {
         userName: userName, // 사용자 이름 추가
         timestamp: new Date().toISOString()
       });
+      
+      // 1대1 채팅인 경우 SSE 연결 상태를 connected로 업데이트
+      if (isOneOnOneChat) {
+        setTimeout(() => {
+          setSseConnectionStatus('connected');
+        }, 1000);
+      }
     }
   };
 
@@ -397,7 +398,7 @@ const ChatMate = () => {
   };
 
   return (
-    <div className="flex flex-col h-full font-cyberpunk" style={{fontFamily:undefined, background:'radial-gradient(circle at 30% 10%, #23234d 0%, #2e3a5e 60%, #181a2b 100%)', minHeight:'100vh'}}>
+    <NeonBackground className="flex flex-col h-full font-cyberpunk">
       {/* 헤더: sticky */}
       <header className="sticky top-0 py-4 px-6 z-10">
         <div className="flex items-center gap-3">
@@ -420,7 +421,7 @@ const ChatMate = () => {
               );
             })}
           </div>
-          <div className="flex flex-col">
+          <div className="flex items-center gap-3">
             <span className="text-cyan-100 text-lg font-bold drop-shadow-[0_0_2px_#0ff] tracking-widest font-cyberpunk">
               {roomInfoParticipants.length > 1 
                 ? `${roomInfoParticipants.length}명의 AI와 대화` 
@@ -429,19 +430,96 @@ const ChatMate = () => {
                   : '채팅방'
               }
             </span>
-            <span className="text-cyan-300 text-xs drop-shadow-[0_0_1px_#0ff]">
-              {roomInfoParticipants.map((p, index) => {
-                const ai = myAIs.find(ai => String(ai.id) === String(p.personaId));
-                return ai?.name || `AI#${p.personaId}`;
-              }).join(', ')}
-            </span>
+            {/* SSE 연결 상태 표시 (1대1 채팅인 경우에만) */}
+            {isOneOnOneChat && (
+              <div className="flex items-center gap-2">
+                <div className={`w-3 h-3 rounded-full ${
+                  sseConnectionStatus === 'connected' 
+                    ? 'bg-green-400 shadow-[0_0_4px_#0f0]' 
+                    : sseConnectionStatus === 'connecting'
+                    ? 'bg-yellow-400 shadow-[0_0_4px_#ff0]'
+                    : 'bg-red-400 shadow-[0_0_4px_#f00]'
+                }`} />
+                <span className={`text-xs font-bold ${
+                  sseConnectionStatus === 'connected' 
+                    ? 'text-green-400' 
+                    : sseConnectionStatus === 'connecting'
+                    ? 'text-yellow-400'
+                    : 'text-red-400'
+                }`}>
+                  {sseConnectionStatus === 'connected' 
+                    ? 'SSE 연결됨' 
+                    : sseConnectionStatus === 'connecting'
+                    ? 'SSE 연결 중'
+                    : 'SSE 연결 안됨'
+                  }
+                </span>
+              </div>
+            )}
+            {/* 단체 채팅 상태 표시 */}
+            {!isOneOnOneChat && roomInfoParticipants.length > 1 && (
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-blue-400 shadow-[0_0_4px_#00f]" />
+                <span className="text-xs font-bold text-blue-400">
+                  WebSocket 연결됨
+                </span>
+              </div>
+            )}
+            {/* 레벨과 친밀도 박스 - 첫 번째 AI 기준 */}
+            {roomInfoParticipants[0] && (
+              <div className="flex gap-2">
+                {/* LEVEL 박스 */}
+                <div className="bg-white/20 border-2 border-yellow-400 rounded-lg px-3 py-1 text-center">
+                  <div className="text-yellow-200 font-bold text-sm font-cyberpunk">
+                    Lv.{getLevel(roomInfoParticipants[0].exp || 0)}
+                  </div>
+                </div>
+                
+                {/* INTIMACY 박스 */}
+                <div className="bg-white/20 border-2 border-fuchsia-400 rounded-lg px-3 py-1 text-center">
+                  <div className="text-fuchsia-200 font-bold text-sm font-cyberpunk">
+                    친밀도 {roomInfoParticipants[0].exp || 0}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
+        {/* 경험치 게이지만 아래에 - 첫 번째 AI 기준 */}
+        {roomInfoParticipants[0] && (
+          <div className="mt-2 flex justify-start ml-12">
+            <div className="w-48 h-5 bg-black/60 border-2 border-cyan-700 rounded-full shadow-[0_0_8px_#0ff] relative overflow-hidden">
+              <div
+                className="h-full bg-cyan-400"
+                style={{
+                  width: `${(() => {
+                    const level = getLevel(roomInfoParticipants[0].exp || 0);
+                    const expBase = getExpBase(level);
+                    const expForCurrentLevel = getExpForCurrentLevel(level);
+                    const expInLevel = (roomInfoParticipants[0].exp || 0) - expBase;
+                    return expForCurrentLevel ? Math.min(100, Math.round((expInLevel / expForCurrentLevel) * 100)) : 100;
+                  })()}%`,
+                  boxShadow: '0 0 8px #0ff, 0 0 16px #0ff',
+                  transition: 'width 0.4s cubic-bezier(.4,2,.6,1)'
+                }}
+              />
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs text-cyan-100 font-bold drop-shadow-[0_0_2px_#0ff]">
+                {(() => {
+                  const level = getLevel(roomInfoParticipants[0].exp || 0);
+                  const expBase = getExpBase(level);
+                  const expForCurrentLevel = getExpForCurrentLevel(level);
+                  const expInLevel = (roomInfoParticipants[0].exp || 0) - expBase;
+                  return `${expInLevel}/${expForCurrentLevel}`;
+                })()}
+              </span>
+            </div>
+          </div>
+        )}
       </header>
       {/* 스크롤 영역: 프로필 + 메시지 */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 px-4 overflow-y-auto no-scrollbar sm:px-6 md:px-8 lg:px-12 pb-28 font-cyberpunk"
+        className="flex-1 px-4 overflow-y-auto no-scrollbar sm:px-6 md:px-8 lg:px-12 pb-28 font-cyberpunk relative z-10"
       >
         {/* 프로필 */}
         <div className="flex flex-col items-center my-6 text-center font-cyberpunk">
@@ -477,13 +555,12 @@ const ChatMate = () => {
                 ...participant,
                 ...myAIs.find(ai => String(ai.id) === String(participant.personaId))
               };
-              // 실시간 업데이트된 friendship(레벨) 사용, 없으면 계산
-              const level = ai.friendship || getLevel(ai.exp || 0);
+              // 새로운 친밀도 시스템: friendship이 레벨을 나타냄
+              const level = ai.friendship || 1;
               const expBase = getExpBase(level);
-              const expNext = getExpForNextLevel(level + 1);
+              const expForCurrentLevel = getExpForCurrentLevel(level);
               const expInLevel = (ai.exp || 0) - expBase;
-              const expMax = expNext - expBase;
-              const percent = expMax ? Math.min(100, Math.round((expInLevel / expMax) * 100)) : 100;
+              const percent = expForCurrentLevel ? Math.min(100, Math.round((expInLevel / expForCurrentLevel) * 100)) : 100;
               return (
                 <div key={ai.personaId} className="flex flex-col items-center">
                   <div className="relative">
@@ -511,9 +588,9 @@ const ChatMate = () => {
                       }}
                     />
                   </div>
-                                     <span className="text-xs text-cyan-300 mt-1 font-bold">
-                     {ai.exp || 0}
-                   </span>
+                  <span className="text-xs text-cyan-300 mt-1 font-bold">
+                    {ai.exp || 0}
+                  </span>
                 </div>
               );
             })}
@@ -521,10 +598,10 @@ const ChatMate = () => {
         </div>
         {/* 메시지들 */}
         <div className="space-y-4 pb-4 max-w-3xl mx-auto font-cyberpunk">
-                  {messages.map((msg, idx) => {
-          const isAI = msg.sender === 'ai';
-          // 메시지 렌더링 시에도 aiObj를 myAIs가 아니라 roomInfoParticipants에서 찾아 exp, personality 등 활용
-          const aiObj = isAI ? roomInfoParticipants.find(ai => String(ai.personaId) === String(msg.aiId)) : null;
+          {messages.map((msg, idx) => {
+            const isAI = msg.sender === 'ai';
+            // 메시지 렌더링 시에도 aiObj를 myAIs가 아니라 roomInfoParticipants에서 찾아 exp, personality 등 활용
+            const aiObj = isAI ? roomInfoParticipants.find(ai => String(ai.personaId) === String(msg.aiId)) : null;
             const profileImg = msg.sender === 'me'
               ? user?.imageUrl || '/assets/icon-character.png'
               : isAI
@@ -560,7 +637,7 @@ const ChatMate = () => {
                       {displayName}
                       {isAI && aiObj && (
                         <span className="ml-2 text-xs text-cyan-300 font-bold">
-                          Lv.{roomInfoParticipants.find(p => String(p.personaId) === String(msg.aiId))?.friendship || getLevel(roomInfoParticipants.find(p => String(p.personaId) === String(msg.aiId))?.exp || 0)}
+                          Lv.{aiObj.friendship || 1}
                         </span>
                       )}
                     </span>
@@ -598,7 +675,7 @@ const ChatMate = () => {
         </div>
       </div>
       {/* 입력창: sticky bottom */}
-      <footer className="fixed right-0 left-0 bottom-0 px-4 py-4 border-t-2 border-cyan-200 bg-black/30 glass backdrop-blur-xl shadow-[0_0_8px_#0ff,0_0_16px_#f0f] font-cyberpunk">
+      <footer className="fixed right-0 left-0 bottom-0 px-4 py-4 border-t-2 border-cyan-200 bg-black/30 glass backdrop-blur-xl shadow-[0_0_8px_#0ff,0_0_16px_#f0f] font-cyberpunk z-20">
         <div className="flex items-center space-x-3 max-w-4xl mx-auto relative font-cyberpunk">
           <div className="relative">
             <button
@@ -638,25 +715,27 @@ const ChatMate = () => {
               </div>
             )}
           </div>
-          <div className="flex-1 flex items-center space-x-2 bg-cyan-100/60 glass border-2 border-cyan-200 text-[#1a1a2e] placeholder-cyan-400 rounded-full px-4 py-2.5 font-cyberpunk focus:outline-none focus:bg-cyan-100/80 focus:border-fuchsia-200 focus:text-fuchsia-700 transition-all shadow-[0_0_4px_#0ff]">
+          <div className="flex-1 flex items-center space-x-2 bg-cyan-100/60 glass border-2 border-cyan-200 rounded-full px-4 py-2.5 font-cyberpunk focus-within:bg-cyan-100/80 focus-within:border-fuchsia-200 transition-all shadow-[0_0_4px_#0ff]">
             <input
               type="text"
               value={newMessage}
               onChange={e => setNewMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="메시지를 입력하세요..."
-              className="w-full bg-transparent border-none outline-none text-white placeholder-cyan-400 font-cyberpunk tracking-widest"
+              className="w-full bg-transparent border-none outline-none text-black placeholder-cyan-400 font-cyberpunk tracking-widest"
+              disabled={aiResponseLoading} // AI 로딩 중에는 입력 비활성화
             />
           </div>
           <button
             onClick={sendMessage}
             className="bg-cyan-200 hover:bg-fuchsia-200 text-[#1a1a2e] w-10 h-10 flex items-center justify-center rounded-full transition-colors text-xl shadow-[0_0_3px_#0ff] font-cyberpunk"
+            disabled={aiResponseLoading || !newMessage.trim()} // AI 로딩 중이거나 메시지가 비어있으면 비활성화
           >
             ➤
           </button>
         </div>
       </footer>
-    </div>
+    </NeonBackground>
   );
 };
 

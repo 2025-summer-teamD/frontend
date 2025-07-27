@@ -43,12 +43,19 @@ export default function CharacterList() {
     localStorage.setItem('likedIds', JSON.stringify(likedIds));
   }, [likedIds]);
 
-  const [tab, setTab] = useState('created'); // 'created' 또는 'liked'
+  const [tab, setTab] = useState('created'); // 'created', 'liked', 'mychats'
   const [searchQuery, setSearchQuery] = useState(''); // 검색어 상태
   const [editingCharacter, setEditingCharacter] = useState(null);
   const [editingModalCharacter, setEditingModalCharacter] = useState(null); // 수정 모달용 상태
   const [showCreateChatModal, setShowCreateChatModal] = useState(false); // 채팅방 생성 모달
   const [selectedCharacterIds, setSelectedCharacterIds] = useState([]); // 선택된 캐릭터 ID들
+  const [chatType, setChatType] = useState(''); // 'oneOnOne' 또는 'group'
+  const [showChatTypeModal, setShowChatTypeModal] = useState(false); // 채팅 타입 선택 모달
+
+  // 찜한 캐릭터 목록을 가져오는 상태
+  const [likedCharacters, setLikedCharacters] = useState([]);
+  const [likedLoading, setLikedLoading] = useState(false);
+  const [likedError, setLikedError] = useState(null);
 
   // useMyCharacters 훅은 이제 'tab' 파라미터를 받지 않고 모든 'created' 캐릭터를 가져옵니다.
   const { characters, loading, error, fetchMyCharacters, setCharacters } = useMyCharacters(tab);
@@ -64,27 +71,83 @@ export default function CharacterList() {
   // 사이드바 채팅방 목록 갱신용
   const { refetch: refetchMyChatRooms } = useChatRooms();
 
+  // 찜한 캐릭터 목록을 가져오는 함수
+  const fetchLikedCharacters = async () => {
+    setLikedLoading(true);
+    setLikedError(null);
+    try {
+      const token = await getToken();
+      const url = `${import.meta.env.VITE_API_BASE_URL}/my/characters?type=liked`;
+      
+      console.log('🔍 fetchLikedCharacters - API call:', { url });
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      console.log('🔍 fetchLikedCharacters - Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ fetchLikedCharacters - Response not ok:', errorText);
+        throw new Error('찜한 캐릭터 목록을 가져오는데 실패했습니다.');
+      }
+      
+      const data = await response.json();
+      console.log('✅ fetchLikedCharacters - Response data:', data);
+      
+      setLikedCharacters(data.data || []);
+    } catch (error) {
+      console.error('❌ fetchLikedCharacters - Error:', error);
+      setLikedError(error.message);
+    } finally {
+      setLikedLoading(false);
+    }
+  };
+
   // 탭 변경 시 데이터 새로고침
   useEffect(() => {
     if (tab === 'mychats') return; // 내 채팅방 탭에서는 캐릭터 API 호출 X
-    fetchMyCharacters(tab);
+    if (tab === 'liked') {
+      fetchLikedCharacters();
+    } else {
+      fetchMyCharacters(tab);
+    }
   }, [tab, fetchMyCharacters]);
 
   // 검색 필터링
-  const filteredCharacters = Array.isArray(characters) ? characters.filter(character => {
-    const keyword = searchQuery.toLowerCase();
-    return (
-      character.name.toLowerCase().includes(keyword) ||
-      (character.description && character.description.toLowerCase().includes(keyword)) ||
-      (character.introduction && character.introduction.toLowerCase().includes(keyword))
-    );
-  }) : [];
+  const getFilteredCharacters = () => {
+    let charactersToFilter = [];
+    
+    if (tab === 'liked') {
+      charactersToFilter = likedCharacters;
+    } else {
+      charactersToFilter = Array.isArray(characters) ? characters : [];
+    }
+    
+    return charactersToFilter.filter(character => {
+      const keyword = searchQuery.toLowerCase();
+      return (
+        character.name.toLowerCase().includes(keyword) ||
+        (character.description && character.description.toLowerCase().includes(keyword)) ||
+        (character.introduction && character.introduction.toLowerCase().includes(keyword))
+      );
+    });
+  };
+
+  const filteredCharacters = getFilteredCharacters();
 
   // 정렬 제거 - 기본 순서로 표시
   const sortedCharacters = filteredCharacters;
 
   // 현재 탭에 따라 보여줄 캐릭터 목록 결정
   const showCharacters = sortedCharacters;
+
+  // 로딩 상태 결정
+  const isLoading = tab === 'liked' ? likedLoading : loading;
+  const currentError = tab === 'liked' ? likedError : error;
 
   // const handleSortChange = (newSort) => {
   //   setActiveSort(newSort);
@@ -93,15 +156,26 @@ export default function CharacterList() {
   const handleLikeToggle = async (id, newLiked) => {
     try {
       const token = await getToken();
-      const result = await toggleLike(id, token);
+      // Use character.id consistently (backend returns id field)
+      const characterId = id;
+      
+      if (!characterId) {
+        throw new Error('캐릭터 ID를 찾을 수 없습니다.');
+      }
+      
+      const result = await toggleLike(characterId, token);
 
       // API 호출 성공 시 로컬 상태 업데이트
       setLikedIds(prev =>
-        newLiked ? [...prev, id] : prev.filter(x => x !== id)
+        newLiked ? [...prev, characterId] : prev.filter(x => x !== characterId)
       );
 
       // 목록 새로고침하여 좋아요 수 업데이트
-      await fetchMyCharacters();
+      if (tab === 'liked') {
+        await fetchLikedCharacters();
+      } else {
+        await fetchMyCharacters();
+      }
     } catch (error) {
       console.error('좋아요 토글 실패:', error);
       alert('좋아요 처리 중 오류가 발생했습니다.');
@@ -117,7 +191,14 @@ export default function CharacterList() {
     if (window.confirm(`정말로 "${character.name}" 캐릭터를 삭제하시겠습니까?`)) {
       try {
         const token = await getToken();
-        await deleteCharacter(character.id, token);
+        // Use character.id consistently (backend returns id field)
+        const characterId = character?.id;
+        
+        if (!characterId) {
+          throw new Error('캐릭터 ID를 찾을 수 없습니다.');
+        }
+        
+        await deleteCharacter(characterId, token);
         // 삭제 후 목록 새로고침
         window.location.reload();
       } catch (error) {
@@ -135,9 +216,16 @@ export default function CharacterList() {
   const handleRemoveFromLiked = async (character) => {
     try {
       const token = await getToken();
-      await toggleLike(character.id, token);
+      // Use character.id consistently (backend returns id field)
+      const characterId = character?.id;
+      
+      if (!characterId) {
+        throw new Error('캐릭터 ID를 찾을 수 없습니다.');
+      }
+      
+      await toggleLike(characterId, token);
       // 찜 목록에서 제거 후 목록 새로고침
-      window.location.reload();
+      await fetchLikedCharacters();
     } catch (error) {
       console.error('Error removing from liked:', error);
       alert('찜 목록에서 제거 중 오류가 발생했습니다.');
@@ -147,14 +235,31 @@ export default function CharacterList() {
   const handleCreateChatRoom = async (selectedCharacterIds) => {
     try {
       console.log('handleCreateChatRoom - selectedCharacterIds:', selectedCharacterIds);
+      console.log('handleCreateChatRoom - chatType:', chatType);
       
       const token = await getToken();
-      const requestBody = {
-        participantIds: selectedCharacterIds
-      };
+      
+      let endpoint;
+      let requestBody;
+      
+      if (chatType === 'oneOnOne') {
+        // 1대1 채팅의 경우 personaId 하나만 전송
+        endpoint = '/chat/rooms';
+        requestBody = {
+          personaId: selectedCharacterIds[0]
+        };
+      } else {
+        // 단체 채팅의 경우 participantIds 배열 사용
+        endpoint = '/chat/rooms';
+        requestBody = {
+          participantIds: selectedCharacterIds
+        };
+      }
+      
+      console.log('handleCreateChatRoom - endpoint:', endpoint);
       console.log('handleCreateChatRoom - requestBody:', requestBody);
       
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/chat/rooms`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -180,12 +285,20 @@ export default function CharacterList() {
     }
   };
 
-  const handleCharacterSelect = (characterId) => {
+  const handleCharacterSelect = async (characterId) => {
+    // Use character.id consistently (backend returns id field)
+    const id = characterId;
+    
+    if (!id) {
+      console.error('Character ID is missing');
+      return;
+    }
+    
     setSelectedCharacterIds(prev => {
-      if (prev.includes(characterId)) {
-        return prev.filter(id => id !== characterId);
+      if (prev.includes(id)) {
+        return prev.filter(x => x !== id);
       } else {
-        return [...prev, characterId];
+        return [...prev, id];
       }
     });
   };
@@ -195,6 +308,12 @@ export default function CharacterList() {
       alert('최소 1명의 캐릭터를 선택해주세요.');
       return;
     }
+    
+    if (chatType === 'group' && selectedCharacterIds.length < 2) {
+      alert('단체 채팅은 최소 2명의 캐릭터를 선택해야 합니다.');
+      return;
+    }
+    
     handleCreateChatRoom(selectedCharacterIds);
     setShowCreateChatModal(false);
     setSelectedCharacterIds([]);
@@ -208,20 +327,34 @@ export default function CharacterList() {
         alert('캐릭터가 성공적으로 삭제되었습니다.');
 
         // 목록 새로고침
-        await fetchMyCharacters();
+        if (tab === 'liked') {
+          await fetchLikedCharacters();
+        } else {
+          await fetchMyCharacters();
+        }
       } else {
         // 수정된 경우
         console.log('Character updated successfully:', updatedCharacter);
         alert('캐릭터 정보가 성공적으로 업데이트되었습니다!');
 
         // 로컬 상태에서 해당 캐릭터 업데이트
-        setCharacters(prevCharacters =>
-          prevCharacters.map(char =>
-            (char.id) === (updatedCharacter.id)
-              ? updatedCharacter
-              : char
-          )
-        );
+        if (tab === 'liked') {
+          setLikedCharacters(prevCharacters =>
+            prevCharacters.map(char =>
+              (char.id) === (updatedCharacter.id)
+                ? updatedCharacter
+                : char
+            )
+          );
+        } else {
+          setCharacters(prevCharacters =>
+            prevCharacters.map(char =>
+              (char.id) === (updatedCharacter.id)
+                ? updatedCharacter
+                : char
+            )
+          );
+        }
 
         // editingCharacter 상태를 업데이트된 데이터로 설정
         setEditingCharacter(updatedCharacter);
@@ -232,12 +365,12 @@ export default function CharacterList() {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return <LoadingSpinner />;
   }
 
-  if (error) {
-    return <ErrorDisplay error={error} />;
+  if (currentError) {
+    return <ErrorDisplay error={currentError} />;
   }
 
   return (
@@ -252,7 +385,7 @@ export default function CharacterList() {
         setSearchQuery={setSearchQuery}
       />
 
-      {/* 버튼 3개: 왼쪽 2개, 오른쪽 1개 */}
+      {/* 버튼 3개: 왼쪽 2개, 오른쪽 2개 */}
       <div className="flex items-center justify-between mb-4 max-w-2xl mx-auto">
         <div className="flex gap-2">
           <TabButton
@@ -271,16 +404,20 @@ export default function CharacterList() {
             내 채팅방
           </TabButton>
         </div>
-        <button
-          onClick={() => setShowCreateChatModal(true)}
-          className="bg-gradient-to-r from-cyan-700 to-fuchsia-700 hover:from-cyan-600 hover:to-fuchsia-600 text-cyan-100 font-bold py-3 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2 shadow-[0_0_8px_#0ff,0_0_16px_#f0f] animate-neonPulse"
-          style={{textShadow:'0 0 4px #0ff, 0 0 8px #f0f', boxShadow:'0 0 8px #0ff, 0 0 16px #f0f'}}
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
-          새 채팅방 만들기
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              setShowChatTypeModal(true);
+            }}
+            className="bg-gradient-to-r from-cyan-700 to-fuchsia-700 hover:from-cyan-600 hover:to-fuchsia-600 text-cyan-100 font-bold py-3 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2 shadow-[0_0_8px_#0ff,0_0_16px_#f0f] animate-neonPulse"
+            style={{textShadow:'0 0 4px #0ff, 0 0 8px #f0f', boxShadow:'0 0 8px #0ff, 0 0 16px #f0f'}}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            새 채팅방 만들기
+          </button>
+        </div>
       </div>
 
       {tab === 'mychats' ? (
@@ -306,12 +443,74 @@ export default function CharacterList() {
         )
       )}
 
+      {/* 채팅 타입 선택 모달 */}
+      {showChatTypeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#181a2b] border-2 border-cyan-400 rounded-2xl shadow-[0_0_16px_#0ff] p-8 w-full max-w-md animate-fadeIn">
+            <h2 className="text-cyan-200 text-lg font-bold mb-6 drop-shadow-[0_0_2px_#0ff] text-center">
+              채팅 타입 선택
+            </h2>
+            <div className="space-y-4">
+              <button
+                onClick={() => {
+                  setChatType('oneOnOne');
+                  setSelectedCharacterIds([]);
+                  setShowChatTypeModal(false);
+                  setShowCreateChatModal(true);
+                }}
+                className="w-full bg-gradient-to-r from-blue-700 to-cyan-700 hover:from-blue-600 hover:to-cyan-600 text-cyan-100 font-bold py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-3 shadow-[0_0_8px_#0ff,0_0_16px_#0ff] animate-neonPulse"
+                style={{textShadow:'0 0 4px #0ff, 0 0 8px #f0f', boxShadow:'0 0 8px #0ff, 0 0 16px #f0f'}}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                1대1 채팅하기
+              </button>
+              <button
+                onClick={() => {
+                  setChatType('group');
+                  setSelectedCharacterIds([]);
+                  setShowChatTypeModal(false);
+                  setShowCreateChatModal(true);
+                }}
+                className="w-full bg-gradient-to-r from-fuchsia-700 to-pink-700 hover:from-fuchsia-600 hover:to-pink-600 text-fuchsia-100 font-bold py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-3 shadow-[0_0_8px_#f0f,0_0_16px_#f0f] animate-neonPulse"
+                style={{textShadow:'0 0 4px #f0f, 0 0 8px #f0f', boxShadow:'0 0 8px #f0f, 0 0 16px #f0f'}}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                단체로 대화하기
+              </button>
+            </div>
+            <div className="flex justify-center mt-6">
+              <Button
+                onClick={() => {
+                  setShowChatTypeModal(false);
+                  setChatType('');
+                }}
+                className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-full"
+              >
+                닫기
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 채팅방 생성 모달 */}
       {showCreateChatModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
           <div className="bg-[#181a2b] border-2 border-cyan-400 rounded-2xl shadow-[0_0_16px_#0ff] p-8 w-full max-w-md animate-fadeIn">
-            <h2 className="text-cyan-200 text-lg font-bold mb-4 drop-shadow-[0_0_2px_#0ff]">채팅방에 참여할 캐릭터 선택</h2>
-            {loading ? (
+            <h2 className="text-cyan-200 text-lg font-bold mb-4 drop-shadow-[0_0_2px_#0ff]">
+              {chatType === 'oneOnOne' ? '1대1 채팅할 캐릭터 선택' : '단체 채팅에 참여할 캐릭터 선택'}
+            </h2>
+            <p className="text-cyan-300 text-sm mb-4">
+              {chatType === 'oneOnOne' 
+                ? '1대1 채팅은 한 명의 캐릭터와만 대화할 수 있습니다.' 
+                : '단체 채팅은 최소 2명의 캐릭터를 선택해야 합니다.'
+              }
+            </p>
+            {isLoading ? (
               <div className="text-cyan-300">로딩 중...</div>
             ) : showCharacters.length === 0 ? (
               <div className="text-cyan-400">참여할 캐릭터가 없습니다.</div>
@@ -320,20 +519,32 @@ export default function CharacterList() {
                 {showCharacters.map(character => (
                   <li
                     key={character.id}
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-cyan-900/40 cursor-pointer transition-all"
+                    className={`flex items-center gap-3 p-2 rounded-lg hover:bg-cyan-900/40 cursor-pointer transition-all ${
+                      selectedCharacterIds.includes(character.id) ? 'bg-cyan-900/60 border border-cyan-400' : ''
+                    }`}
                     onClick={() => {
-                      handleCharacterSelect(character.id);
+                      if (chatType === 'oneOnOne') {
+                        // 1대1 채팅의 경우 하나만 선택 가능
+                        setSelectedCharacterIds([character.id]);
+                      } else {
+                        // 단체 채팅의 경우 여러 개 선택 가능
+                        handleCharacterSelect(character.id);
+                      }
                     }}
                     role="button"
                     tabIndex={0}
                     onKeyDown={e => {
                       if (e.key === 'Enter' || e.key === ' ') {
-                        handleCharacterSelect(character.id);
+                        if (chatType === 'oneOnOne') {
+                          setSelectedCharacterIds([character.id]);
+                        } else {
+                          handleCharacterSelect(character.id);
+                        }
                       }
                     }}
                   >
                     <input
-                      type="checkbox"
+                      type={chatType === 'oneOnOne' ? 'radio' : 'checkbox'}
                       checked={selectedCharacterIds.includes(character.id)}
                       onChange={() => {}} // 체크박스는 클릭 시 상태만 변경
                       className="w-4 h-4 text-cyan-600 focus:ring-cyan-500 border-cyan-300 rounded"
@@ -346,19 +557,37 @@ export default function CharacterList() {
             )}
             <div className="flex justify-end gap-2 mt-4">
               <Button
-                onClick={() => setShowCreateChatModal(false)}
+                onClick={() => {
+                  setShowCreateChatModal(false);
+                  setChatType('');
+                  setSelectedCharacterIds([]);
+                }}
                 className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-full"
               >
                 닫기
               </Button>
               <Button
                 onClick={handleCreateChatRoomWithSelected}
-                className="bg-gradient-to-r from-cyan-700 to-fuchsia-700 hover:from-cyan-600 hover:to-fuchsia-600 text-cyan-100 font-bold py-2 px-4 rounded-full transition-all duration-200 text-lg"
+                disabled={
+                  selectedCharacterIds.length === 0 || 
+                  (chatType === 'group' && selectedCharacterIds.length < 2)
+                }
+                className="bg-gradient-to-r from-cyan-700 to-fuchsia-700 hover:from-cyan-600 hover:to-fuchsia-600 text-cyan-100 font-bold py-2 px-4 rounded-full transition-all duration-200 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{textShadow:'0 0 4px #0ff, 0 0 8px #f0f', boxShadow:'0 0 8px #0ff, 0 0 16px #f0f'}}
               >
-                채팅방 생성
+                {chatType === 'oneOnOne' ? '1대1 채팅 시작' : '단체 채팅 시작'}
               </Button>
             </div>
+            {/* 선택된 캐릭터 수 표시 */}
+            {chatType === 'group' && (
+              <div className="mt-2 text-center">
+                <span className={`text-sm font-bold ${
+                  selectedCharacterIds.length >= 2 ? 'text-green-400' : 'text-yellow-400'
+                }`}>
+                  {selectedCharacterIds.length}명 선택됨 {selectedCharacterIds.length < 2 ? '(최소 2명 필요)' : ''}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -388,6 +617,10 @@ export default function CharacterList() {
             resetCharacter(); // 상세 정보 리셋
           }}
           onLikeToggle={handleLikeToggle}
+          onEdit={(character) => {
+            setEditingCharacter(null); // 프로필 모달 닫기
+            setEditingModalCharacter(character); // 수정 모달 열기
+          }}
         />
       )}
 
@@ -402,6 +635,10 @@ export default function CharacterList() {
             resetCharacter(); // 상세 정보 리셋
           }}
           onLikeToggle={handleRemoveFromLiked}
+          onEdit={(character) => {
+            setEditingCharacter(null); // 프로필 모달 닫기
+            setEditingModalCharacter(character); // 수정 모달 열기
+          }}
         />
       )}
     </PageLayout>

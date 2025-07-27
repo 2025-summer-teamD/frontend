@@ -13,7 +13,15 @@ export default function MyChatRoomList() {
   const handleEditClick = (e, room) => {
     e.stopPropagation();
     setEditingRoom(room.roomId);
-    setEditName(room.name);
+    setEditName(room.name || getDefaultRoomName(room));
+  };
+
+  const getDefaultRoomName = (room) => {
+    if (room.aiParticipants && room.aiParticipants.length > 0) {
+      const participantNames = room.aiParticipants.map(p => p.name).join(',');
+      return `${participantNames}와의 채팅방`;
+    }
+    return room.name || '채팅방';
   };
 
   const handleSaveName = async (e, roomId) => {
@@ -22,7 +30,7 @@ export default function MyChatRoomList() {
 
     try {
       const token = await getToken();
-      const response = await fetch(`/api/chat/rooms/${roomId}/name`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/chat/rooms/${roomId}/name`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -37,9 +45,11 @@ export default function MyChatRoomList() {
         refetch(); // 채팅방 목록 새로고침
       } else {
         console.error('채팅방 이름 수정 실패');
+        alert('채팅방 이름 수정에 실패했습니다.');
       }
     } catch (error) {
       console.error('채팅방 이름 수정 중 오류:', error);
+      alert('채팅방 이름 수정 중 오류가 발생했습니다.');
     }
   };
 
@@ -136,7 +146,9 @@ export default function MyChatRoomList() {
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  <div className="font-bold text-cyan-200 text-lg drop-shadow-[0_0_4px_#0ff]">{room.name}</div>
+                  <div className="font-bold text-cyan-200 text-lg drop-shadow-[0_0_4px_#0ff]">
+                    {room.name || getDefaultRoomName(room)}
+                  </div>
                   <button
                     onClick={(e) => handleEditClick(e, room)}
                     className="px-2 py-1 bg-cyan-700/50 text-cyan-300 text-xs rounded hover:bg-cyan-600/50 font-mono opacity-0 group-hover:opacity-100 transition-opacity"

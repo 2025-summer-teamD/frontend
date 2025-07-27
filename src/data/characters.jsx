@@ -222,7 +222,11 @@ export function useUpdateCharacter() {
         tag: updateData.tag || updateData.tags
       };
 
-      console.log('Updating character with data:', requestData);
+      console.log('🔍 useUpdateCharacter - API call:', {
+        url: `${API_BASE_URL}/my/characters/${characterId}`,
+        requestData,
+        characterId
+      });
 
       const data = await authenticatedApiCall(
         `${API_BASE_URL}/my/characters/${characterId}`,
@@ -233,8 +237,11 @@ export function useUpdateCharacter() {
         }
       );
 
+      console.log('✅ useUpdateCharacter - API response:', data);
+
       return data.data;
     } catch (err) {
+      console.error('❌ useUpdateCharacter - API error:', err);
       const errorMessage = handleApiError(err, '캐릭터 수정에 실패했습니다.');
       setError(errorMessage);
       throw err;

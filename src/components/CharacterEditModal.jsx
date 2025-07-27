@@ -5,17 +5,74 @@ import { Heart as OutlineHeart, Heart as SolidHeart } from 'lucide-react';
 import { useUpdateCharacter, useDeleteCharacter } from '../data/characters';
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
-import { useEnterOrCreateChatRoom } from '../data/chatMessages';
+import { toggleLike } from '../data/characters';
 
 const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, onChatRoomCreated }) => {
   const { updateCharacter, loading: updateLoading } = useUpdateCharacter();
   const { deleteCharacter, loading: deleteLoading } = useDeleteCharacter();
   const { user } = useUser(); // username을 가져오기 위해 useUser 추가
   const navigate = useNavigate();
-  const { enterOrCreateChatRoom } = useEnterOrCreateChatRoom();
   const [loading, setLoading] = useState(false);
   const [exp, setExp] = useState(character?.exp ?? 0);
-  const { getToken } = useAuth();
+  const { getToken, userId } = useAuth();
+
+  // Determine if character is created by current user
+  const isCharacterCreatedByMe = character?.clerkId === userId;
+
+  // Handle like/unlike functionality
+  const handleLikeToggle = async () => {
+    if (isCharacterCreatedByMe) return; // Cannot like own character
+    
+    setLoading(true);
+    try {
+      const token = await getToken();
+      // Use character.id consistently (backend returns id field)
+      const characterId = character?.id;
+      
+      if (!characterId) {
+        throw new Error('캐릭터 ID를 찾을 수 없습니다.');
+      }
+      
+      await toggleLike(characterId, token);
+      
+      // Call parent's onLikeToggle if provided
+      if (onLikeToggle) {
+        onLikeToggle(characterId, !liked);
+      }
+    } catch (error) {
+      console.error('찜하기 처리 실패:', error);
+      alert('찜하기 처리 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get button text and disabled state
+  const getButtonConfig = () => {
+    if (isCharacterCreatedByMe) {
+      return {
+        text: '내가 만든 캐릭터',
+        disabled: true,
+        className: 'w-full bg-gray-600 text-gray-400 font-mono font-bold py-4 px-6 rounded-2xl cursor-not-allowed'
+      };
+    } else {
+      if (liked) {
+        return {
+          text: '찜 취소하기',
+          disabled: false,
+          className: 'w-full bg-gradient-to-r from-pink-700 to-red-700 hover:from-pink-600 hover:to-red-600 text-pink-100 font-mono font-bold py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2 shadow-[0_0_8px_#f0f,0_0_16px_#f0f] animate-neonPulse'
+        };
+      } else {
+        return {
+          text: '찜 하기',
+          disabled: false,
+          className: 'w-full bg-gradient-to-r from-cyan-700 to-fuchsia-700 hover:from-cyan-600 hover:to-fuchsia-600 text-cyan-100 font-mono font-bold py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2 shadow-[0_0_8px_#0ff,0_0_16px_#f0f] animate-neonPulse'
+        };
+      }
+    }
+  };
+
+  const buttonConfig = getButtonConfig();
 
   // username 디버깅
   useEffect(() => {
@@ -134,11 +191,6 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
     }
   };
 
-  const toggleLike = () => {
-    const characterId = character?.characterId || character?.id;
-    onLikeToggle(characterId, !liked);
-  };
-
   const handleSave = async () => {
     // Validate required fields
     if (!formData.name.trim()) {
@@ -152,7 +204,18 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
     }
 
     try {
-      const characterId = character?.characterId || character?.id;
+      // Use character.id consistently (backend returns id field)
+      const characterId = character?.id;
+      
+      console.log('🔍 CharacterEditModal - Save attempt:', {
+        characterId,
+        formData,
+        character
+      });
+
+      if (!characterId) {
+        throw new Error('캐릭터 ID를 찾을 수 없습니다.');
+      }
 
       // API를 통해 캐릭터 수정
       const updatedCharacter = await updateCharacter(characterId, {
@@ -162,7 +225,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
         tag: formData.tags
       });
 
-      console.log('Character updated successfully:', updatedCharacter);
+      console.log('✅ CharacterEditModal - Save successful:', updatedCharacter);
 
       // 부모 컴포넌트에 수정 완료 알림 (alert는 부모에서 처리)
       if (onSave) {
@@ -173,27 +236,8 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
       onClose();
 
     } catch (error) {
-      console.error('Error updating character:', error);
+      console.error('❌ CharacterEditModal - Save failed:', error);
       alert(`캐릭터 수정 중 오류가 발생했습니다: ${error.message}`);
-    }
-  };
-
-  const handleStartChat = async () => {
-    setLoading(true);
-    try {
-      const characterId = character.characterId || character.id;
-      const { roomId, character: updatedCharacter, chatHistory, isNewRoom } = await enterOrCreateChatRoom(characterId);
-
-      console.log(isNewRoom ? '🆕 새 채팅방 생성됨' : '🔄 기존 채팅방 입장 (히스토리 ' + chatHistory.length + '개)');
-
-      if (onChatRoomCreated) onChatRoomCreated();
-      navigate(`/chatMate/${roomId}`, {
-        state: { character: updatedCharacter, chatHistory: chatHistory, roomId: roomId }
-      });
-    } catch (error) {
-      alert('채팅방 처리에 실패했습니다: ' + error.message);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -206,7 +250,12 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
     }
 
     try {
-      const characterId = character?.characterId || character?.id;
+      // Use character.id consistently (backend returns id field)
+      const characterId = character?.id;
+
+      if (!characterId) {
+        throw new Error('캐릭터 ID를 찾을 수 없습니다.');
+      }
 
       // API를 통해 캐릭터 삭제
       await deleteCharacter(characterId);
@@ -297,7 +346,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
             </div>
           </div>
           <button
-            onClick={toggleLike}
+            onClick={handleLikeToggle}
             className="absolute top-0 right-0 focus:outline-none flex items-center gap-1"
             aria-label={liked ? '좋아요 취소' : '좋아요'}
           >
@@ -394,21 +443,35 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
         </div>
         {/* 버튼 섹션 */}
         <div className="space-y-3">
-          {/* 대화하기 버튼 */}
-          <button
-            onClick={handleStartChat}
-            className="w-full bg-gradient-to-r from-cyan-700 to-fuchsia-700 hover:from-cyan-600 hover:to-fuchsia-600 text-cyan-100 font-mono font-bold py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2 shadow-[0_0_8px_#0ff,0_0_16px_#f0f] animate-neonPulse"
-            disabled={loading}
-            style={{textShadow:'0 0 4px #0ff, 0 0 8px #f0f', boxShadow:'0 0 8px #0ff, 0 0 16px #f0f'}}>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03
-                8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512
-                15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-              />
-            </svg>
-            {loading ? '채팅방 입장 중...' : '대화하기'}
-          </button>
+          {/* 수정하기 버튼 - 내가 만든 캐릭터일 때만 표시 */}
+          {isCharacterCreatedByMe && (
+            <>
+              <button
+                onClick={handleSave}
+                disabled={updateLoading}
+                className="w-full bg-gradient-to-r from-blue-700 to-cyan-700 hover:from-blue-600 hover:to-cyan-600 text-cyan-100 font-mono font-bold py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2 shadow-[0_0_8px_#00f,0_0_16px_#0ff] animate-neonPulse"
+                style={{textShadow:'0 0 4px #00f, 0 0 8px #0ff', boxShadow:'0 0 8px #00f, 0 0 16px #0ff'}}>
+                {updateLoading ? '수정 중...' : '수정하기'}
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleteLoading}
+                className="w-full bg-gradient-to-r from-red-700 to-pink-700 hover:from-red-600 hover:to-pink-600 text-red-100 font-mono font-bold py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2 shadow-[0_0_8px_#f00,0_0_16px_#f0f] animate-neonPulse"
+                style={{textShadow:'0 0 4px #f00, 0 0 8px #f0f', boxShadow:'0 0 8px #f00, 0 0 16px #f0f'}}>
+                {deleteLoading ? '삭제 중...' : '삭제하기'}
+              </button>
+            </>
+          )}
+          {/* 찜하기 버튼 - 다른 사람이 만든 캐릭터일 때만 표시 */}
+          {!isCharacterCreatedByMe && (
+            <button
+              onClick={handleLikeToggle}
+              className={buttonConfig.className}
+              disabled={buttonConfig.disabled || loading}
+              style={buttonConfig.disabled ? {} : {textShadow:'0 0 4px #0ff, 0 0 8px #f0f', boxShadow:'0 0 8px #0ff, 0 0 16px #f0f'}}>
+              {loading ? '처리 중...' : buttonConfig.text}
+            </button>
+          )}
           {/* 취소 버튼 */}
           <button
             onClick={onClose}
