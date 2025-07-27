@@ -71,37 +71,20 @@ CharacterHeader.propTypes = {
 // 재사용 가능한 통계 섹션 컴포넌트
 export const CharacterStats = ({ character, isMyCharacter = false }) => (
   <div className="flex justify-between mb-3">
-    {isMyCharacter ? (
-      <>
-      <div className="w-full flex justify-center items-center gap-30">
-        <div className="text-center">
-          <div className="text-[28px] font-bold text-white mb-1">5</div>
-          <div className="text-gray-400 text-sm">조회수</div>
-        </div>
-        <div className="text-center">
-          <div className="text-[28px] font-bold text-white mb-1">10</div>
-          <div className="text-gray-400 text-sm">좋아요</div>
-        </div>
-        <div className="text-center">
-          <div className="text-[28px] font-bold text-white mb-1">{character.exp || 0}</div>
-          <div className="text-gray-400 text-sm">친밀도</div>
-        </div>
-        </div>
-      </>
-    ) : (
-      <>
-        <div className="w-full flex justify-center items-center gap-40">
-        <div className="text-center">
-          <div className="text-[28px] font-bold text-white mb-1">{character.usesCount || 0}</div>
-          <div className="text-gray-400 text-sm">조회수</div>
-        </div>
-        <div className="text-center">
-          <div className="text-[28px] font-bold text-white mb-1">{character.likes || 0}</div>
-          <div className="text-gray-400 text-sm">좋아요</div>
-        </div>
-        </div>
-      </>
-    )}
+    <div className="w-full flex justify-center items-center gap-30">
+      <div className="text-center">
+        <div className="text-[28px] font-bold text-white mb-1">{character.usesCount || 0}</div>
+        <div className="text-gray-400 text-sm">조회수</div>
+      </div>
+      <div className="text-center">
+        <div className="text-[28px] font-bold text-white mb-1">{character.likes || 0}</div>
+        <div className="text-gray-400 text-sm">좋아요</div>
+      </div>
+      <div className="text-center">
+        <div className="text-[28px] font-bold text-white mb-1">{character.friendship || 1}</div>
+        <div className="text-gray-400 text-sm">친밀도</div>
+      </div>
+    </div>
   </div>
 );
 

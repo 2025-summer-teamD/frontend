@@ -71,13 +71,36 @@ export default function CharacterList() {
   // 사이드바 채팅방 목록 갱신용
   const { refetch: refetchMyChatRooms } = useChatRooms();
 
+  // 페이지 포커스 시 캐릭터 목록 새로고침
+  useEffect(() => {
+    const handleFocus = () => {
+      console.log('🔄 페이지 포커스 감지 - 캐릭터 목록 새로고침');
+      if (tab === 'created') {
+        fetchMyCharacters('created');
+      } else if (tab === 'liked') {
+        fetchLikedCharacters();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    
+    // 컴포넌트 마운트 시에도 새로고침
+    handleFocus();
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [tab, fetchMyCharacters]);
+
   // 찜한 캐릭터 목록을 가져오는 함수
   const fetchLikedCharacters = async () => {
     setLikedLoading(true);
     setLikedError(null);
     try {
       const token = await getToken();
-      const url = `${import.meta.env.VITE_API_BASE_URL}/my/characters?type=liked`;
+      // 캐시 강제 새로고침을 위한 타임스탬프 추가
+      const timestamp = Date.now();
+      const url = `${import.meta.env.VITE_API_BASE_URL}/my/characters?type=liked&_t=${timestamp}`;
       
       console.log('🔍 fetchLikedCharacters - API call:', { url });
       
@@ -92,7 +115,9 @@ export default function CharacterList() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ fetchLikedCharacters - Response not ok:', errorText);
-        throw new Error('찜한 캐릭터 목록을 가져오는데 실패했습니다.');
+        // 오류가 발생해도 빈 배열로 설정하여 UI가 깨지지 않도록 함
+        setLikedCharacters([]);
+        return;
       }
       
       const data = await response.json();
@@ -101,7 +126,9 @@ export default function CharacterList() {
       setLikedCharacters(data.data || []);
     } catch (error) {
       console.error('❌ fetchLikedCharacters - Error:', error);
-      setLikedError(error.message);
+      // 오류가 발생해도 빈 배열로 설정하여 UI가 깨지지 않도록 함
+      setLikedCharacters([]);
+      setLikedError(null); // 오류 메시지를 표시하지 않음
     } finally {
       setLikedLoading(false);
     }
@@ -209,6 +236,13 @@ export default function CharacterList() {
   };
 
   const handleSelectCharacter = async (character) => {
+    // 캐릭터 목록 새로고침하여 최신 친밀도 반영
+    if (tab === 'created') {
+      await fetchMyCharacters('created');
+    } else if (tab === 'liked') {
+      await fetchLikedCharacters();
+    }
+    
     // 카드 클릭 시 프로필 모달 열기
     setEditingCharacter(character);
   };
@@ -425,7 +459,14 @@ export default function CharacterList() {
       ) : (
         /* 캐릭터 카드 그리드 */
         showCharacters.length === 0 ? (
-          <EmptyState />
+          tab === 'liked' ? (
+            <EmptyState 
+              title="찜한 캐릭터가 없습니다" 
+              message="커뮤니티에서 원하는 캐릭터를 찜하세요!"
+            />
+          ) : (
+            <EmptyState />
+          )
         ) : (
           <CharacterGrid
             characters={showCharacters.map(char => ({
@@ -615,6 +656,8 @@ export default function CharacterList() {
           onClose={() => {
             setEditingCharacter(null);
             resetCharacter(); // 상세 정보 리셋
+            // 캐릭터 목록 새로고침하여 최신 친밀도 반영
+            fetchMyCharacters('created');
           }}
           onLikeToggle={handleLikeToggle}
           onEdit={(character) => {
@@ -633,6 +676,8 @@ export default function CharacterList() {
           onClose={() => {
             setEditingCharacter(null);
             resetCharacter(); // 상세 정보 리셋
+            // 찜한 캐릭터 목록 새로고침
+            fetchLikedCharacters();
           }}
           onLikeToggle={handleRemoveFromLiked}
           onEdit={(character) => {
