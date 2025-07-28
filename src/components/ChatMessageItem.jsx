@@ -9,6 +9,64 @@ const ChatMessageItem = ({ key, msg, showProfile, showTime, profileImg, displayN
   const [audio, setAudio] = useState(null); // Audio 객체를 저장할 state
   console.log('key:' + msg.id);
   console.log(msg);
+  // TTS 오디오 캐싱을 위한 유틸리티 함수들
+  const getTTSCacheKey = (roomId, msgId) => `tts_${roomId}_${msgId}`;
+  
+  const getCachedTTSUrl = (cacheKey) => {
+    try {
+      const cachedData = localStorage.getItem(cacheKey);
+      if (cachedData) {
+        const { audioBase64, timestamp } = JSON.parse(cachedData);
+        // 24시간 후 캐시 만료
+        const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24시간
+        if (Date.now() - timestamp < CACHE_DURATION) {
+          // Base64를 Blob으로 변환
+          const byteCharacters = atob(audioBase64);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const audioBlob = new Blob([byteArray], { type: 'audio/mpeg' });
+          return URL.createObjectURL(audioBlob);
+        } else {
+          // 만료된 캐시 삭제
+          localStorage.removeItem(cacheKey);
+        }
+      }
+    } catch (error) {
+      console.error('캐시된 TTS 데이터 로드 실패:', error);
+      localStorage.removeItem(cacheKey);
+    }
+    return null;
+  };
+  
+  const cacheTTSData = async (cacheKey, audioBlob) => {
+    try {
+      // Blob을 Base64로 변환
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result.split(',')[1]; // data:audio/mpeg;base64, 부분 제거
+        const cacheData = {
+          audioBase64: base64,
+          timestamp: Date.now()
+        };
+        
+        // localStorage 용량 체크 (5MB 제한)
+        const dataSize = JSON.stringify(cacheData).length;
+        if (dataSize < 5 * 1024 * 1024) { // 5MB
+          localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+          console.log('TTS 오디오가 캐시되었습니다:', cacheKey);
+        } else {
+          console.warn('TTS 오디오가 너무 커서 캐시하지 않습니다:', cacheKey);
+        }
+      };
+      reader.readAsDataURL(audioBlob);
+    } catch (error) {
+      console.error('TTS 데이터 캐싱 실패:', error);
+    }
+  };
+
   // TTS 재생 버튼 클릭 핸들러
   const handlePlayTTS = async () => {
     // 이미 재생 중이면 다시 호출하지 않음
@@ -24,31 +82,32 @@ const ChatMessageItem = ({ key, msg, showProfile, showTime, profileImg, displayN
     setIsPlaying(true); // 재생 시작 상태로 변경
 
     try {
-      // API 호출에 필요한 파라미터 준비
-      // msg.id는 chatLogId에 해당, roomId는 상위 컴포넌트에서 prop으로 받아와야 함.
-      // userId는 현재 로그인한 사용자의 ID로, auth context 등에서 가져와야 함.
-      // 여기서는 예시로 props로 전달받는다고 가정합니다.
-      const chatLogId = key; // DB에서 가져온 chatLog의 id (줄 바꿈 기준으로 쪼개진 메시지 ID가 아니라 전체 로그 ID)
-	//   console.log('key: ' + key);
-	//   console.log(msg);
-      // API 호출 URL 구성
-      // GET 요청이므로 쿼리 파라미터를 사용하거나, URL 경로 파라미터를 사용합니다.
-      // 백엔드 라우터가 `router.get('/tts/:roomId/:chatLogId')` 형태라면 아래와 같이.
-      const ttsApiUrl = `${API_BASE_URL}/chat/tts/${roomId}/${msg.id}`;
-      // 백엔드 라우터가 `router.get('/tts?roomId=...&userId=...&chatLogId=...')` 형태라면 아래와 같이.
-      // const ttsApiUrl = `${API_BASE_URL}/api/tts?roomId=${roomId}&userId=${userId}&chatLogId=${chatLogId}`;
+      const cacheKey = getTTSCacheKey(roomId, msg.id);
+      
+      // 먼저 캐시된 데이터가 있는지 확인
+      let audioUrl = getCachedTTSUrl(cacheKey);
+      
+      if (!audioUrl) {
+        // 캐시된 데이터가 없으면 API 호출
+        console.log('캐시된 TTS 데이터가 없습니다. API 호출합니다:', cacheKey);
+        
+        const ttsApiUrl = `${API_BASE_URL}/chat/tts/${roomId}/${msg.id}`;
+        const response = await fetch(ttsApiUrl);
 
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'TTS 오디오를 가져오지 못했습니다.');
+        }
 
-      const response = await fetch(ttsApiUrl);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'TTS 오디오를 가져오지 못했습니다.');
+        // MP3 오디오 데이터를 Blob으로 받아서 URL 생성
+        const audioBlob = await response.blob();
+        audioUrl = URL.createObjectURL(audioBlob);
+        
+        // 백그라운드에서 캐싱 (재생과 병렬로 처리)
+        cacheTTSData(cacheKey, audioBlob);
+      } else {
+        console.log('캐시된 TTS 데이터를 사용합니다:', cacheKey);
       }
-
-      // MP3 오디오 데이터를 Blob으로 받아서 URL 생성
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
 
       // Audio 객체 생성 및 재생
       const newAudio = new Audio(audioUrl);
