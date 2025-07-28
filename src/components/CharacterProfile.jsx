@@ -330,13 +330,13 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
           
           {/* 찜하기/찜취소하기 버튼 - 내가 만든 캐릭터가 아닐 때만 표시 */}
           {!isCharacterCreatedByMe && (
-            <button
-              onClick={handleLikeToggle}
-              className={buttonConfig.className}
-              disabled={buttonConfig.disabled || loading}
-              style={buttonConfig.disabled ? {} : {textShadow:'0 0 4px #0ff, 0 0 8px #f0f', boxShadow:'0 0 8px #0ff, 0 0 16px #f0f'}}>
-              {loading ? '처리 중...' : buttonConfig.text}
-            </button>
+          <button
+            onClick={handleLikeToggle}
+            className={buttonConfig.className}
+            disabled={buttonConfig.disabled || loading}
+            style={buttonConfig.disabled ? {} : {textShadow:'0 0 4px #0ff, 0 0 8px #f0f', boxShadow:'0 0 8px #0ff, 0 0 16px #f0f'}}>
+            {loading ? '처리 중...' : buttonConfig.text}
+          </button>
           )}
           <button
             onClick={onClose}
