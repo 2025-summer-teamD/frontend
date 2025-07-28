@@ -309,7 +309,7 @@ export function useEnterOrCreateChatRoom() {
           const errorData = await postResponse.json();
           errorMessage = errorData.message || errorMessage;
         } catch {
-          const errorText = await postResponse.text();
+        const errorText = await postResponse.text();
           errorMessage = errorText || errorMessage;
         }
         console.error('💥 1대1 채팅방 생성 실패:', errorMessage);

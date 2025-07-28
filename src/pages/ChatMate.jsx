@@ -897,7 +897,7 @@ const ChatMate = () => {
             const showTime = isLast || msg.time !== nextMsg?.time || msg.sender !== "prevMsg?.sender";
             const showProfile = idx === 0 || msg.time !== prevMsg?.time || msg.sender !== "prevMsg?.sender";
             return (<ChatMessageItem
-              key={msg.id}
+                key={msg.id}
               msg={msg}
               showProfile={showProfile}
               showTime={showTime}
@@ -916,17 +916,19 @@ const ChatMate = () => {
       {/* 입력창: sticky bottom */}
       <footer className="fixed right-0 left-0 bottom-0 px-4 py-4 border-t-2 border-cyan-200 bg-black/30 glass backdrop-blur-xl shadow-[0_0_8px_#0ff,0_0_16px_#f0f] font-cyberpunk z-20">
         <div className="flex items-center space-x-3 max-w-4xl mx-auto relative font-cyberpunk">
-          <div className="relative">
-            <button
-              className="text-cyan-400 hover:text-fuchsia-400 p-2 text-xl drop-shadow-[0_0_2px_#0ff] font-cyberpunk"
-              aria-label="게임 메뉴"
-              onClick={() => {
-                setShowAttachModal(false); // 다른 모달 닫기
-                setShowGameModal(v => !v);
-              }}
-            >
-              <IoGameController />
-            </button>
+          {/* 게임 버튼은 1:1 채팅에서만 표시 */}
+          {isOneOnOneChat && (
+            <div className="relative">
+              <button
+                className="text-cyan-400 hover:text-fuchsia-400 p-2 text-xl drop-shadow-[0_0_2px_#0ff] font-cyberpunk"
+                aria-label="게임 메뉴"
+                onClick={() => {
+                  setShowAttachModal(false); // 다른 모달 닫기
+                  setShowGameModal(v => !v);
+                }}
+              >
+                <IoGameController />
+              </button>
             {/* 게임 모달: 게임버튼 위에 작게 */}
             {showGameModal && (
               <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-50 bg-blue-900/50 border-2 border-cyan-200 rounded-xl shadow-[0_0_4px_#0ff] p-4 flex flex-col items-center w-64 animate-fadeIn font-cyberpunk">
@@ -963,9 +965,13 @@ const ChatMate = () => {
                   <button
                     className="w-full bg-gradient-to-r from-purple-200 to-pink-200 hover:from-purple-100 hover:to-pink-100 text-[#1a1a2e] px-4 py-2 rounded-full font-cyberpunk font-bold transition-all shadow-[0_0_2px_#0ff]"
                     onClick={() => {
-                      // TODO: 밸런스 게임 시작
-                      console.log('밸런스 게임 시작');
+                      // 밸런스 게임 시작 메시지 전송
+                      setNewMessage('[GAME:밸런스게임] 밸런스 게임을 시작하고 싶어요!');
                       setShowGameModal(false);
+                      // 자동으로 메시지 전송
+                      setTimeout(() => {
+                        sendMessage();
+                      }, 100);
                     }}
                   >
                     밸런스 게임
@@ -980,6 +986,7 @@ const ChatMate = () => {
               </div>
             )}
           </div>
+          )}
           <div className="relative">
             <button
               className="text-cyan-400 hover:text-fuchsia-400 p-2 text-xl drop-shadow-[0_0_2px_#0ff] font-cyberpunk"
