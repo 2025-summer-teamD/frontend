@@ -561,10 +561,9 @@ export default function CharacterList() {
                         handleCharacterSelect(character.id);
                       }
                     }}
-                    role="button"
-                    tabIndex={0}
                     onKeyDown={e => {
                       if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
                         if (chatType === 'oneOnOne') {
                           setSelectedCharacterIds([character.id]);
                         } else {
@@ -572,6 +571,9 @@ export default function CharacterList() {
                         }
                       }
                     }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${character.name} 선택`}
                   >
                     <input
                       type={chatType === 'oneOnOne' ? 'radio' : 'checkbox'}

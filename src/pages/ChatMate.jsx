@@ -660,6 +660,17 @@ const ChatMate = () => {
                       setSelectedCharacter(ai);
                     }
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      if (ai) {
+                        setSelectedCharacter(ai);
+                      }
+                    }
+                  }}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`${ai?.name || 'AI'} 프로필 보기`}
                 >
             <img
                     src={ai?.imageUrl || '/assets/icon-character.png'}
