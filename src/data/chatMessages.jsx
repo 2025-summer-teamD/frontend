@@ -24,8 +24,8 @@ export function useSendMessageToAI() {
       
       if (response.ok) {
         const data = await response.json();
-        // character 필드가 있으면 1대1 채팅 (기존 구조)
-        return data.data?.character !== null && data.data?.character !== undefined;
+        // persona 필드가 있으면 1대1 채팅 (새로운 구조)
+        return data.data?.persona !== null && data.data?.persona !== undefined;
       }
       return false;
     } catch (error) {
@@ -230,7 +230,7 @@ export function useCreateChatRoom() {
       console.log('✅ 토큰 가져오기 성공');
 
       const requestData = {
-        characterId: characterId,
+        personaId: characterId,
         isPublic: isPublic
       };
 
@@ -256,7 +256,7 @@ export function useCreateChatRoom() {
 
       return {
         roomId: data.data.id,
-        character: data.data.character || data.data,
+        character: data.data.persona || data.data,
         chatHistory: data.data.chatHistory || []
       };
     } catch (err) {
@@ -324,7 +324,7 @@ export function useEnterOrCreateChatRoom() {
 
       const result = {
         roomId: postData.data.roomId,
-        character: postData.data.character,
+        character: postData.data.persona,
         chatHistory: postData.data.chatHistory || [],
         isNewRoom: postData.data.isNewRoom || true
       };

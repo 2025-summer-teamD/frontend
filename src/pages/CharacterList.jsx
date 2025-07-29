@@ -12,15 +12,18 @@ import EmptyState from '../components/EmptyState';
 import PageLayout from '../components/PageLayout';
 import TabButton from '../components/TabButton';
 import Button from '../components/Button';
+import ChatRoomCreateModal from '../components/ChatRoomCreateModal';
 import { useMyCharacters, useCharacterDetail, useUpdateCharacter, toggleLike, useDeleteCharacter } from '../data/characters';
 import { useAuth, useUser } from '@clerk/clerk-react';
 import { useChatRooms } from '../contexts/ChatRoomsContext';
 import { getSafeImageUrl } from '../utils/imageUtils';
 import MyChatRoomList from '../components/MyChatRoomList';
+import { useNavigate } from 'react-router-dom';
 
 export default function CharacterList() {
   const { userId, getToken } = useAuth();
   const { user } = useUser(); // username을 가져오기 위해 useUser 추가
+  const navigate = useNavigate();
 
   // username 정보 출력 (디버깅용)
   useEffect(() => {
@@ -51,6 +54,11 @@ export default function CharacterList() {
   const [selectedCharacterIds, setSelectedCharacterIds] = useState([]); // 선택된 캐릭터 ID들
   const [chatType, setChatType] = useState(''); // 'oneOnOne' 또는 'group'
   const [showChatTypeModal, setShowChatTypeModal] = useState(false); // 채팅 타입 선택 모달
+  
+  // ChatRoomCreateModal 관련 상태
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedCharacter, setSelectedCharacter] = useState(null);
+  const [showCharacterSelectModal, setShowCharacterSelectModal] = useState(false);
 
   // 찜한 캐릭터 목록을 가져오는 상태
   const [likedCharacters, setLikedCharacters] = useState([]);
@@ -69,7 +77,7 @@ export default function CharacterList() {
   // 캐릭터 삭제를 위한 훅
   const { deleteCharacter } = useDeleteCharacter();
   // 사이드바 채팅방 목록 갱신용
-  const { refetch: refetchMyChatRooms } = useChatRooms();
+  const { refetch: refetchMyChatRooms, refetchPublicRooms } = useChatRooms();
 
   // 페이지 포커스 시 캐릭터 목록 새로고침
   useEffect(() => {
@@ -266,10 +274,12 @@ export default function CharacterList() {
     }
   };
 
-  const handleCreateChatRoom = async (selectedCharacterIds) => {
+  const handleCreateChatRoom = async (selectedCharacterIds, description = '', isPublic = true) => {
     try {
       console.log('handleCreateChatRoom - selectedCharacterIds:', selectedCharacterIds);
       console.log('handleCreateChatRoom - chatType:', chatType);
+      console.log('handleCreateChatRoom - description:', description);
+      console.log('handleCreateChatRoom - isPublic:', isPublic);
       
       const token = await getToken();
       
@@ -280,13 +290,17 @@ export default function CharacterList() {
         // 1대1 채팅의 경우 personaId 하나만 전송
         endpoint = '/chat/rooms';
         requestBody = {
-          personaId: selectedCharacterIds[0]
+          personaId: selectedCharacterIds[0],
+          description: description,
+          isPublic: isPublic
         };
       } else {
         // 단체 채팅의 경우 participantIds 배열 사용
         endpoint = '/chat/rooms';
         requestBody = {
-          participantIds: selectedCharacterIds
+          participantIds: selectedCharacterIds,
+          description: description,
+          isPublic: isPublic
         };
       }
       
@@ -351,8 +365,12 @@ export default function CharacterList() {
       alert('단체 채팅은 최소 2명의 캐릭터를 선택해야 합니다.');
       return;
     }
+
+    // 설명과 공개/비공개 설정 가져오기
+    const description = document.getElementById('chatRoomDescription')?.value || '';
+    const isPublic = document.getElementById('isPublicChat')?.checked || true;
     
-    handleCreateChatRoom(selectedCharacterIds);
+    handleCreateChatRoom(selectedCharacterIds, description, isPublic);
     setShowCreateChatModal(false);
     setSelectedCharacterIds([]);
   };
@@ -437,7 +455,7 @@ export default function CharacterList() {
               setShowChatTypeModal(true);
             }}
             className="bg-gradient-to-r from-cyan-700 to-fuchsia-700 hover:from-cyan-600 hover:to-fuchsia-600 text-cyan-100 font-bold py-3 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2 shadow-[0_0_8px_#0ff,0_0_16px_#f0f] animate-neonPulse"
-            style={{textShadow:'0 0 4px #0ff, 0 0 8px #f0f', boxShadow:'0 0 8px #0ff, 0 0 16px #f0f'}}
+            style={{textShadow:'0 0_4px #0ff, 0 0 8px #f0f', boxShadow:'0 0 8px #0ff, 0 0 16px #f0f'}}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -448,7 +466,7 @@ export default function CharacterList() {
       </div>
 
       {tab === 'mychats' ? (
-        <MyChatRoomList />
+        <MyChatRoomList refetchPublicRooms={refetchPublicRooms} />
       ) : (
         /* 캐릭터 카드 그리드 */
         showCharacters.length === 0 ? (
@@ -493,7 +511,7 @@ export default function CharacterList() {
                   setShowCreateChatModal(true);
                 }}
                 className="w-full bg-gradient-to-r from-blue-700 to-cyan-700 hover:from-blue-600 hover:to-cyan-600 text-cyan-100 font-bold py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-3 shadow-[0_0_8px_#0ff,0_0_16px_#0ff] animate-neonPulse"
-                style={{textShadow:'0 0 4px #0ff, 0 0 8px #f0f', boxShadow:'0 0 8px #0ff, 0 0 16px #f0f'}}
+                style={{textShadow:'0 0_4px #0ff, 0 0 8px #f0f', boxShadow:'0 0 8px #0ff, 0 0 16px #f0f'}}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -508,7 +526,7 @@ export default function CharacterList() {
                   setShowCreateChatModal(true);
                 }}
                 className="w-full bg-gradient-to-r from-fuchsia-700 to-pink-700 hover:from-fuchsia-600 hover:to-pink-600 text-fuchsia-100 font-bold py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-3 shadow-[0_0_8px_#f0f,0_0_16px_#f0f] animate-neonPulse"
-                style={{textShadow:'0 0 4px #f0f, 0 0 8px #f0f', boxShadow:'0 0 8px #f0f, 0 0 16px #f0f'}}
+                style={{textShadow:'0 0_4px #f0f, 0 0 8px #f0f', boxShadow:'0 0 8px #f0f, 0 0 16px #f0f'}}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -521,6 +539,71 @@ export default function CharacterList() {
                 onClick={() => {
                   setShowChatTypeModal(false);
                   setChatType('');
+                }}
+                className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-full"
+              >
+                닫기
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 캐릭터 선택 모달 (1대1 채팅용) */}
+      {showCharacterSelectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#181a2b] border-2 border-cyan-400 rounded-2xl shadow-[0_0_16px_#0ff] p-8 w-full max-w-md animate-fadeIn">
+            <h2 className="text-cyan-200 text-lg font-bold mb-6 drop-shadow-[0_0_2px_#0ff] text-center">
+              채팅할 캐릭터 선택
+            </h2>
+            <p className="text-cyan-300 text-sm mb-4 text-center">
+              채팅방을 만들 캐릭터를 선택해주세요
+            </p>
+            {isLoading ? (
+              <div className="text-cyan-300 text-center">로딩 중...</div>
+            ) : showCharacters.length === 0 ? (
+              <div className="text-cyan-400 text-center">채팅할 캐릭터가 없습니다.</div>
+            ) : (
+              <ul className="space-y-2 max-h-64 overflow-y-auto no-scrollbar">
+                {showCharacters.map(character => (
+                  <li
+                    key={character.id}
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-cyan-900/40 cursor-pointer transition-all border border-transparent hover:border-cyan-400"
+                    onClick={() => {
+                      setSelectedCharacter({
+                        id: character.id,
+                        name: character.name,
+                        imageUrl: getSafeImageUrl(character.imageUrl || character.image || '')
+                      });
+                      setShowCharacterSelectModal(false);
+                      setShowCreateModal(true);
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSelectedCharacter({
+                          id: character.id,
+                          name: character.name,
+                          imageUrl: getSafeImageUrl(character.imageUrl || character.image || '')
+                        });
+                        setShowCharacterSelectModal(false);
+                        setShowCreateModal(true);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${character.name} 선택`}
+                  >
+                    <img src={getSafeImageUrl(character.imageUrl || character.image || '')} alt={character.name} className="w-10 h-10 rounded-full border-2 border-cyan-300 shadow-[0_0_2px_#0ff]" />
+                    <span className="text-cyan-100 font-bold">{character.name}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="flex justify-center mt-6">
+              <Button
+                onClick={() => {
+                  setShowCharacterSelectModal(false);
                 }}
                 className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-full"
               >
@@ -591,6 +674,37 @@ export default function CharacterList() {
                 ))}
               </ul>
             )}
+            
+            {/* 채팅방 설명 입력 필드 */}
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-cyan-300 mb-2">
+                채팅방 설명 (선택사항)
+              </label>
+              <textarea
+                id="chatRoomDescription"
+                placeholder="예: 재미있는 대화를 나누는 공간"
+                className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 resize-none"
+                rows={3}
+                maxLength={500}
+              />
+              <div className="text-right text-xs text-gray-500 mt-1">
+                <span id="descriptionCount">0</span>/500
+              </div>
+            </div>
+
+            {/* 공개/비공개 설정 */}
+            <div className="flex items-center gap-3 mt-4">
+              <input
+                type="checkbox"
+                id="isPublicChat"
+                defaultChecked={true}
+                className="w-4 h-4 text-cyan-600 bg-gray-800 border-gray-600 rounded focus:ring-cyan-500 focus:ring-2"
+              />
+              <label htmlFor="isPublicChat" className="text-sm text-cyan-300">
+                공개 채팅방으로 만들기
+              </label>
+            </div>
+
             <div className="flex justify-end gap-2 mt-4">
               <Button
                 onClick={() => {
@@ -609,7 +723,7 @@ export default function CharacterList() {
                   (chatType === 'group' && selectedCharacterIds.length < 2)
                 }
                 className="bg-gradient-to-r from-cyan-700 to-fuchsia-700 hover:from-cyan-600 hover:to-fuchsia-600 text-cyan-100 font-bold py-2 px-4 rounded-full transition-all duration-200 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{textShadow:'0 0 4px #0ff, 0 0 8px #f0f', boxShadow:'0 0 8px #0ff, 0 0 16px #f0f'}}
+                style={{textShadow:'0 0_4px #0ff, 0 0 8px #f0f', boxShadow:'0 0 8px #0ff, 0 0 16px #f0f'}}
               >
                 {chatType === 'oneOnOne' ? '1대1 채팅 시작' : '단체 채팅 시작'}
               </Button>
@@ -647,6 +761,7 @@ export default function CharacterList() {
         <CharacterProfile
           character={editingCharacter}
           liked={likedIds.includes(editingCharacter.id)}
+          origin="my"
           isMyCharacter={editingCharacter.clerkId === userId}
           onClose={() => {
             setEditingCharacter(null);
@@ -667,6 +782,7 @@ export default function CharacterList() {
         <CharacterProfile
           character={editingCharacter}
           liked={likedIds.includes(editingCharacter.id)}
+          origin="my"
           isMyCharacter={editingCharacter.clerkId === userId}
           onClose={() => {
             setEditingCharacter(null);
@@ -678,6 +794,77 @@ export default function CharacterList() {
           onEdit={(character) => {
             setEditingCharacter(null); // 프로필 모달 닫기
             setEditingModalCharacter(character); // 수정 모달 열기
+          }}
+        />
+      )}
+
+      {/* ChatRoomCreateModal */}
+      {showCreateModal && selectedCharacter && (
+        <ChatRoomCreateModal
+          character={selectedCharacter}
+          onClose={() => {
+            setShowCreateModal(false);
+            setSelectedCharacter(null);
+          }}
+          onConfirm={async (chatRoomData) => {
+            try {
+              setShowCreateModal(false);
+              setSelectedCharacter(null);
+
+              const token = await getToken();
+              const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+              
+              const createResponse = await fetch(`${API_BASE_URL}/chat/rooms`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  personaId: chatRoomData.personaId,
+                  description: chatRoomData.description,
+                  isPublic: chatRoomData.isPublic
+                }),
+              });
+
+              if (!createResponse.ok) {
+                const errorText = await createResponse.text();
+                throw new Error(`채팅방 생성 실패: ${createResponse.status}`);
+              }
+
+              const createResult = await createResponse.json();
+              const roomId = createResult.data?.roomId;
+
+              if (!roomId) {
+                throw new Error('채팅방 ID를 받지 못했습니다.');
+              }
+
+              // 채팅방 정보 조회
+              const infoResponse = await fetch(`${API_BASE_URL}/chat/room-info?roomId=${roomId}`, {
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+                },
+              });
+
+              if (!infoResponse.ok) {
+                const errorText = await infoResponse.text();
+                throw new Error(`채팅방 정보 조회 실패: ${infoResponse.status}`);
+              }
+
+              const infoResult = await infoResponse.json();
+
+              navigate(`/chatMate/${roomId}`, {
+                state: {
+                  character: infoResult.data?.persona,
+                  chatHistory: infoResult.data?.chatHistory || [],
+                  roomId: roomId
+                }
+              });
+            } catch (error) {
+              alert('채팅방 생성에 실패했습니다: ' + error.message);
+            }
           }}
         />
       )}
