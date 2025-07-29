@@ -309,6 +309,10 @@ export default function CharacterList() {
       if (data.success) {
         // 채팅방 생성 성공 시 ChatMate로 이동
         console.log('handleCreateChatRoom - data.data:', data.data);
+        console.log('handleCreateChatRoom - 생성된 roomId:', data.data.roomId);
+        console.log('handleCreateChatRoom - 채팅방 타입:', chatType);
+        
+        // 페이지 전체 새로고침으로 이동 (Context 상태 초기화)
         window.location.href = `/chatMate/${data.data.roomId}`;
       } else {
         alert('채팅방 생성에 실패했습니다: ' + data.message);

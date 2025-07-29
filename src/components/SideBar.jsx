@@ -57,9 +57,7 @@ const Sidebar = ({ children }) => {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            participantIds: [characterId]
-          }),
+          body: JSON.stringify({ participantIds: [characterId] }),
         });
 
         if (!createResponse.ok) {
