@@ -203,10 +203,18 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
     setChatLoading(true);
     try {
       const characterId = character.id;
+      console.log('🔍 [CharacterProfile] characterId:', characterId);
+      
       const { roomId, character: updatedCharacter, chatHistory, isNewRoom } = await enterOrCreateChatRoom(characterId);
+      
+      console.log('🔍 [CharacterProfile] enterOrCreateChatRoom 결과:');
+      console.log('🔍 [CharacterProfile] roomId:', roomId);
+      console.log('🔍 [CharacterProfile] isNewRoom:', isNewRoom);
+      console.log('🔍 [CharacterProfile] chatHistory 길이:', chatHistory?.length);
       
       console.log(isNewRoom ? '🆕 새 채팅방 생성됨' : '🔄 기존 채팅방 입장 (히스토리 ' + chatHistory.length + '개)');
 
+      console.log('🔍 [CharacterProfile] navigate 호출:', `/chatMate/${roomId}`);
       navigate(`/chatMate/${roomId}`, {
         state: { character: updatedCharacter, chatHistory: chatHistory, roomId: roomId }
       });

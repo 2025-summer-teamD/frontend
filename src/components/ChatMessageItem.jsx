@@ -3,11 +3,11 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // ChatMessageItem 컴포넌트라고 가정하고 작성합니다.
 // 이 컴포넌트가 부모로부터 msg, showProfile, showTime, profileImg, displayName, isAI, aiObj, aiColor 등을 props로 받는다고 가정합니다.
-const ChatMessageItem = ({ key, msg, showProfile, showTime, profileImg, displayName, isAI, aiObj, aiColor, roomId, userId }) => {
+const ChatMessageItem = ({ msg, showProfile, showTime, profileImg, displayName, isAI, aiObj, aiColor, roomId, userId }) => {
   // TTS 재생 상태 관리를 위한 state
   const [isPlaying, setIsPlaying] = useState(false);
   const [audio, setAudio] = useState(null); // Audio 객체를 저장할 state
-  console.log('key:' + msg.id);
+  console.log('messageId:' + msg.id);
   console.log(msg);
   // TTS 오디오 캐싱을 위한 유틸리티 함수들
   const getTTSCacheKey = (roomId, msgId) => `tts_${roomId}_${msgId}`;

@@ -276,7 +276,7 @@ export function useEnterOrCreateChatRoom() {
   const { getToken } = useAuth();
 
   const enterOrCreateChatRoom = useCallback(async (characterId) => {
-    console.log('🔍 채팅방 입장/생성 시도 - characterId:', characterId);
+    console.log('🔍 [enterOrCreateChatRoom] 시작 - characterId:', characterId);
 
     if (!characterId) {
       throw new Error('캐릭터 ID가 필요합니다.');
@@ -289,10 +289,11 @@ export function useEnterOrCreateChatRoom() {
       const token = await getToken();
 
       // 1대1 채팅방 생성/입장 (POST)
-      console.log('🆕 1대1 채팅방 생성/입장 시도...');
+      console.log('🔍 [enterOrCreateChatRoom] 1대1 채팅방 생성/입장 시도...');
       const requestData = {
         personaId: characterId
       };
+      console.log('🔍 [enterOrCreateChatRoom] 요청 데이터:', requestData);
 
       const postResponse = await fetch(`${API_BASE_URL}/chat/rooms`, {
         method: 'POST',
@@ -317,14 +318,17 @@ export function useEnterOrCreateChatRoom() {
       }
 
       const postData = await postResponse.json();
-      console.log('✅ 1대1 채팅방 생성 완료:', postData);
+      console.log('🔍 [enterOrCreateChatRoom] API 응답:', postData);
 
-      return {
+      const result = {
         roomId: postData.data.roomId,
         character: postData.data.character,
         chatHistory: postData.data.chatHistory || [],
         isNewRoom: postData.data.isNewRoom || true
       };
+      
+      console.log('🔍 [enterOrCreateChatRoom] 최종 결과:', result);
+      return result;
     } catch (err) {
       console.error('💥 채팅방 입장/생성 에러:', err);
       setError(err.message || '채팅방 처리에 실패했습니다.');
