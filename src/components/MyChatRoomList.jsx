@@ -9,11 +9,55 @@ export default function MyChatRoomList() {
   const { getToken } = useAuth();
   const [editingRoom, setEditingRoom] = useState(null);
   const [editName, setEditName] = useState('');
+  const [updatingPublic, setUpdatingPublic] = useState(null);
+  const [localRooms, setLocalRooms] = useState([]);
+
+  // rooms가 변경될 때 localRooms 업데이트
+  React.useEffect(() => {
+    setLocalRooms(rooms);
+  }, [rooms]);
 
   const handleEditClick = (e, room) => {
     e.stopPropagation();
     setEditingRoom(room.roomId);
     setEditName(room.name || getDefaultRoomName(room));
+  };
+
+  const handlePublicToggle = async (e, room) => {
+    e.stopPropagation();
+    setUpdatingPublic(room.roomId);
+    
+    try {
+      const token = await getToken();
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/chat/rooms/${room.roomId}/public`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ isPublic: !room.isPublic })
+      });
+
+      if (response.ok) {
+        // 로컬 상태 즉시 업데이트
+        setLocalRooms(prevRooms => 
+          prevRooms.map(r => 
+            r.roomId === room.roomId 
+              ? { ...r, isPublic: !r.isPublic }
+              : r
+          )
+        );
+        console.log('✅ 채팅방 공개 설정 업데이트 완료:', !room.isPublic);
+      } else {
+        console.error('채팅방 공개 설정 수정 실패');
+        alert('채팅방 공개 설정 수정에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('채팅방 공개 설정 수정 중 오류:', error);
+      alert('채팅방 공개 설정 수정 중 오류가 발생했습니다.');
+    } finally {
+      setUpdatingPublic(null);
+    }
   };
 
   const getDefaultRoomName = (room) => {
@@ -40,9 +84,21 @@ export default function MyChatRoomList() {
       });
 
       if (response.ok) {
+        // 로컬 상태 즉시 업데이트
+        setLocalRooms(prevRooms => 
+          prevRooms.map(room => 
+            room.roomId === roomId 
+              ? { ...room, name: editName.trim() }
+              : room
+          )
+        );
+        console.log('✅ 채팅방 이름 업데이트 완료:', editName.trim());
         setEditingRoom(null);
         setEditName('');
-        refetch(); // 채팅방 목록 새로고침
+        // refetch도 호출하여 서버와 동기화
+        if (refetch) {
+          setTimeout(() => refetch(), 100);
+        }
       } else {
         console.error('채팅방 이름 수정 실패');
         alert('채팅방 이름 수정에 실패했습니다.');
@@ -96,7 +152,7 @@ export default function MyChatRoomList() {
 
   return (
     <div className="grid grid-cols-1 gap-4 mt-6">
-      {rooms.map(room => (
+      {localRooms.map(room => (
         <div
           key={room.roomId}
           className="group bg-black/60 border-2 border-cyan-700 rounded-xl p-4 cursor-pointer hover:shadow-[0_0_8px_#0ff] flex items-center justify-between"
@@ -128,6 +184,16 @@ export default function MyChatRoomList() {
                       } else if (e.key === 'Escape') {
                         handleCancelEdit(e);
                       }
+                      // 스페이스바 이벤트 전파 방지
+                      if (e.key === ' ') {
+                        e.stopPropagation();
+                      }
+                    }}
+                    onKeyUp={(e) => {
+                      // 스페이스바 이벤트 전파 방지
+                      if (e.key === ' ') {
+                        e.stopPropagation();
+                      }
                     }}
                     autoFocus
                   />
@@ -154,6 +220,18 @@ export default function MyChatRoomList() {
                     className="px-2 py-1 bg-cyan-700/50 text-cyan-300 text-xs rounded hover:bg-cyan-600/50 font-mono opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     수정
+                  </button>
+                  {/* 공개 설정 토글 */}
+                  <button
+                    onClick={(e) => handlePublicToggle(e, room)}
+                    disabled={updatingPublic === room.roomId}
+                    className={`px-2 py-1 text-xs rounded font-mono opacity-0 group-hover:opacity-100 transition-opacity ${
+                      room.isPublic 
+                        ? 'bg-green-700/50 text-green-300 hover:bg-green-600/50' 
+                        : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50'
+                    }`}
+                  >
+                    {updatingPublic === room.roomId ? '처리중...' : (room.isPublic ? '공개' : '비공개')}
                   </button>
                 </div>
               )}

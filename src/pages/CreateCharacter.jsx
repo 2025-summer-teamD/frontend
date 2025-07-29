@@ -342,9 +342,6 @@ export default function CreateCharacter() {
                             alt="Preview"
                             className="w-full h-72 object-contain cursor-pointer hover:opacity-80 transition-opacity"
                             onClick={() => document.getElementById('image-upload')?.click()}
-                            onError={(e) => {
-                              e.target.src = '/api/uploads/default-character.svg';
-                            }}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
                           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">

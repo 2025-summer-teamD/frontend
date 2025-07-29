@@ -32,9 +32,6 @@ export const CharacterHeader = ({ character, liked, onLikeToggle, showLikeButton
             src={getSafeImageUrl(character.imageUrl)} 
             alt={character.name} 
             className="w-full h-full object-cover"
-            onError={(e) => {
-              e.target.src = '/api/uploads/default-character.svg';
-            }}
           />
         )}
       </div>
@@ -196,18 +193,30 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
   const [loading, setLoading] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
   const [showImage, setShowImage] = useState(false);
+  const [isPublic, setIsPublic] = useState(character?.isPublic ?? true); // character의 실제 isPublic 값으로 초기화
   const { getToken, userId } = useAuth();
   const { enterOrCreateChatRoom } = useEnterOrCreateChatRoom();
 
   // Determine if character is created by current user
   const isCharacterCreatedByMe = character?.clerkId === userId;
 
+  // character가 변경될 때 isPublic 상태 업데이트
+  React.useEffect(() => {
+    setIsPublic(character?.isPublic ?? true);
+  }, [character?.isPublic]);
+
+  // isPublic 상태가 변경될 때마다 로그 출력 (디버깅용)
+  React.useEffect(() => {
+    console.log('CharacterProfile - isPublic changed:', isPublic);
+  }, [isPublic]);
+
   // 채팅 시작 함수
   const handleStartChat = async () => {
     setChatLoading(true);
     try {
       const characterId = character.id;
-      const { roomId, character: updatedCharacter, chatHistory, isNewRoom } = await enterOrCreateChatRoom(characterId);
+      console.log('CharacterProfile - Starting chat with isPublic:', isPublic);
+      const { roomId, character: updatedCharacter, chatHistory, isNewRoom } = await enterOrCreateChatRoom(characterId, isPublic);
       
       console.log(isNewRoom ? '🆕 새 채팅방 생성됨' : '🔄 기존 채팅방 입장 (히스토리 ' + chatHistory.length + '개)');
 
@@ -317,6 +326,22 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
             </button>
           )}
           
+          {/* 공개 설정 토글 - 채팅방에서만 숨김 */}
+          {origin !== 'chat' && (
+            <div className="flex items-center justify-between p-3 bg-black/30 border border-cyan-700 rounded-xl">
+              <span className="text-cyan-200 text-sm font-bold">다른 사람에게 공개</span>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isPublic}
+                  onChange={(e) => setIsPublic(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
+              </label>
+            </div>
+          )}
+          
           {/* 1:1 채팅하기 버튼 - 채팅방에서만 숨김 */}
           {origin !== 'chat' && (
             <button
@@ -370,9 +395,6 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
                 src={getSafeImageUrl(character.imageUrl)} 
                 alt={character.name} 
                 className="w-full h-full object-contain rounded-lg"
-                onError={(e) => {
-                  e.target.src = '/api/uploads/default-character.svg';
-                }}
               />
               <button
                 onClick={() => setShowImage(false)}
