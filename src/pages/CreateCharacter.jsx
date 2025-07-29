@@ -133,7 +133,7 @@ export default function CreateCharacter() {
     setFetchAiError('');
     try {
       const token = await getToken();
-      const res = await fetch('/api/characters/existing/preview', {
+      const res = await fetch(`${API_BASE_URL}/characters/existing/preview`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
