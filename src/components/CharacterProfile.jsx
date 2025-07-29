@@ -32,9 +32,6 @@ export const CharacterHeader = ({ character, liked, onLikeToggle, showLikeButton
             src={getSafeImageUrl(character.imageUrl)} 
             alt={character.name} 
             className="w-full h-full object-cover"
-            onError={(e) => {
-              e.target.src = '/api/uploads/default-character.svg';
-            }}
           />
         )}
       </div>
@@ -196,18 +193,29 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
   const [loading, setLoading] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
   const [showImage, setShowImage] = useState(false);
-  const [isPublic, setIsPublic] = useState(true); // 공개 여부 상태 추가
+  const [isPublic, setIsPublic] = useState(character?.isPublic ?? true); // character의 실제 isPublic 값으로 초기화
   const { getToken, userId } = useAuth();
   const { enterOrCreateChatRoom } = useEnterOrCreateChatRoom();
 
   // Determine if character is created by current user
   const isCharacterCreatedByMe = character?.clerkId === userId;
 
+  // character가 변경될 때 isPublic 상태 업데이트
+  React.useEffect(() => {
+    setIsPublic(character?.isPublic ?? true);
+  }, [character?.isPublic]);
+
+  // isPublic 상태가 변경될 때마다 로그 출력 (디버깅용)
+  React.useEffect(() => {
+    console.log('CharacterProfile - isPublic changed:', isPublic);
+  }, [isPublic]);
+
   // 채팅 시작 함수
   const handleStartChat = async () => {
     setChatLoading(true);
     try {
       const characterId = character.id;
+      console.log('CharacterProfile - Starting chat with isPublic:', isPublic);
       const { roomId, character: updatedCharacter, chatHistory, isNewRoom } = await enterOrCreateChatRoom(characterId, isPublic);
       
       console.log(isNewRoom ? '🆕 새 채팅방 생성됨' : '🔄 기존 채팅방 입장 (히스토리 ' + chatHistory.length + '개)');
@@ -387,9 +395,6 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
                 src={getSafeImageUrl(character.imageUrl)} 
                 alt={character.name} 
                 className="w-full h-full object-contain rounded-lg"
-                onError={(e) => {
-                  e.target.src = '/api/uploads/default-character.svg';
-                }}
               />
               <button
                 onClick={() => setShowImage(false)}

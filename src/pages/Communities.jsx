@@ -1,5 +1,6 @@
 // src/pages/Communities.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCommunityCharacters, toggleLike, incrementViewCount } from '../data/characters';
 import { useChatRooms } from '../contexts/ChatRoomsContext';
 import CharacterProfile from '../components/CharacterProfile';
@@ -14,6 +15,7 @@ import { useAuth } from "@clerk/clerk-react";
 import { CharacterCard } from '../components/CharacterGrid';
 
 export default function Communities() {
+  const navigate = useNavigate();
   const { getToken, userId } = useAuth();
 
   const [likedIds, setLikedIds] = useState(() =>
@@ -27,6 +29,23 @@ export default function Communities() {
 
   const { characters, loading, error, setCharacters } = useCommunityCharacters(sortBy);
   const { chatRooms, loading: chatRoomsLoading, error: chatRoomsError, refetch: refetchMyChatCharacters } = useChatRooms();
+
+  // 캐릭터 목록 새로고침 함수
+  const refetchCharacters = async () => {
+    try {
+      const token = await getToken();
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/personas/community?sortBy=${sortBy}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setCharacters(data.data || []);
+      }
+    } catch (error) {
+      console.error('캐릭터 목록 새로고침 실패:', error);
+    }
+  };
 
   React.useEffect(() => {
     localStorage.setItem('likedIds', JSON.stringify(likedIds));
@@ -68,15 +87,20 @@ export default function Communities() {
     }
   };
 
-  const handleSaveCharacter = (id, formData) => {
-    console.log('Saving character:', id, formData);
-    // 실제 저장 로직 구현
+  const handleSaveCharacter = (updatedCharacter) => {
+    console.log('Saving character:', updatedCharacter);
+    // 캐릭터 수정 후 커뮤니티 목록 새로고침
+    if (updatedCharacter) {
+      refetchCharacters();
+    }
+    setEditingCharacter(null);
   };
 
   // 검색 필터링 (API 데이터 구조에 맞게 수정)
   const filteredCharacters = characters.filter(char => {
     const keyword = searchQuery.toLowerCase();
-    return (
+    // 공개 캐릭터만 표시
+    return char.isPublic && (
       char.name.toLowerCase().includes(keyword) ||
       char.introduction.toLowerCase().includes(keyword)
     );
@@ -97,6 +121,42 @@ export default function Communities() {
       room.participants?.some(p => p.persona?.name?.toLowerCase().includes(keyword))
     );
   });
+
+  // 채팅방 클릭 핸들러 추가
+  const handleChatRoomClick = async (room) => {
+    try {
+      const token = await getToken();
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+      
+      // room-info API 호출하여 채팅방 정보와 대화 내용 가져오기
+      const infoResponse = await fetch(`${API_BASE_URL}/chat/room-info?roomId=${room.id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      if (!infoResponse.ok) {
+        const errorText = await infoResponse.text();
+        throw new Error(`채팅방 정보 조회 실패: ${infoResponse.status}`);
+      }
+      
+      const infoResult = await infoResponse.json();
+      
+      // 채팅방으로 이동하면서 정보 전달
+      navigate(`/chatMate/${room.id}`, {
+        state: {
+          character: infoResult.data?.character || room,
+          chatHistory: infoResult.data?.chatHistory || [],
+          roomId: room.id
+        }
+      });
+    } catch (error) {
+      console.error('채팅방 입장 실패:', error);
+      alert('채팅방 입장에 실패했습니다: ' + error.message);
+    }
+  };
 
   if (loading && activeTab === '캐릭터') {
     return <LoadingSpinner />;
@@ -210,42 +270,65 @@ export default function Communities() {
           {filteredChatRooms.length === 0 ? (
             <EmptyState />
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10">
               {filteredChatRooms.map(room => (
                 <div
                   key={room.id}
-                  className="bg-black/60 glass border-2 border-cyan-700 rounded-2xl p-4 shadow-[0_0_16px_#0ff,0_0_32px_#f0f] hover:shadow-[0_0_20px_#0ff,0_0_40px_#f0f] transition-all duration-300 cursor-pointer"
-                  onClick={() => {
-                    // 채팅방 클릭 시 해당 채팅방으로 이동
-                    window.location.href = `/chatMate/${room.id}`;
-                  }}
+                  className="relative bg-black/80 border-4 border-cyan-400 rounded-2xl overflow-hidden shadow-[0_0_24px_#0ff,0_0_48px_#0ff] hover:shadow-[0_0_32px_#0ff,0_0_64px_#0ff] transition-all duration-300 cursor-pointer pixel-border group"
+                  style={{ fontFamily: 'Press Start 2P, monospace', minHeight: 280 }}
+                  onClick={() => handleChatRoomClick(room)}
                 >
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="flex -space-x-2">
-                      {room.participants?.slice(0, 3).map((participant, index) => (
+                  {/* 참여자 사진들로 채워진 배경 */}
+                  <div className="absolute inset-0 flex">
+                    {room.participants?.map((participant, idx) => {
+                      const totalParticipants = room.participants?.length || 1;
+                      const widthPercent = 100 / totalParticipants;
+                      
+                      return (
                         <div
-                          key={participant.personaId || index}
-                          className="w-8 h-8 rounded-full border-2 border-cyan-300 shadow-[0_0_4px_#0ff]"
-                          style={{ zIndex: 3 - index }}
+                          key={participant.personaId || idx}
+                          className="relative overflow-hidden"
+                          style={{ width: `${widthPercent}%` }}
                         >
                           <img
                             src={participant.persona?.imageUrl || '/assets/icon-character.png'}
                             alt={participant.persona?.name || 'AI'}
-                            className="w-full h-full object-cover rounded-full"
+                            className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-300"
+                            style={{imageRendering:'pixelated'}}
                           />
+                          {/* 그라데이션 오버레이 */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* 채팅방 정보 오버레이 */}
+                  <div className="relative z-10 p-6 h-full flex flex-col justify-between">
+                    {/* 채팅방 이름 */}
+                    <div className="text-pink-300 text-xl sm:text-2xl font-extrabold mb-4 text-center drop-shadow-[0_0_8px_#f0f] pixel-font" style={{letterSpacing:'0.04em', textShadow:'0 0 8px #0ff, 0 0 16px #f0f'}}>
+                      {room.name || `${room.participants?.length || 0}명의 AI와 대화`}
+                    </div>
+                    
+                    {/* 참여자 이름들 */}
+                    <div className="flex flex-wrap justify-center items-center gap-2 mb-4">
+                      {room.participants?.map((participant, idx) => (
+                        <div key={participant.personaId || idx} className="text-cyan-200 text-sm sm:text-base font-bold text-center pixel-font bg-black/50 px-2 py-1 rounded border border-cyan-400/50" style={{textShadow:'0 0 4px #0ff'}}>
+                          {participant.persona?.name || 'AI'}
                         </div>
                       ))}
                     </div>
-                    <div className="flex-1">
-                      <h3 className="text-cyan-200 font-bold text-sm">
-                        {room.name || `${room.participants?.length || 0}명의 AI와 대화`}
-                      </h3>
-                      <p className="text-cyan-300 text-xs">
+
+                    {/* 참여자 수 표시 */}
+                    <div className="text-center">
+                      <div className="text-cyan-300 text-lg font-bold pixel-font" style={{textShadow:'0 0 4px #0ff'}}>
                         {room.participants?.length || 0}명 참여
-                      </p>
+                      </div>
                     </div>
                   </div>
-                  <div className="text-cyan-400 text-xs">
+
+                  {/* 공개/비공개 표시 */}
+                  <div className="absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold pixel-font border-2 border-cyan-400 bg-black/70 text-cyan-200 shadow-[0_0_4px_#0ff] z-20">
                     {room.isPublic ? '공개' : '비공개'}
                   </div>
                 </div>
