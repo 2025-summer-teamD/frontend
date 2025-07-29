@@ -158,7 +158,7 @@ const ChatMate = () => {
   const [showAttachModal, setShowAttachModal] = useState(false);
   const [showGameModal, setShowGameModal] = useState(false);
   const fileInputRef = useRef(null);
-  
+
   // 캐릭터 프로필 모달 상태
   const [selectedCharacter, setSelectedCharacter] = useState(null);
 
