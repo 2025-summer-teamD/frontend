@@ -6,9 +6,12 @@ import { useChatRooms } from '../contexts/ChatRoomsContext';
 import { useAuth } from '@clerk/clerk-react';
 import logo from '/assets/logo.png';
 import AnimatedAuthHeader from './AnimatedAuthHeader';
+import ChatRoomCreateModal from './ChatRoomCreateModal';
 
 const Sidebar = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedCharacter, setSelectedCharacter] = useState(null);
   const navigate = useNavigate();
   const { getToken } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,7 +45,7 @@ const Sidebar = ({ children }) => {
 
 
   // 채팅방 입장 API 호출 함수
-  const enterChatRoom = async (characterId, existingRoomId = null) => {
+  const enterChatRoom = async (characterId, existingRoomId = null, description = null, isPublic = true) => {
     try {
       const token = await getToken();
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -58,7 +61,9 @@ const Sidebar = ({ children }) => {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            participantIds: [characterId]
+            personaId: characterId,
+            description: description,
+            isPublic: isPublic
           }),
         });
 
@@ -93,7 +98,7 @@ const Sidebar = ({ children }) => {
 
       return {
         roomId: roomId,
-        character: infoResult.data?.character,
+        character: infoResult.data?.persona,
         chatHistory: infoResult.data?.chatHistory || []
       };
     } catch (err) {
@@ -125,20 +130,30 @@ const Sidebar = ({ children }) => {
       }
       return;
     }
-    try {
-      setSidebarOpen(false);
-      // 기존 roomId가 있으면 그것을 사용, 없으면 새로 생성
-      const existingRoomId = chat.roomId;
-      const { roomId, character: updatedCharacter, chatHistory } = await enterChatRoom(characterId, existingRoomId);
-      navigate(`/chatMate/${roomId}`, {
-        state: {
-          character: updatedCharacter,
-          chatHistory: chatHistory,
-          roomId: roomId
-        }
+
+    // 기존 roomId가 있으면 바로 입장, 없으면 모달 표시
+    if (chat.roomId) {
+      try {
+        setSidebarOpen(false);
+        const { roomId, character: updatedCharacter, chatHistory } = await enterChatRoom(characterId, chat.roomId);
+        navigate(`/chatMate/${roomId}`, {
+          state: {
+            character: updatedCharacter,
+            chatHistory: chatHistory,
+            roomId: roomId
+          }
+        });
+      } catch (error) {
+        alert('채팅방 입장에 실패했습니다: ' + error.message);
+      }
+    } else {
+      // 새 채팅방 생성 시 모달 표시
+      setSelectedCharacter({
+        id: characterId,
+        name: chat.name || '캐릭터',
+        imageUrl: chat.imageUrl || '/assets/icon-character.png'
       });
-    } catch (error) {
-      alert('채팅방 입장에 실패했습니다: ' + error.message);
+      setShowCreateModal(true);
     }
   };
 
@@ -363,6 +378,41 @@ const Sidebar = ({ children }) => {
           onClick={() => setSidebarOpen(false)}
           aria-label="Close sidebar"
         ></button>
+      )}
+
+      {/* Chat Room Create Modal */}
+      {showCreateModal && selectedCharacter && (
+        <ChatRoomCreateModal
+          character={selectedCharacter}
+          onClose={() => {
+            setShowCreateModal(false);
+            setSelectedCharacter(null);
+          }}
+          onConfirm={async (chatRoomData) => {
+            try {
+              setShowCreateModal(false);
+              setSelectedCharacter(null);
+              setSidebarOpen(false);
+              
+              const { roomId, character: updatedCharacter, chatHistory } = await enterChatRoom(
+                chatRoomData.personaId,
+                null,
+                chatRoomData.description,
+                chatRoomData.isPublic
+              );
+              
+              navigate(`/chatMate/${roomId}`, {
+                state: {
+                  character: updatedCharacter,
+                  chatHistory: chatHistory,
+                  roomId: roomId
+                }
+              });
+            } catch (error) {
+              alert('채팅방 생성에 실패했습니다: ' + error.message);
+            }
+          }}
+        />
       )}
     </div>
   );

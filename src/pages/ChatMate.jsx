@@ -203,8 +203,8 @@ const ChatMate = () => {
           }
         });
         const data = await response.json();
-            if (data.success && data.data && data.data.character) {
-              setCharacter(data.data.character);
+            if (data.success && data.data && data.data.persona) {
+              setCharacter(data.data.persona);
           setRoomInfoParticipants(data.data.participants || []);
           setParticipants(data.data.participants || []); // 참여자 목록도 동기화
 
