@@ -189,6 +189,7 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
       
       console.log(isNewRoom ? '🆕 새 채팅방 생성됨' : '🔄 기존 채팅방 입장 (히스토리 ' + chatHistory.length + '개)');
 
+      console.log('🔍 [CharacterProfile] navigate 호출:', `/chatMate/${roomId}`);
       navigate(`/chatMate/${roomId}`, {
         state: { character: updatedCharacter, chatHistory: chatHistory, roomId: roomId }
       });
