@@ -111,13 +111,6 @@ const SwipeableImageGallery = ({ imageUrls, getSafeImageUrl, setImagePreview, im
                 src={getSafeImageUrl ? getSafeImageUrl(url) : url}
                 alt={`Image ${index + 1}`}
                 className="w-full h-full object-contain"
-                onError={(e) => {
-                  console.log('이미지 로드 실패:', url);
-                  e.target.src = '/api/uploads/default-character.svg';
-                }}
-                onLoad={() => {
-                  console.log('이미지 로드 성공:', url);
-                }}
               />
             </div>
           ))}

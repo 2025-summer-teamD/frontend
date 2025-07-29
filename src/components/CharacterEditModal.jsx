@@ -16,10 +16,21 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [exp, setExp] = useState(character?.exp ?? 0);
+  const [isPublic, setIsPublic] = useState(character?.isPublic ?? true); // 공개 여부 상태 추가
   const { getToken, userId } = useAuth();
 
   // Determine if character is created by current user
   const isCharacterCreatedByMe = character?.clerkId === userId;
+
+  // character가 변경될 때 isPublic 상태 업데이트
+  useEffect(() => {
+    setIsPublic(character?.isPublic ?? true);
+  }, [character?.isPublic]);
+
+  // isPublic 상태가 변경될 때마다 로그 출력 (디버깅용)
+  useEffect(() => {
+    console.log('CharacterEditModal - isPublic changed:', isPublic);
+  }, [isPublic]);
 
   // Handle like/unlike functionality
   const handleLikeToggle = async () => {
@@ -212,7 +223,8 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
       console.log('🔍 CharacterEditModal - Save attempt:', {
         characterId,
         formData,
-        character
+        character,
+        isPublic
       });
 
       if (!characterId) {
@@ -225,7 +237,8 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
         introduction: formData.description,
         personality: formData.personality,
         tone: formData.tone,
-        tag: formData.tags
+        tag: formData.tags,
+        isPublic: isPublic
       });
 
       console.log('✅ CharacterEditModal - Save successful:', updatedCharacter);
@@ -396,6 +409,25 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
                 style={{fontFamily:'Share Tech Mono, monospace'}}
               />
             </div>
+
+            {/* 공개 설정 토글 - 내가 만든 캐릭터에서만 표시 */}
+            {isCharacterCreatedByMe && (
+              <div>
+                <div className="text-cyan-400 text-sm mb-3 font-mono">공개 설정</div>
+                <div className="flex items-center justify-between p-3 bg-black/30 border border-cyan-700 rounded-xl">
+                  <span className="text-cyan-200 text-sm font-mono">다른 사람에게 공개</span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isPublic}
+                      onChange={(e) => setIsPublic(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
+                  </label>
+                </div>
+              </div>
+            )}
             {/* 말투 입력 */}
             <div>
               <div className="text-cyan-400 text-sm mb-3 font-mono">말투</div>

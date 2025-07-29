@@ -215,8 +215,8 @@ export function useCreateChatRoom() {
   const [error, setError] = useState(null);
   const { getToken } = useAuth();
 
-  const createChatRoom = useCallback(async (characterId) => {
-    console.log('🆕 새 채팅방 생성 시작 - characterId:', characterId);
+  const createChatRoom = useCallback(async (characterId, isPublic = true) => {
+    console.log('🆕 새 채팅방 생성 시작 - characterId:', characterId, 'isPublic:', isPublic);
 
     if (!characterId) {
       throw new Error('캐릭터 ID가 필요합니다.');
@@ -230,7 +230,8 @@ export function useCreateChatRoom() {
       console.log('✅ 토큰 가져오기 성공');
 
       const requestData = {
-        characterId: characterId
+        characterId: characterId,
+        isPublic: isPublic
       };
 
       console.log('📤 채팅방 생성 요청 데이터:', requestData);
@@ -275,8 +276,8 @@ export function useEnterOrCreateChatRoom() {
   const [error, setError] = useState(null);
   const { getToken } = useAuth();
 
-  const enterOrCreateChatRoom = useCallback(async (characterId) => {
-    console.log('🔍 채팅방 입장/생성 시도 - characterId:', characterId);
+  const enterOrCreateChatRoom = useCallback(async (characterId, isPublic = true) => {
+    console.log('🔍 채팅방 입장/생성 시도 - characterId:', characterId, 'isPublic:', isPublic);
 
     if (!characterId) {
       throw new Error('캐릭터 ID가 필요합니다.');
@@ -291,7 +292,8 @@ export function useEnterOrCreateChatRoom() {
       // 1대1 채팅방 생성/입장 (POST)
       console.log('🆕 1대1 채팅방 생성/입장 시도...');
       const requestData = {
-        personaId: characterId
+        personaId: characterId,
+        isPublic: isPublic
       };
 
       const postResponse = await fetch(`${API_BASE_URL}/chat/rooms`, {

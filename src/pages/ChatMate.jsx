@@ -158,7 +158,7 @@ const ChatMate = () => {
   const [showAttachModal, setShowAttachModal] = useState(false);
   const [showGameModal, setShowGameModal] = useState(false);
   const fileInputRef = useRef(null);
-  
+
   // 캐릭터 프로필 모달 상태
   const [selectedCharacter, setSelectedCharacter] = useState(null);
 
@@ -244,7 +244,6 @@ const ChatMate = () => {
     console.log('📡 joinRoom 이벤트 전송:', { roomId, userId: user.id });
 
     socket.on('connect', () => {
-      console.log('🔌 WebSocket 연결됨');
       setWebSocketConnectionStatus('connected');
     });
 
@@ -697,52 +696,7 @@ const ChatMate = () => {
                   : '채팅방'
               }
             </span>
-            {/* 연결 상태 표시 */}
-            <div className="flex items-center gap-2">
-              {isOneOnOneChat ? (
-                // SSE 연결 상태
-                <>
-                  <div className={`w-3 h-3 rounded-full ${
-                    sseConnectionStatus === 'connected' ? 'bg-green-400 shadow-[0_0_4px_#0f0]' :
-                    sseConnectionStatus === 'connecting' ? 'bg-yellow-400 shadow-[0_0_4px_#ff0]' :
-                    sseConnectionStatus === 'error' ? 'bg-red-400 shadow-[0_0_4px_#f00]' :
-                    'bg-gray-400'
-                  }`} />
-                  <span className={`text-xs font-bold ${
-                    sseConnectionStatus === 'connected' ? 'text-green-400' :
-                    sseConnectionStatus === 'connecting' ? 'text-yellow-400' :
-                    sseConnectionStatus === 'error' ? 'text-red-400' :
-                    'text-gray-400'
-                  }`}>
-                    {sseConnectionStatus === 'connected' ? 'SSE 연결됨' :
-                     sseConnectionStatus === 'connecting' ? 'SSE 연결 중' :
-                     sseConnectionStatus === 'error' ? 'SSE 연결 오류' :
-                     'SSE 연결 안됨'}
-                  </span>
-                </>
-              ) : (
-                // WebSocket 연결 상태
-                <>
-                  <div className={`w-3 h-3 rounded-full ${
-                    webSocketConnectionStatus === 'connected' ? 'bg-green-400 shadow-[0_0_4px_#0f0]' :
-                    webSocketConnectionStatus === 'connecting' ? 'bg-yellow-400 shadow-[0_0_4px_#ff0]' :
-                    webSocketConnectionStatus === 'error' ? 'bg-red-400 shadow-[0_0_4px_#f00]' :
-                    'bg-gray-400'
-                  }`} />
-                  <span className={`text-xs font-bold ${
-                    webSocketConnectionStatus === 'connected' ? 'text-green-400' :
-                    webSocketConnectionStatus === 'connecting' ? 'text-yellow-400' :
-                    webSocketConnectionStatus === 'error' ? 'text-red-400' :
-                    'text-gray-400'
-                  }`}>
-                    {webSocketConnectionStatus === 'connected' ? 'WebSocket 연결됨' :
-                     webSocketConnectionStatus === 'connecting' ? 'WebSocket 연결 중' :
-                     webSocketConnectionStatus === 'error' ? 'WebSocket 연결 오류' :
-                     'WebSocket 연결 안됨'}
-          </span>
-                </>
-              )}
-            </div>
+            {/* 연결 상태 표시 제거 */}
             {/* 레벨 박스 - 1대1 채팅에서만 표시 */}
             {isOneOnOneChat && roomInfoParticipants[0] && (
               <div className="flex gap-2">

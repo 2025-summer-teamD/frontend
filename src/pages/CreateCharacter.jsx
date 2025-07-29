@@ -1,14 +1,16 @@
-import React, { useState } from 'react'
+import React, { act, useState } from 'react'
 import CAMERA from '/assets/image-preview.png'
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { getSafeImageUrl } from '../utils/imageUtils';
 import PageLayout from '../components/PageLayout';
 import TabButton from '../components/TabButton';
 import Button from '../components/Button';
+import Toggle from '../components/Toggle';
 import Input from '../components/Input';
 import Textarea from '../components/Textarea';
 import Checkbox from '../components/Checkbox';
 import SwipeableImageGallery from '../components/SwipeableImageGallery';
+import { ToggleRightIcon } from 'lucide-react';
 
 export default function CreateCharacter() {
   const [activeTab, setActiveTab] = useState('custom')
@@ -28,6 +30,7 @@ export default function CreateCharacter() {
   const [fetchingAi, setFetchingAi] = useState(false);
   const [fetchAiError, setFetchAiError] = useState('');
   const [imageUrls, setImageUrls] = useState([]); // 이미지 URL 목록
+  const [gender, setGender] = useState(true); // true: 여성, false: 남성
 
   const { getToken } = useAuth();
   const { user } = useUser(); // username을 가져오기 위해 useUser 추가
@@ -66,6 +69,23 @@ export default function CreateCharacter() {
     }
     try {
       setIsCreating(true);
+      let finalTags = [...tags]; // 현재 tags 상태의 복사본을 만듭니다.
+
+      if (activeTab === 'custom') {
+        const genderTag = gender ? '여성' : '남성';
+        console.log('캐릭터 성별 태그 추가 전 (현재 tags): ', tags);
+
+        // finalTags에 genderTag를 미리 추가합니다.
+        finalTags = [...tags, genderTag]; // 또는 finalTags.push(genderTag);
+        console.log('formData에 들어갈 최종 tags 배열:', finalTags);
+
+        // setTags 호출은 여전히 필요합니다 (UI에 반영되기 위해)
+        setTags(prevTags => {
+            const newTags = [...prevTags, genderTag];
+            console.log('setTags 내부 (UI 업데이트용 tags 배열):', newTags);
+            return newTags;
+        });
+      }
       const token = await getToken();
 
       const formData = new FormData();
@@ -73,7 +93,8 @@ export default function CreateCharacter() {
       formData.append('isPublic', isPublic ? 'true' : 'false'); // 문자열로 변환
       formData.append('description', description);
       formData.append('creatorName', user?.username || user?.firstName || user?.fullName || '사용자');
-      formData.append('prompt', JSON.stringify({ tone, personality, tag: tags.join(",") }));
+      console.log('캐릭터 성별 태크 추가: ', gender, finalTags);
+      formData.append('prompt', JSON.stringify({ tone, personality, tag: finalTags.join(",") }));
       if (imageFile) {
         formData.append('image', imageFile);
       } else if (imagePreview && imagePreview !== CAMERA) {
@@ -226,6 +247,7 @@ export default function CreateCharacter() {
                           placeholder="배경 스토리 등"
                         />
 
+
                         <div>
                           <label className="block text-white text-sm font-medium mb-2">태그 (Enter로 추가)</label>
                           <Input
@@ -250,6 +272,13 @@ export default function CreateCharacter() {
                           label="다른 사람에게 공개"
                           checked={isPublic}
                           onChange={e => setIsPublic(e.target.checked)}
+                          className="bg-transparent px-1 py-1"
+                        />
+
+                        <Toggle
+                          label={gender ? "여성" : "남성"}
+                          checked={gender}
+                          onChange={e => setGender(e.target.checked)}
                           className="bg-transparent px-1 py-1"
                         />
 
@@ -313,9 +342,6 @@ export default function CreateCharacter() {
                             alt="Preview"
                             className="w-full h-72 object-contain cursor-pointer hover:opacity-80 transition-opacity"
                             onClick={() => document.getElementById('image-upload')?.click()}
-                            onError={(e) => {
-                              e.target.src = '/api/uploads/default-character.svg';
-                            }}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
                           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
