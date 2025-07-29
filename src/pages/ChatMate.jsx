@@ -9,46 +9,37 @@ import { useMyCharacters } from '../data/characters';
 import { v4 as uuidv4 } from 'uuid';
 import NeonBackground from '../components/NeonBackground';
 import ChatMessageItem from '../components/ChatMessageItem';
+import CharacterProfile from '../components/CharacterProfile';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-// 레벨 계산 함수 (백엔드와 동일한 로직 - 10레벨 시스템)
+
+
+// 레벨 계산 함수 (백엔드와 동일한 로직 - 30레벨 시스템)
 // 백엔드에서는 이미 friendship 필드에 레벨이 저장되어 있으므로 이 함수는 fallback용
 function getLevel(exp) {
-  // 10레벨 시스템: 각 레벨업에 필요한 경험치가 1씩 증가
-  // 1레벨: 0exp, 2레벨: 1exp, 3레벨: 3exp, 4레벨: 6exp, 5레벨: 10exp
-  // 6레벨: 15exp, 7레벨: 21exp, 8레벨: 28exp, 9레벨: 36exp, 10레벨: 45exp
-  if (exp >= 45) return 10;
-  if (exp >= 36) return 9;
-  if (exp >= 28) return 8;
-  if (exp >= 21) return 7;
-  if (exp >= 15) return 6;
-  if (exp >= 10) return 5;
-  if (exp >= 6) return 4;
-  if (exp >= 3) return 3;
-  if (exp >= 1) return 2;
-  return 1; // exp가 0일 때 레벨 1
+  // 30레벨 시스템: 공식으로 계산
+  if (exp < 10) return 1;
+  const level = Math.floor((-1 + Math.sqrt(1 + 8 * exp / 10)) / 2) + 1;
+  return Math.min(level, 30); // 최대 30레벨
 }
 
 // 다음 레벨까지 필요한 경험치 계산
 function getExpForNextLevel(level) {
-  // 백엔드와 동일한 경험치 테이블
-  const expTable = [0, 0, 1, 3, 6, 10, 15, 21, 28, 36, 45];
-  return expTable[level] || 0;
+  // 공식: (level * (level + 1) / 2) * 10
+  return Math.floor((level * (level + 1) / 2) * 10);
 }
 
 // 현재 레벨의 시작 경험치 계산
 function getExpBase(level) {
-  // 백엔드와 동일한 경험치 테이블
-  const expTable = [0, 0, 0, 1, 3, 6, 10, 15, 21, 28, 36];
-  return expTable[level] || 0;
+  // 공식: ((level - 1) * level / 2) * 10
+  return Math.floor(((level - 1) * level / 2) * 10);
 }
 
 // 현재 레벨에서 필요한 경험치 계산
 function getExpForCurrentLevel(level) {
-  // 백엔드와 동일한 경험치 테이블
-  const expTable = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-  return expTable[level] || 1;
+  // 공식: level * 10
+  return level * 10;
 }
 
 // 경험치 게이지 컴포넌트 (백엔드 friendship 필드 사용)
@@ -64,7 +55,7 @@ function LevelExpGauge({ exp, friendship }) {
   return (
     <div className="flex flex-col items-center gap-1">
       <span>Lv.{level}</span>
-      <span>친밀도:{exp}</span>
+      <span>레벨:{level}</span>
       <div className="w-32 h-2 bg-black/60 border border-cyan-700 rounded-full shadow-[0_0_4px_#0ff] relative overflow-hidden">
         <div
           className="h-full bg-cyan-400"
@@ -87,7 +78,7 @@ const SOCKET_URL = 'http://localhost:3001'; // 포트 3002로 명시적으로 �
 // AI별 네온 컬러 팔레트 (고정 or 랜덤)
 const AI_NEON_COLORS = [
   { bg: 'bg-fuchsia-100/80', border: 'border-fuchsia-200', shadow: 'shadow-[0_0_4px_#f0f]', text: 'text-fuchsia-900' },
-  { bg: 'bg-cyan-100/80', border: 'border-cyan-200', shadow: 'shadow-[0_0_4px_#0ff]', text: 'text-cyan-900' },
+  { bg: 'bg-purple-100/80', border: 'border-purple-200', shadow: 'shadow-[0_0_4px_#a0f]', text: 'text-purple-900' },
   { bg: 'bg-green-100/80', border: 'border-green-200', shadow: 'shadow-[0_0_4px_#0f0]', text: 'text-green-900' },
   { bg: 'bg-pink-100/80', border: 'border-pink-200', shadow: 'shadow-[0_0_4px_#f0c]', text: 'text-pink-900' },
   { bg: 'bg-blue-100/80', border: 'border-blue-200', shadow: 'shadow-[0_0_4px_#0cf]', text: 'text-blue-900' },
@@ -167,6 +158,9 @@ const ChatMate = () => {
   const [showAttachModal, setShowAttachModal] = useState(false);
   const [showGameModal, setShowGameModal] = useState(false);
   const fileInputRef = useRef(null);
+  
+  // 캐릭터 프로필 모달 상태
+  const [selectedCharacter, setSelectedCharacter] = useState(null);
 
   // 🆕 사이드바 채팅방 전환 감지: state 변경 시 상태 업데이트
   useEffect(() => {
@@ -329,8 +323,8 @@ const ChatMate = () => {
   // 캐릭터 데이터 디버깅
   useEffect(() => {
     if (isOneOnOneChat && roomInfoParticipants.length > 0) {
-      console.log('🔍 1대1 채팅 캐릭터 데이터:', roomInfoParticipants[0]);
-      console.log('🔍 Available fields:', Object.keys(roomInfoParticipants[0]));
+      // console.log('🔍 1대1 채팅 캐릭터 데이터:', roomInfoParticipants[0]);
+      // console.log('🔍 Available fields:', Object.keys(roomInfoParticipants[0]));
     }
   }, [isOneOnOneChat, roomInfoParticipants]);
 
@@ -470,7 +464,7 @@ const ChatMate = () => {
 
             const chunk = decoder.decode(value);
             const lines = chunk.split('\n');
-
+            let chatId = null;
             for (const line of lines) {
               if (line.startsWith('data: ')) {
                 const data = line.slice(6); // 'data: ' 제거
@@ -480,7 +474,7 @@ const ChatMate = () => {
                   if (aiResponse.trim()) {
                     // 1대1 채팅에서는 첫 번째 AI 참여자의 정보를 사용
                     const aiParticipant = roomInfoParticipants.find(p => p.personaId);
-                    addAiResponseToRoom(roomId, aiResponse.trim(), character?.id, aiParticipant?.name);
+                    addAiResponseToRoom(roomId, chatId, aiResponse.trim(), character?.id, aiParticipant?.name);
                   }
                   setAiLoading(roomId, false);
                   setSseConnectionStatus('disconnected');
@@ -490,7 +484,14 @@ const ChatMate = () => {
                     const parsedData = JSON.parse(data);
                     if (parsedData.type === 'text_chunk') {
                       aiResponse += parsedData.content;
-            }
+                    }
+                    else if (parsedData.type === 'message_saved') {
+                      console.log('메시지가 저장되었습니다:', parsedData);
+                      // console.log(`메시지 새로고침: ${parsedData.messageId}`, msg);
+                      chatId = parsedData.chatLogId; // chatRoomId 변경
+                      // chatRoomId 변경
+
+                    }
                   } catch (e) {
                     // JSON 파싱 실패 시 무시
                   }
@@ -601,8 +602,8 @@ const ChatMate = () => {
                   if (data === '[DONE]') {
                     // AI 응답 완료
                     if (aiResponse.trim()) {
-                      addAiResponseToRoom(roomId, aiResponse.trim(), character?.id);
-          }
+                      addAiResponseToRoom(roomId, chatId, aiResponse.trim(), character?.id);
+                    }
                     setAiLoading(roomId, false);
                     setSseConnectionStatus('disconnected');
                     return;
@@ -650,7 +651,7 @@ const ChatMate = () => {
   return (
     <NeonBackground className="flex flex-col h-full font-cyberpunk">
       {/* 헤더: sticky */}
-      <header className="sticky top-0 py-4 px-6 z-10">
+      <header className="sticky top-0 py-4 px-6 z-50">
         <div className="flex items-center gap-3">
           {/* 여러 캐릭터 프로필 이미지 */}
           <div className="flex -space-x-2">
@@ -659,8 +660,24 @@ const ChatMate = () => {
               return (
                 <div
                   key={participant.personaId}
-                  className="w-9 h-9 rounded-full border-2 border-cyan-300 shadow-[0_0_4px_#0ff] relative"
+                  className="w-9 h-9 rounded-full border-2 border-cyan-300 shadow-[0_0_4px_#0ff] relative cursor-pointer hover:scale-110 transition-transform"
                   style={{ zIndex: roomInfoParticipants.length - index }}
+                  onClick={() => {
+                    if (ai) {
+                      setSelectedCharacter(ai);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      if (ai) {
+                        setSelectedCharacter(ai);
+                      }
+                    }
+                  }}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`${ai?.name || 'AI'} 프로필 보기`}
                 >
             <img
                     src={ai?.imageUrl || '/assets/icon-character.png'}
@@ -726,8 +743,8 @@ const ChatMate = () => {
                 </>
               )}
             </div>
-            {/* 레벨과 친밀도 박스 - 첫 번째 AI 기준 */}
-            {roomInfoParticipants[0] && (
+            {/* 레벨 박스 - 1대1 채팅에서만 표시 */}
+            {isOneOnOneChat && roomInfoParticipants[0] && (
               <div className="flex gap-2">
                 {/* LEVEL 박스 */}
                 <div className="bg-white/20 border-2 border-yellow-400 rounded-lg px-3 py-1 text-center">
@@ -735,37 +752,39 @@ const ChatMate = () => {
                     Lv.{roomInfoParticipants[0].friendship || 1}
                   </div>
                 </div>
-
-                {/* INTIMACY 박스 */}
-                <div className="bg-white/20 border-2 border-fuchsia-400 rounded-lg px-3 py-1 text-center">
-                  <div className="text-fuchsia-200 font-bold text-sm font-cyberpunk">
-                    친밀도 {roomInfoParticipants[0].exp || 0}
-                  </div>
-                </div>
               </div>
             )}
+
           </div>
         </div>
-        {/* 경험치 게이지만 아래에 - 첫 번째 AI 기준 */}
-        {roomInfoParticipants[0] && (
-          <div className="mt-2 flex justify-start ml-12">
-            <div className="w-48 h-5 bg-black/60 border-2 border-cyan-700 rounded-full shadow-[0_0_8px_#0ff] relative overflow-hidden">
-              <div
-                className="h-full bg-cyan-400"
-                style={{
-                  width: `${Math.min(100, Math.round(((roomInfoParticipants[0].exp || 0) / 45) * 100))}%`,
-                  boxShadow: '0 0 4px #0ff, 0 0 8px #0ff',
-                  transition: 'width 0.4s cubic-bezier(.4,2,.6,1)'
-                }}
-              />
-            </div>
-          </div>
-        )}
+{/* 경험치 게이지 - 1대1 채팅에서만 표시 */}
+{isOneOnOneChat && roomInfoParticipants[0] && (
+  <div className="mt-2 flex justify-start ml-12">
+    <div
+      className="group w-48 h-5 bg-black/60 border-2 border-cyan-700 rounded-full shadow-[0_0_8px_#0ff] relative overflow-hidden cursor-pointer"
+    >
+      <div
+        className="h-full bg-cyan-400"
+        style={{
+          width: `${Math.min(100, Math.round(((roomInfoParticipants[0].exp || 0) / getExpForNextLevel(roomInfoParticipants[0].friendship || 1)) * 100))}%`,
+          boxShadow: '0 0 4px #0ff, 0 0 8px #0ff',
+          transition: 'width 0.4s cubic-bezier(.4,2,.6,1)'
+        }}
+      />
+      {/* 경험치 숫자 표시 - 마우스 오버시에만 보임 */}
+      <div className="exp-tooltip absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
+        <div className="text-cyan-300 text-xs font-cyberpunk font-bold drop-shadow-[0_0_2px_#000]">
+          {roomInfoParticipants[0].exp || 0} / {getExpForNextLevel(roomInfoParticipants[0].friendship || 1)}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
       </header>
       {/* 스크롤 영역: 프로필 + 메시지 */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 px-4 overflow-y-auto no-scrollbar sm:px-6 md:px-8 lg:px-12 pb-28 font-cyberpunk relative z-10"
+        className="flex-1 px-4 overflow-y-auto no-scrollbar sm:px-6 md:px-8 lg:px-12 pb-28 font-cyberpunk relative z-1"
       >
         {/* 프로필 */}
         {isOneOnOneChat ? (
@@ -830,12 +849,6 @@ const ChatMate = () => {
                   ...participant,
                   ...myAIs.find(ai => String(ai.id) === String(participant.personaId))
                 };
-                // 백엔드에서 전송한 friendship을 우선 사용
-                const level = ai.friendship || 1;
-                const expBase = getExpBase(level);
-                const expForCurrentLevel = getExpForCurrentLevel(level);
-                const expInLevel = (ai.exp || 0) - expBase;
-                const percent = expForCurrentLevel ? Math.min(100, Math.round((expInLevel / expForCurrentLevel) * 100)) : 100;
                 return (
                   <div key={ai.personaId} className="flex flex-col items-center">
                     <div className="relative">
@@ -846,25 +859,9 @@ const ChatMate = () => {
                           className="w-full h-full object-cover rounded-full"
                         />
                       </div>
-                      <div className="absolute -top-2 -right-2 w-8 h-8 bg-fuchsia-500 rounded-full flex items-center justify-center border border-fuchsia-300 shadow-[0_0_4px_#f0f]">
-                        <span className="text-sm font-bold text-fuchsia-900">Lv.{level}</span>
-                      </div>
                     </div>
                     <span className="text-sm font-bold text-cyan-100 mb-2 drop-shadow-[0_0_2px_#0ff] tracking-widest font-cyberpunk">
                       {ai.name}
-                    </span>
-                    <div className="w-20 h-2 bg-black/60 border border-cyan-700 rounded-full shadow-[0_0_4px_#0ff] relative overflow-hidden">
-                      <div
-                        className="h-full bg-cyan-400"
-                        style={{
-                          width: `${percent}%`,
-                          boxShadow: '0 0 4px #0ff, 0 0 8px #0ff',
-                          transition: 'width 0.4s cubic-bezier(.4,2,.6,1)'
-                        }}
-                      />
-                    </div>
-                    <span className="text-xs text-cyan-300 mt-1 font-bold">
-                      {ai.exp || 0}
                     </span>
                   </div>
                 );
@@ -875,7 +872,7 @@ const ChatMate = () => {
         {/* 메시지들 */}
         <div className="space-y-4 pb-4 max-w-3xl mx-auto font-cyberpunk">
           {messages.map((msg, idx) => {
-            console.log(msg);
+            // console.log(msg);
             const isAI = msg.sender === 'ai';
             // 메시지 렌더링 시에도 aiObj를 myAIs가 아니라 roomInfoParticipants에서 찾아 exp, personality 등 활용
             const aiObj = isAI ? roomInfoParticipants.find(ai => String(ai.personaId) === String(msg.aiId)) : null;
@@ -908,6 +905,7 @@ const ChatMate = () => {
               aiColor={aiColor} // AI 말풍선 색상 설정
               roomId={roomId} // 현재 채팅방 ID 전달
               userId={user.id} // 현재 로그인한 사용자 ID 전달
+              isLast={isLast} // 마지막 메시지 여부
           />)
           })}
           <div ref={messagesEndRef} />
@@ -916,60 +914,92 @@ const ChatMate = () => {
       {/* 입력창: sticky bottom */}
       <footer className="fixed right-0 left-0 bottom-0 px-4 py-4 border-t-2 border-cyan-200 bg-black/30 glass backdrop-blur-xl shadow-[0_0_8px_#0ff,0_0_16px_#f0f] font-cyberpunk z-20">
         <div className="flex items-center space-x-3 max-w-4xl mx-auto relative font-cyberpunk">
-          <div className="relative">
-            <button
-              className="text-cyan-400 hover:text-fuchsia-400 p-2 text-xl drop-shadow-[0_0_2px_#0ff] font-cyberpunk"
-              aria-label="게임 메뉴"
-              onClick={() => {
-                setShowAttachModal(false); // 다른 모달 닫기
-                setShowGameModal(v => !v);
-              }}
-            >
-              <IoGameController />
-            </button>
+          {/* 게임 버튼은 1:1 채팅에서만 표시 */}
+          {isOneOnOneChat && (
+            <div className="relative">
+              <button
+                className="text-cyan-400 hover:text-fuchsia-400 p-2 text-xl drop-shadow-[0_0_2px_#0ff] font-cyberpunk"
+                aria-label="게임 메뉴"
+                onClick={() => {
+                  setShowAttachModal(false); // 다른 모달 닫기
+                  setShowGameModal(v => !v);
+                }}
+              >
+                <IoGameController />
+              </button>
             {/* 게임 모달: 게임버튼 위에 작게 */}
             {showGameModal && (
               <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-50 bg-blue-900/50 border-2 border-cyan-200 rounded-xl shadow-[0_0_4px_#0ff] p-4 flex flex-col items-center w-64 animate-fadeIn font-cyberpunk">
                 <div className="text-cyan-300 font-bold mb-3 text-lg drop-shadow-[0_0_2px_#0ff] tracking-widest">게임 선택</div>
                 <div className="space-y-2 w-full">
+                  {/* 10레벨 미만: 게임 버튼 숨김 */}
+                  {(!roomInfoParticipants[0] || roomInfoParticipants[0].friendship < 10) && (
+                    <div className="text-cyan-300 text-sm text-center py-2">
+                      레벨 10 이상에서 게임이 열립니다
+                    </div>
+                  )}
+                  {/* 10레벨 이상: 게임 버튼들 표시 */}
+                  {roomInfoParticipants[0]?.friendship >= 10 && (
+                    <>
+                      {/* 끝말잇기 - 10레벨 이상에서 활성화 */}
+                      <button
+                        className="w-full bg-gradient-to-r from-cyan-200 to-fuchsia-200 hover:from-cyan-100 hover:to-fuchsia-100 text-[#1a1a2e] px-4 py-2 rounded-full font-cyberpunk font-bold transition-all shadow-[0_0_2px_#0ff]"
+                        onClick={() => {
+                          // 끝말잇기 게임 시작 메시지 전송
+                          setNewMessage('[GAME:끝말잇기] 끝말잇기 게임을 시작하고 싶어요!');
+                          setShowGameModal(false);
+                          // 자동으로 메시지 전송
+                          setTimeout(() => {
+                            sendMessage();
+                          }, 100);
+                        }}
+                      >
+                        끝말잇기
+                      </button>
+                                        {/* 스무고개 - 20레벨 이상에서만 활성화, 그 전에는 회색 */}
                   <button
-                    className="w-full bg-gradient-to-r from-cyan-200 to-fuchsia-200 hover:from-cyan-100 hover:to-fuchsia-100 text-[#1a1a2e] px-4 py-2 rounded-full font-cyberpunk font-bold transition-all shadow-[0_0_2px_#0ff]"
+                    className={`w-full px-4 py-2 rounded-full font-cyberpunk font-bold transition-all ${
+                      roomInfoParticipants[0]?.friendship >= 20
+                        ? 'bg-gradient-to-r from-green-200 to-blue-200 hover:from-green-100 hover:to-blue-100 text-[#1a1a2e] shadow-[0_0_2px_#0ff]'
+                        : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                    }`}
                     onClick={() => {
-                      // 끝말잇기 게임 시작 메시지 전송
-                      setNewMessage('[GAME:끝말잇기] 끝말잇기 게임을 시작하고 싶어요!');
-                      setShowGameModal(false);
-                      // 자동으로 메시지 전송
-                      setTimeout(() => {
-                        sendMessage();
-                      }, 100);
+                      if (roomInfoParticipants[0]?.friendship >= 20) {
+                        // 스무고개 게임 시작 메시지 전송
+                        setNewMessage('[GAME:스무고개] 스무고개 게임을 시작하고 싶어요!');
+                        setShowGameModal(false);
+                        // 자동으로 메시지 전송
+                        setTimeout(() => {
+                          sendMessage();
+                        }, 100);
+                      }
                     }}
                   >
-                    끝말잇기
+                    {roomInfoParticipants[0]?.friendship >= 20 ? '스무고개' : '20Lv 이후 잠금해제'}
                   </button>
+                  {/* 밸런스 게임 - 30레벨 이상에서만 활성화, 그 전에는 회색 */}
                   <button
-                    className="w-full bg-gradient-to-r from-green-200 to-blue-200 hover:from-green-100 hover:to-blue-100 text-[#1a1a2e] px-4 py-2 rounded-full font-cyberpunk font-bold transition-all shadow-[0_0_2px_#0ff]"
+                    className={`w-full px-4 py-2 rounded-full font-cyberpunk font-bold transition-all ${
+                      roomInfoParticipants[0]?.friendship >= 30
+                        ? 'bg-gradient-to-r from-purple-200 to-pink-200 hover:from-purple-100 hover:to-pink-100 text-[#1a1a2e] shadow-[0_0_2px_#0ff]'
+                        : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                    }`}
                     onClick={() => {
-                      // 스무고개 게임 시작 메시지 전송
-                      setNewMessage('[GAME:스무고개] 스무고개 게임을 시작하고 싶어요!');
-                      setShowGameModal(false);
-                      // 자동으로 메시지 전송
-                      setTimeout(() => {
-                        sendMessage();
-                      }, 100);
+                      if (roomInfoParticipants[0]?.friendship >= 30) {
+                        // 밸런스 게임 시작 메시지 전송
+                        setNewMessage('[GAME:밸런스게임] 밸런스 게임을 시작하고 싶어요!');
+                        setShowGameModal(false);
+                        // 자동으로 메시지 전송
+                        setTimeout(() => {
+                          sendMessage();
+                        }, 100);
+                      }
                     }}
                   >
-                    스무고개
+                    {roomInfoParticipants[0]?.friendship >= 30 ? '밸런스 게임' : '30Lv 이후 잠금해제'}
                   </button>
-                  <button
-                    className="w-full bg-gradient-to-r from-purple-200 to-pink-200 hover:from-purple-100 hover:to-pink-100 text-[#1a1a2e] px-4 py-2 rounded-full font-cyberpunk font-bold transition-all shadow-[0_0_2px_#0ff]"
-                    onClick={() => {
-                      // TODO: 밸런스 게임 시작
-                      console.log('밸런스 게임 시작');
-                      setShowGameModal(false);
-                    }}
-                  >
-                    밸런스 게임
-                  </button>
+                    </>
+                  )}
                 </div>
                 <button
                   className="mt-3 text-cyan-400 hover:text-fuchsia-400 font-cyberpunk font-bold text-base transition-colors"
@@ -980,6 +1010,7 @@ const ChatMate = () => {
               </div>
             )}
           </div>
+          )}
           <div className="relative">
             <button
               className="text-cyan-400 hover:text-fuchsia-400 p-2 text-xl drop-shadow-[0_0_2px_#0ff] font-cyberpunk"
@@ -1031,6 +1062,7 @@ const ChatMate = () => {
               className="w-full bg-transparent border-none outline-none text-white placeholder-cyan-400 font-cyberpunk tracking-widest"
               disabled={aiResponseLoading}
             />
+
           </div>
           <button
             onClick={sendMessage}
@@ -1041,6 +1073,18 @@ const ChatMate = () => {
           </button>
         </div>
       </footer>
+
+      {/* 캐릭터 프로필 모달 */}
+      {selectedCharacter && (
+        <CharacterProfile
+          character={selectedCharacter}
+          liked={false}
+          origin="chat"
+          onClose={() => setSelectedCharacter(null)}
+          onLikeToggle={() => {}} // 빈 함수로 설정하여 버튼 비활성화
+          onEdit={() => {}} // 빈 함수로 설정하여 버튼 비활성화
+        />
+      )}
     </NeonBackground>
   );
 };

@@ -7,6 +7,8 @@ import { useUser, useAuth } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 import { toggleLike } from '../data/characters';
 
+
+
 const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, onChatRoomCreated }) => {
   const { updateCharacter, loading: updateLoading } = useUpdateCharacter();
   const { deleteCharacter, loading: deleteLoading } = useDeleteCharacter();
@@ -375,9 +377,9 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
             <div className="text-cyan-400 text-sm font-mono">좋아요</div>
           </div>
           <div className="text-center">
-            {/* 백엔드에서 받은 exp 값 표시 */}
-            <div className="text-[28px] font-bold text-cyan-200 mb-1 drop-shadow-[0_0_4px_#0ff]">{exp}</div>
-            <div className="text-cyan-400 text-sm font-mono">친밀도</div>
+            {/* 백엔드에서 계산된 레벨 표시 */}
+            <div className="text-[28px] font-bold text-cyan-200 mb-1 drop-shadow-[0_0_4px_#0ff]">{character?.friendship || 1}</div>
+            <div className="text-cyan-400 text-sm font-mono">레벨</div>
           </div>
         </div>
         <div className="mb-8">
