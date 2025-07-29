@@ -19,14 +19,14 @@ export default function Communities() {
   const [likedIds, setLikedIds] = useState(() =>
     JSON.parse(localStorage.getItem('likedIds')) || []
   );
-  const [activeTab, setActiveTab] = useState('인기순');
+  const [activeTab, setActiveTab] = useState('캐릭터'); // 기본 탭을 캐릭터로 변경
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [editingCharacter, setEditingCharacter] = useState(null);
   const [sortBy, setSortBy] = useState('likes'); // 정렬 기준 추가
 
   const { characters, loading, error, setCharacters } = useCommunityCharacters(sortBy);
-  const { refetch: refetchMyChatCharacters } = useChatRooms();
+  const { chatRooms, loading: chatRoomsLoading, error: chatRoomsError, refetch: refetchMyChatCharacters } = useChatRooms();
 
   React.useEffect(() => {
     localStorage.setItem('likedIds', JSON.stringify(likedIds));
@@ -34,7 +34,6 @@ export default function Communities() {
 
   // 정렬 버튼 클릭 핸들러
   const handleSortChange = (newSort) => {
-    setActiveTab(newSort);
     setSortBy(newSort === '인기순' ? 'likes' : 'usesCount');
   };
 
@@ -85,75 +84,175 @@ export default function Communities() {
 
   // 정렬 (API 데이터 구조에 맞게 수정)
   const sortedCharacters = [...filteredCharacters].sort((a, b) => {
-    const valA = parseFloat(activeTab === '조회수순' ? a.usesCount : a.likes);
-    const valB = parseFloat(activeTab === '조회수순' ? b.usesCount : b.likes);
+    const valA = parseFloat(sortBy === 'usesCount' ? a.usesCount : a.likes);
+    const valB = parseFloat(sortBy === 'usesCount' ? b.usesCount : b.likes);
     return valB - valA;
   });
 
-  if (loading) {
+  // 채팅방 필터링
+  const filteredChatRooms = chatRooms.filter(room => {
+    const keyword = searchQuery.toLowerCase();
+    return (
+      room.name?.toLowerCase().includes(keyword) ||
+      room.participants?.some(p => p.persona?.name?.toLowerCase().includes(keyword))
+    );
+  });
+
+  if (loading && activeTab === '캐릭터') {
     return <LoadingSpinner />;
   }
 
-  if (error) {
+  if (chatRoomsLoading && activeTab === '채팅방') {
+    return <LoadingSpinner />;
+  }
+
+  if (error && activeTab === '캐릭터') {
     return <ErrorDisplay error={error} />;
+  }
+
+  if (chatRoomsError && activeTab === '채팅방') {
+    return <ErrorDisplay error={chatRoomsError} />;
   }
 
   return (
     <PageLayout 
-      title="캐릭터 커뮤니티"
-      subtitle="당신이 좋아하는 캐릭터를 찾아보세요"
+      title="커뮤니티"
+      subtitle="다른 사용자들이 만든 캐릭터와 채팅방을 둘러보세요"
     >
-      {/* Search and Filter */}
-      <SearchBar 
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-      />
-      <div className="flex justify-center gap-2 sm:gap-4 mt-4 mb-3">
-        {['인기순', '조회수순'].map(tab => (
+      {/* 탭 버튼 */}
+      <div className="flex justify-center gap-2 sm:gap-4 mb-6">
+        {['캐릭터', '채팅방'].map(tab => (
           <TabButton
             key={tab}
             isActive={activeTab === tab}
-            onClick={() => handleSortChange(tab)}
+            onClick={() => setActiveTab(tab)}
           >
             {tab}
           </TabButton>
         ))}
       </div>
 
-      {/* Character Grid */}
-      {sortedCharacters.length === 0 ? (
-        <EmptyState />
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
-          {sortedCharacters.map(character => {
-            const isLiked = character.liked || likedIds.includes(character.id);
-            const handleSelect = async () => {
-              try {
-                if (character.id) {
-                  const token = await getToken();
-                  await incrementViewCount(character.id, token);
-                  character.usesCount = (character.usesCount || 0) + 1;
-                  setCharacters(prev => [...prev]);
-                }
-              } catch (error) {
-                console.error('조회수 증가 실패:', error);
-              }
-              setSelectedCharacter(character);
-            };
-            return (
-              <CharacterCard
-                key={character.id}
-                character={character}
-                isMine={false}
-                isLiked={isLiked}
-                onLikeToggle={handleLikeToggle}
-                onEdit={() => {}}
-                onSelect={handleSelect}
-                showEditButtons={false}
-              />
-            );
-          })}
-        </div>
+      {/* Search and Filter */}
+      <SearchBar 
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+      />
+      
+      {/* 캐릭터 탭 */}
+      {activeTab === '캐릭터' && (
+        <>
+          <div className="flex justify-center gap-2 sm:gap-4 mt-4 mb-3">
+            {['인기순', '조회수순'].map(tab => (
+              <TabButton
+                key={tab}
+                isActive={sortBy === (tab === '인기순' ? 'likes' : 'usesCount')}
+                onClick={() => handleSortChange(tab)}
+              >
+                {tab}
+              </TabButton>
+            ))}
+          </div>
+
+          {/* Character Grid */}
+          {sortedCharacters.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
+              {sortedCharacters.map(character => {
+                const isLiked = character.liked || likedIds.includes(character.id);
+                const handleSelect = async () => {
+                  try {
+                    if (character.id) {
+                      const token = await getToken();
+                      await incrementViewCount(character.id, token);
+                      character.usesCount = (character.usesCount || 0) + 1;
+                      setCharacters(prev => [...prev]);
+                    }
+                  } catch (error) {
+                    console.error('조회수 증가 실패:', error);
+                  }
+                  setSelectedCharacter(character);
+                };
+                return (
+                  <CharacterCard
+                    key={character.id}
+                    character={character}
+                    isMine={false}
+                    isLiked={isLiked}
+                    onLikeToggle={handleLikeToggle}
+                    onEdit={() => {}}
+                    onSelect={handleSelect}
+                    showEditButtons={false}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* 채팅방 탭 */}
+      {activeTab === '채팅방' && (
+        <>
+          <div className="flex justify-center gap-2 sm:gap-4 mt-4 mb-3">
+            {['최신순', '인기순'].map(tab => (
+              <TabButton
+                key={tab}
+                isActive={sortBy === (tab === '최신순' ? 'createdAt' : 'likes')}
+                onClick={() => setSortBy(tab === '최신순' ? 'createdAt' : 'likes')}
+              >
+                {tab}
+              </TabButton>
+            ))}
+          </div>
+
+          {/* Chat Rooms Grid */}
+          {filteredChatRooms.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+              {filteredChatRooms.map(room => (
+                <div
+                  key={room.id}
+                  className="bg-black/60 glass border-2 border-cyan-700 rounded-2xl p-4 shadow-[0_0_16px_#0ff,0_0_32px_#f0f] hover:shadow-[0_0_20px_#0ff,0_0_40px_#f0f] transition-all duration-300 cursor-pointer"
+                  onClick={() => {
+                    // 채팅방 클릭 시 해당 채팅방으로 이동
+                    window.location.href = `/chatMate/${room.id}`;
+                  }}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="flex -space-x-2">
+                      {room.participants?.slice(0, 3).map((participant, index) => (
+                        <div
+                          key={participant.personaId || index}
+                          className="w-8 h-8 rounded-full border-2 border-cyan-300 shadow-[0_0_4px_#0ff]"
+                          style={{ zIndex: 3 - index }}
+                        >
+                          <img
+                            src={participant.persona?.imageUrl || '/assets/icon-character.png'}
+                            alt={participant.persona?.name || 'AI'}
+                            className="w-full h-full object-cover rounded-full"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-cyan-200 font-bold text-sm">
+                        {room.name || `${room.participants?.length || 0}명의 AI와 대화`}
+                      </h3>
+                      <p className="text-cyan-300 text-xs">
+                        {room.participants?.length || 0}명 참여
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-cyan-400 text-xs">
+                    {room.isPublic ? '공개' : '비공개'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {selectedCharacter && (

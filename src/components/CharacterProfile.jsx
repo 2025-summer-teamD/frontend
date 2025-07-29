@@ -196,6 +196,7 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
   const [loading, setLoading] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
   const [showImage, setShowImage] = useState(false);
+  const [isPublic, setIsPublic] = useState(true); // 공개 여부 상태 추가
   const { getToken, userId } = useAuth();
   const { enterOrCreateChatRoom } = useEnterOrCreateChatRoom();
 
@@ -207,7 +208,7 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
     setChatLoading(true);
     try {
       const characterId = character.id;
-      const { roomId, character: updatedCharacter, chatHistory, isNewRoom } = await enterOrCreateChatRoom(characterId);
+      const { roomId, character: updatedCharacter, chatHistory, isNewRoom } = await enterOrCreateChatRoom(characterId, isPublic);
       
       console.log(isNewRoom ? '🆕 새 채팅방 생성됨' : '🔄 기존 채팅방 입장 (히스토리 ' + chatHistory.length + '개)');
 
@@ -315,6 +316,22 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
               style={{textShadow:'0 0 4px #0f0, 0 0 8px #0f0', boxShadow:'0 0 8px #0f0, 0 0 16px #0f0'}}>
               수정하기
             </button>
+          )}
+          
+          {/* 공개 설정 토글 - 채팅방에서만 숨김 */}
+          {origin !== 'chat' && (
+            <div className="flex items-center justify-between p-3 bg-black/30 border border-cyan-700 rounded-xl">
+              <span className="text-cyan-200 text-sm font-bold">다른 사람에게 공개</span>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isPublic}
+                  onChange={(e) => setIsPublic(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
+              </label>
+            </div>
           )}
           
           {/* 1:1 채팅하기 버튼 - 채팅방에서만 숨김 */}

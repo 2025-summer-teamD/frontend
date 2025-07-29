@@ -47,10 +47,54 @@ function useMyChats() {
   return { characters, loading, error, refetch: fetchMyChats };
 }
 
+function usePublicChatRooms() {
+  const [chatRooms, setChatRooms] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { getToken } = useAuth();
+
+  const fetchPublicChatRooms = useCallback(async () => {
+    try {
+      setLoading(true);
+      const token = await getToken();
+      const res = await fetch(`${API_BASE_URL}/chat/public-rooms`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      
+      if (data.success && data.data) {
+        setChatRooms(data.data);
+      } else {
+        setChatRooms([]);
+      }
+    } catch (err) {
+      setError('공개 채팅방 목록을 불러오는데 실패했습니다.');
+      setChatRooms([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [getToken]);
+
+  useEffect(() => { fetchPublicChatRooms(); }, [fetchPublicChatRooms]);
+
+  return { chatRooms, loading, error, refetch: fetchPublicChatRooms };
+}
+
 function ChatRoomsProvider({ children }) {
   const { characters, loading, error, refetch } = useMyChats();
+  const { chatRooms, loading: chatRoomsLoading, error: chatRoomsError, refetch: refetchPublicRooms } = usePublicChatRooms();
+  
   return (
-    <ChatRoomsContext.Provider value={{ characters, loading, error, refetch }}>
+    <ChatRoomsContext.Provider value={{ 
+      characters, 
+      loading, 
+      error, 
+      refetch,
+      chatRooms,
+      chatRoomsLoading,
+      chatRoomsError,
+      refetchPublicRooms
+    }}>
       {children}
     </ChatRoomsContext.Provider>
   );
