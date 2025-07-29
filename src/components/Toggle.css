@@ -1,0 +1,60 @@
+/* Toggle.css (새 파일 생성) */
+.toggle-switch-container {
+  position: relative;
+  display: inline-flex; /* 라벨과 스위치를 한 줄에 */
+  align-items: center;
+  cursor: pointer;
+  user-select: none; /* 텍스트 선택 방지 */
+  padding: 5px; /* 클릭 영역 확보 */
+}
+
+.toggle-switch-label {
+  margin-right: 10px; /* 라벨과 스위치 사이 간격 */
+  margin-left: 10px; /* 라벨과 스위치 사이 간격 */
+  font-weight: bold;
+  color: #0ff; /* 기본 라벨 색상 */
+}
+
+.toggle-switch-input {
+  /* 기본 체크박스 숨기기 */
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-switch-slider {
+  display: block; /* 블록 요소로 만들기 */
+  width: 50px; /* 스위치 너비 */
+  height: 25px; /* 스위치 높이 */
+  background-color: #ccc; /* 꺼진 상태 배경색 */
+  border-radius: 25px; /* 둥근 모양 */
+  position: relative;
+  transition: background-color 0.4s; /* 배경색 변경 애니메이션 */
+}
+
+.toggle-switch-slider:before {
+  content: "";
+  position: absolute;
+  width: 21px; /* 원형 버튼 크기 */
+  height: 21px; /* 원형 버튼 크기 */
+  border-radius: 50%; /* 원형 */
+  background-color: white; /* 원형 버튼 색상 */
+  top: 2px; /* 위쪽 여백 */
+  left: 2px; /* 왼쪽 여백 */
+  right: 2px; /* 왼쪽 여백 */
+  transition: transform 0.4s; /* 버튼 이동 애니메이션 */
+}
+
+/* 체크되었을 때 */
+.toggle-switch-input:checked + .toggle-switch-slider {
+  background-color: #2196F3; /* 켜진 상태 배경색 */
+}
+
+.toggle-switch-input:checked + .toggle-switch-slider:before {
+  transform: translateX(25px); /* 오른쪽으로 이동 (너비 - 원형 크기 - 양쪽 패딩) */
+}
+
+/* 포커스 시 스타일 (접근성) */
+.toggle-switch-input:focus + .toggle-switch-slider {
+  box-shadow: 0 0 1px #2196F3;
+}

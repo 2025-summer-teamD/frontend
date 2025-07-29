@@ -1,14 +1,16 @@
-import React, { useState } from 'react'
+import React, { act, useState } from 'react'
 import CAMERA from '/assets/image-preview.png'
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { getSafeImageUrl } from '../utils/imageUtils';
 import PageLayout from '../components/PageLayout';
 import TabButton from '../components/TabButton';
 import Button from '../components/Button';
+import Toggle from '../components/Toggle';
 import Input from '../components/Input';
 import Textarea from '../components/Textarea';
 import Checkbox from '../components/Checkbox';
 import SwipeableImageGallery from '../components/SwipeableImageGallery';
+import { ToggleRightIcon } from 'lucide-react';
 
 export default function CreateCharacter() {
   const [activeTab, setActiveTab] = useState('custom')
@@ -28,6 +30,7 @@ export default function CreateCharacter() {
   const [fetchingAi, setFetchingAi] = useState(false);
   const [fetchAiError, setFetchAiError] = useState('');
   const [imageUrls, setImageUrls] = useState([]); // 이미지 URL 목록
+  const [gender, setGender] = useState(true); // true: 여성, false: 남성
 
   const { getToken } = useAuth();
   const { user } = useUser(); // username을 가져오기 위해 useUser 추가
@@ -66,6 +69,23 @@ export default function CreateCharacter() {
     }
     try {
       setIsCreating(true);
+      let finalTags = [...tags]; // 현재 tags 상태의 복사본을 만듭니다.
+
+      if (activeTab === 'custom') {
+        const genderTag = gender ? '여성' : '남성';
+        console.log('캐릭터 성별 태그 추가 전 (현재 tags): ', tags);
+
+        // finalTags에 genderTag를 미리 추가합니다.
+        finalTags = [...tags, genderTag]; // 또는 finalTags.push(genderTag);
+        console.log('formData에 들어갈 최종 tags 배열:', finalTags);
+
+        // setTags 호출은 여전히 필요합니다 (UI에 반영되기 위해)
+        setTags(prevTags => {
+            const newTags = [...prevTags, genderTag];
+            console.log('setTags 내부 (UI 업데이트용 tags 배열):', newTags);
+            return newTags;
+        });
+      }
       const token = await getToken();
 
       const formData = new FormData();
@@ -73,7 +93,8 @@ export default function CreateCharacter() {
       formData.append('isPublic', isPublic ? 'true' : 'false'); // 문자열로 변환
       formData.append('description', description);
       formData.append('creatorName', user?.username || user?.firstName || user?.fullName || '사용자');
-      formData.append('prompt', JSON.stringify({ tone, personality, tag: tags.join(",") }));
+      console.log('캐릭터 성별 태크 추가: ', gender, finalTags);
+      formData.append('prompt', JSON.stringify({ tone, personality, tag: finalTags.join(",") }));
       if (imageFile) {
         formData.append('image', imageFile);
       } else if (imagePreview && imagePreview !== CAMERA) {
@@ -133,7 +154,7 @@ export default function CreateCharacter() {
     setFetchAiError('');
     try {
       const token = await getToken();
-      const res = await fetch('/api/characters/existing/preview', {
+      const res = await fetch(`${API_BASE_URL}/characters/existing/preview`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -226,6 +247,7 @@ export default function CreateCharacter() {
                           placeholder="배경 스토리 등"
                         />
 
+
                         <div>
                           <label className="block text-white text-sm font-medium mb-2">태그 (Enter로 추가)</label>
                           <Input
@@ -250,6 +272,13 @@ export default function CreateCharacter() {
                           label="다른 사람에게 공개"
                           checked={isPublic}
                           onChange={e => setIsPublic(e.target.checked)}
+                          className="bg-transparent px-1 py-1"
+                        />
+
+                        <Toggle
+                          label={gender ? "여성" : "남성"}
+                          checked={gender}
+                          onChange={e => setGender(e.target.checked)}
                           className="bg-transparent px-1 py-1"
                         />
 
@@ -311,12 +340,18 @@ export default function CreateCharacter() {
                           <img
                             src={getSafeImageUrl(imagePreview)}
                             alt="Preview"
-                            className="w-full h-72 object-contain"
-                            onError={(e) => {
-                              e.target.src = '/api/uploads/default-character.svg';
-                            }}
+                            className="w-full h-72 object-contain cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => document.getElementById('image-upload')?.click()}
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="bg-black/60 text-white text-xs px-3 py-1 rounded opacity-0 hover:opacity-100 transition-opacity">
+                              이미지 클릭하여 업로드
+                            </div>
+                          </div>
+                          <div className="text-center mt-2">
+                            <p className="text-cyan-300 text-xs font-mono tracking-widest">이미지 파일 선택</p>
+                          </div>
                         </div>
                       ) : (
                         <SwipeableImageGallery
@@ -327,27 +362,22 @@ export default function CreateCharacter() {
                         />
                       )}
                       {/* 이미지 업로드 */}
-                      {activeTab === 'custom' ? (
-                        <div className="flex flex-col items-center mt-2 mb-4">
-                          <label className="block text-white text-xs font-medium mb-1">캐릭터 이미지 업로드</label>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={e => {
-                              const file = e.target.files[0];
-                              setImageFile(file);
-                              if (file) {
-                                setImagePreview(URL.createObjectURL(file));
-                              } else {
-                                setImagePreview(CAMERA);
-                              }
-                            }}
-                            className="text-white text-xs text-center file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-[#413ebc] file:text-white file:text-xs hover:file:bg-[#5a4ee5] transition-colors duration-150"
-                          />
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center mt-2 mb-4">
-                        </div>
+                      {activeTab === 'custom' && (
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={e => {
+                            const file = e.target.files[0];
+                            setImageFile(file);
+                            if (file) {
+                              setImagePreview(URL.createObjectURL(file));
+                            } else {
+                              setImagePreview(CAMERA);
+                            }
+                          }}
+                          className="hidden"
+                          id="image-upload"
+                        />
                       )}
                       <div className="p-6">
                         <h4 className="text-white font-bold text-xl mb-2">{name || '캐릭터 이름'}</h4>

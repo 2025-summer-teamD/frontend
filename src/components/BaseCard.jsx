@@ -29,15 +29,13 @@ const BaseCard = ({
       style={baseStyle}
       aria-label={`${character.name}와 대화하기`}
     >
-      <img
-        src={getSafeImageUrl(character.imageUrl)}
-        alt={character.name}
-        className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-110 opacity-90 ${imageClassName}`}
-        style={{ filter: 'brightness(1.1) saturate(1.2) drop-shadow(0 0 6px #0ff)' }}
-        onError={(e) => {
-          e.target.src = '/api/uploads/default-character.svg';
-        }}
-      />
+      {character.imageUrl && (
+        <img 
+          src={getSafeImageUrl(character.imageUrl)} 
+          alt={character.name} 
+          className="w-full h-full object-cover rounded-lg"
+        />
+      )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
       <div className={`absolute bottom-0 left-0 right-0 p-3 text-cyan-100 ${contentClassName}`}>
         {children}

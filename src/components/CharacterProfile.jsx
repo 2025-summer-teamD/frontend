@@ -8,7 +8,7 @@ import { toggleLike } from '../data/characters';
 import { useEnterOrCreateChatRoom } from '../data/chatMessages';
 
 // 재사용 가능한 캐릭터 헤더 컴포넌트
-export const CharacterHeader = ({ character, liked, onLikeToggle, showLikeButton = true }) => {
+export const CharacterHeader = ({ character, liked, onLikeToggle, showLikeButton = true, onImageClick }) => {
   const characterId = character.id;
   const { userId } = useAuth();
   
@@ -23,15 +23,15 @@ export const CharacterHeader = ({ character, liked, onLikeToggle, showLikeButton
 
   return (
     <div className="relative flex items-center mb-8">
-      <div className="w-20 h-20 bg-gray-300 rounded-full border-4 border-white mr-5 overflow-hidden">
+      <div 
+        className="w-20 h-20 bg-gray-300 rounded-full border-4 border-white mr-5 overflow-hidden cursor-pointer hover:scale-105 transition-transform"
+        onClick={onImageClick}
+      >
         {character.imageUrl && (
           <img 
             src={getSafeImageUrl(character.imageUrl)} 
             alt={character.name} 
             className="w-full h-full object-cover"
-            onError={(e) => {
-              e.target.src = '/api/uploads/default-character.svg';
-            }}
           />
         )}
       </div>
@@ -192,25 +192,31 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
+  const [showImage, setShowImage] = useState(false);
+  const [isPublic, setIsPublic] = useState(character?.isPublic ?? true); // character의 실제 isPublic 값으로 초기화
   const { getToken, userId } = useAuth();
   const { enterOrCreateChatRoom } = useEnterOrCreateChatRoom();
 
   // Determine if character is created by current user
   const isCharacterCreatedByMe = character?.clerkId === userId;
 
+  // character가 변경될 때 isPublic 상태 업데이트
+  React.useEffect(() => {
+    setIsPublic(character?.isPublic ?? true);
+  }, [character?.isPublic]);
+
+  // isPublic 상태가 변경될 때마다 로그 출력 (디버깅용)
+  React.useEffect(() => {
+    console.log('CharacterProfile - isPublic changed:', isPublic);
+  }, [isPublic]);
+
   // 채팅 시작 함수
   const handleStartChat = async () => {
     setChatLoading(true);
     try {
       const characterId = character.id;
-      console.log('🔍 [CharacterProfile] characterId:', characterId);
-      
-      const { roomId, character: updatedCharacter, chatHistory, isNewRoom } = await enterOrCreateChatRoom(characterId);
-      
-      console.log('🔍 [CharacterProfile] enterOrCreateChatRoom 결과:');
-      console.log('🔍 [CharacterProfile] roomId:', roomId);
-      console.log('🔍 [CharacterProfile] isNewRoom:', isNewRoom);
-      console.log('🔍 [CharacterProfile] chatHistory 길이:', chatHistory?.length);
+      console.log('CharacterProfile - Starting chat with isPublic:', isPublic);
+      const { roomId, character: updatedCharacter, chatHistory, isNewRoom } = await enterOrCreateChatRoom(characterId, isPublic);
       
       console.log(isNewRoom ? '🆕 새 채팅방 생성됨' : '🔄 기존 채팅방 입장 (히스토리 ' + chatHistory.length + '개)');
 
@@ -295,13 +301,14 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
 
   return (
     <div className="fixed inset-0 flex justify-center items-center z-[500] p-5" onClick={handleBackdropClick} style={{fontFamily:'Share Tech Mono, monospace', zIndex: 500, background: 'rgba(0,0,0,0.8)', alignItems: 'flex-start'}}>
-      <div className="bg-[rgba(34,34,40,0.85)] glass border-2 border-cyan-700 rounded-3xl p-8 w-140 shadow-[0_0_24px_#0ff,0_0_48px_#f0f] max-h-[90vh] animate-fadeIn flex flex-col z-[500]" style={{boxShadow:'0 0 24px #0ff, 0 0 48px #f0f', border:'2px solid #099', backdropFilter:'blur(16px)', zIndex: 500, marginTop: '80px'}}>
+      <div className="bg-[rgba(34,34,40,0.85)] glass border-2 border-cyan-700 rounded-3xl p-6 md:p-8 w-full max-w-md md:max-w-lg lg:max-w-xl shadow-[0_0_24px_#0ff,0_0_48px_#f0f] max-h-[85vh] animate-fadeIn flex flex-col z-[500]" style={{boxShadow:'0 0 24px #0ff, 0 0 48px #f0f', border:'2px solid #099', backdropFilter:'blur(16px)', zIndex: 500, marginTop: '80px'}}>
         <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
           {/* 캐릭터 헤더 */}
           <CharacterHeader 
             character={character} 
             liked={liked} 
             onLikeToggle={onLikeToggle}
+            onImageClick={() => setShowImage(true)}
           />
           {/* 통계 섹션 */}
           <CharacterStats character={character} isMyCharacter={isMyCharacter} />
@@ -310,8 +317,8 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
         </div>
         {/* 버튼 영역: 항상 하단 고정 */}
         <div className="space-y-3 pt-4">
-          {/* 수정하기 버튼 - 내가 만든 캐릭터일 때만 표시 */}
-          {isCharacterCreatedByMe && (
+          {/* 수정하기 버튼 - 내가 만든 캐릭터일 때만 표시 (채팅방에서는 숨김) */}
+          {isCharacterCreatedByMe && origin !== 'chat' && (
             <button
               onClick={handleEditClick}
               className="w-full bg-gradient-to-r from-green-700 to-emerald-700 hover:from-green-600 hover:to-emerald-600 text-green-100 font-bold py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2 shadow-[0_0_8px_#0f0,0_0_16px_#0f0] animate-neonPulse"
@@ -320,21 +327,39 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
             </button>
           )}
           
-          {/* 1:1 채팅하기 버튼 - 모든 캐릭터에 대해 표시 */}
-          <button
-            onClick={handleStartChat}
-            disabled={chatLoading}
-            className="w-full bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600 text-purple-100 font-bold py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2 shadow-[0_0_8px_#f0f,0_0_16px_#0ff] animate-neonPulse"
-            style={{textShadow:'0 0 4px #f0f, 0 0 8px #0ff', boxShadow:'0 0 8px #f0f, 0 0 16px #0ff'}}>
-            {chatLoading ? '채팅방 생성 중...' : (
-              <>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-                1:1 채팅하기
-              </>
-            )}
-          </button>
+          {/* 공개 설정 토글 - 채팅방에서만 숨김 */}
+          {origin !== 'chat' && (
+            <div className="flex items-center justify-between p-3 bg-black/30 border border-cyan-700 rounded-xl">
+              <span className="text-cyan-200 text-sm font-bold">다른 사람에게 공개</span>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isPublic}
+                  onChange={(e) => setIsPublic(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
+              </label>
+            </div>
+          )}
+          
+          {/* 1:1 채팅하기 버튼 - 채팅방에서만 숨김 */}
+          {origin !== 'chat' && (
+            <button
+              onClick={handleStartChat}
+              disabled={chatLoading}
+              className="w-full bg-gradient-to-r from-purple-700 to-pink-700 hover:from-purple-600 hover:to-pink-600 text-purple-100 font-bold py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2 shadow-[0_0_8px_#f0f,0_0_16px_#0ff] animate-neonPulse"
+              style={{textShadow:'0 0 4px #f0f, 0 0 8px #0ff', boxShadow:'0 0 8px #f0f, 0 0 16px #0ff'}}>
+              {chatLoading ? '채팅방 생성 중...' : (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  1:1 채팅하기
+                </>
+              )}
+            </button>
+          )}
           
           {/* 찜하기/찜취소하기 버튼 - 내가 만든 캐릭터가 아닐 때만 표시 */}
           {!isCharacterCreatedByMe && (
@@ -354,6 +379,36 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
           </button>
         </div>
       </div>
+
+      {/* 이미지 뷰어 모달 */}
+      {showImage && character.imageUrl && (
+        <div 
+          className="fixed inset-0 flex justify-center items-center z-[600] p-5 overflow-y-auto" 
+          onClick={() => setShowImage(false)}
+          style={{
+            zIndex: 600, 
+            background: 'rgba(0,0,0,0.8)'
+          }}
+        >
+          <div className="flex flex-col items-center max-w-lg animate-fadeIn" style={{ marginTop: '-10vh' }}>
+            <div className="relative max-h-[40vh]">
+              <img 
+                src={getSafeImageUrl(character.imageUrl)} 
+                alt={character.name} 
+                className="w-full h-full object-contain rounded-lg"
+              />
+              <button
+                onClick={() => setShowImage(false)}
+                className="absolute top-2 right-2 bg-black/60 text-white p-2 rounded-full hover:bg-black/80 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

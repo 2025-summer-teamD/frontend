@@ -33,10 +33,11 @@ const Hero = React.memo(() => {
         <div className="flex flex-col md:flex-row gap-4 md:gap-6 lg:gap-10 w-full max-w-lg md:max-w-none justify-center mt-8 md:mt-12">
           <button
             onClick={handleCreateCharacter}
-            className="flex items-center justify-center w-full md:w-[280px] lg:w-[353px] h-[60px] md:h-[73px] px-4 py-2 text-lg md:text-xl font-semibold rounded-full transition-colors bg-black/30 border-2 border-gray-700 text-gray-400 hover:border-cyan-400 hover:text-cyan-200 hover:shadow-[0_0_8px_#0ff,0_0_16px_#f0f] hover:animate-neonPulse"
+            className="flex items-center justify-center w-full md:w-[280px] lg:w-[353px] h-[60px] md:h-[73px] px-4 py-2 text-lg md:text-xl font-semibold rounded-full transition-all duration-300 bg-black/70 backdrop-blur-sm border-2 border-gray-600 text-white hover:border-cyan-400 hover:text-cyan-200 hover:shadow-[0_0_20px_#0ff,0_0_40px_#0ff] hover:bg-black/80"
             style={{
               fontFamily: 'Share Tech Mono, monospace',
-              textShadow: '0 0 4px #0ff',
+              textShadow: '0 0 8px #0ff, 0 0 16px #0ff, 2px 2px 4px rgba(0,0,0,0.8)',
+              boxShadow: '0 4px 8px rgba(0,0,0,0.5)',
             }}
             aria-label="새 인격체 만들기"
           >
@@ -44,10 +45,11 @@ const Hero = React.memo(() => {
           </button>
           <button
             onClick={handleViewCommunity}
-            className="flex items-center justify-center w-full md:w-[280px] lg:w-[353px] h-[60px] md:h-[73px] px-4 py-2 text-lg md:text-xl font-semibold rounded-full transition-colors bg-black/30 border-2 border-gray-700 text-gray-400 hover:border-cyan-400 hover:text-cyan-200 hover:shadow-[0_0_8px_#0ff,0_0_16px_#f0f] hover:animate-neonPulse"
+            className="flex items-center justify-center w-full md:w-[280px] lg:w-[353px] h-[60px] md:h-[73px] px-4 py-2 text-lg md:text-xl font-semibold rounded-full transition-all duration-300 bg-black/70 backdrop-blur-sm border-2 border-gray-600 text-white hover:border-cyan-400 hover:text-cyan-200 hover:shadow-[0_0_20px_#0ff,0_0_40px_#0ff] hover:bg-black/80"
             style={{
               fontFamily: 'Share Tech Mono, monospace',
-              textShadow: '0 0 4px #0ff',
+              textShadow: '0 0 8px #0ff, 0 0 16px #0ff, 2px 2px 4px rgba(0,0,0,0.8)',
+              boxShadow: '0 4px 8px rgba(0,0,0,0.5)',
             }}
             aria-label="커뮤니티 둘러보기"
           >

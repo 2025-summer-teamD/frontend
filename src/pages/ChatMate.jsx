@@ -9,6 +9,7 @@ import { useMyCharacters } from '../data/characters';
 import { v4 as uuidv4 } from 'uuid';
 import NeonBackground from '../components/NeonBackground';
 import ChatMessageItem from '../components/ChatMessageItem';
+import CharacterProfile from '../components/CharacterProfile';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -77,7 +78,7 @@ const SOCKET_URL = 'http://localhost:3001'; // 1대1 채팅 친밀도 업데이�
 // AI별 네온 컬러 팔레트 (고정 or 랜덤)
 const AI_NEON_COLORS = [
   { bg: 'bg-fuchsia-100/80', border: 'border-fuchsia-200', shadow: 'shadow-[0_0_4px_#f0f]', text: 'text-fuchsia-900' },
-  { bg: 'bg-cyan-100/80', border: 'border-cyan-200', shadow: 'shadow-[0_0_4px_#0ff]', text: 'text-cyan-900' },
+  { bg: 'bg-purple-100/80', border: 'border-purple-200', shadow: 'shadow-[0_0_4px_#a0f]', text: 'text-purple-900' },
   { bg: 'bg-green-100/80', border: 'border-green-200', shadow: 'shadow-[0_0_4px_#0f0]', text: 'text-green-900' },
   { bg: 'bg-pink-100/80', border: 'border-pink-200', shadow: 'shadow-[0_0_4px_#f0c]', text: 'text-pink-900' },
   { bg: 'bg-blue-100/80', border: 'border-blue-200', shadow: 'shadow-[0_0_4px_#0cf]', text: 'text-blue-900' },
@@ -162,6 +163,9 @@ const ChatMate = () => {
   const [showAttachModal, setShowAttachModal] = useState(false);
   const [showGameModal, setShowGameModal] = useState(false);
   const fileInputRef = useRef(null);
+
+  // 캐릭터 프로필 모달 상태
+  const [selectedCharacter, setSelectedCharacter] = useState(null);
 
   // 🆕 사이드바 채팅방 전환 감지: state 변경 시 상태 업데이트
   useEffect(() => {
@@ -259,7 +263,6 @@ const ChatMate = () => {
     console.log('📡 joinRoom 이벤트 전송:', { roomId, userId: user.id });
 
     socket.on('connect', () => {
-      console.log('🔌 WebSocket 연결됨');
       setWebSocketConnectionStatus('connected');
     });
 
@@ -339,8 +342,8 @@ const ChatMate = () => {
   // 캐릭터 데이터 디버깅
   useEffect(() => {
     if (isOneOnOneChat && roomInfoParticipants.length > 0) {
-      console.log('🔍 1대1 채팅 캐릭터 데이터:', roomInfoParticipants[0]);
-      console.log('🔍 Available fields:', Object.keys(roomInfoParticipants[0]));
+      // console.log('🔍 1대1 채팅 캐릭터 데이터:', roomInfoParticipants[0]);
+      // console.log('🔍 Available fields:', Object.keys(roomInfoParticipants[0]));
     }
   }, [isOneOnOneChat, roomInfoParticipants]);
 
@@ -501,7 +504,7 @@ const ChatMate = () => {
 
             const chunk = decoder.decode(value);
             const lines = chunk.split('\n');
-
+            let chatId = null;
             for (const line of lines) {
               if (line.startsWith('data: ')) {
                 const data = line.slice(6); // 'data: ' 제거
@@ -511,7 +514,7 @@ const ChatMate = () => {
                   if (aiResponse.trim()) {
                     // 1대1 채팅에서는 첫 번째 AI 참여자의 정보를 사용
                     const aiParticipant = roomInfoParticipants.find(p => p.personaId);
-                    addAiResponseToRoom(roomId, aiResponse.trim(), character?.id, aiParticipant?.name);
+                    addAiResponseToRoom(roomId, chatId, aiResponse.trim(), character?.id, aiParticipant?.name);
                   }
                   setAiLoading(roomId, false);
                   setSseConnectionStatus('disconnected');
@@ -521,7 +524,14 @@ const ChatMate = () => {
                     const parsedData = JSON.parse(data);
                     if (parsedData.type === 'text_chunk') {
                       aiResponse += parsedData.content;
-            }
+                    }
+                    else if (parsedData.type === 'message_saved') {
+                      console.log('메시지가 저장되었습니다:', parsedData);
+                      // console.log(`메시지 새로고침: ${parsedData.messageId}`, msg);
+                      chatId = parsedData.chatLogId; // chatRoomId 변경
+                      // chatRoomId 변경
+
+                    }
                   } catch (e) {
                     // JSON 파싱 실패 시 무시
                   }
@@ -800,8 +810,8 @@ const ChatMate = () => {
                   if (data === '[DONE]') {
                     // AI 응답 완료
                     if (aiResponse.trim()) {
-                      addAiResponseToRoom(roomId, aiResponse.trim(), character?.id);
-          }
+                      addAiResponseToRoom(roomId, chatId, aiResponse.trim(), character?.id);
+                    }
                     setAiLoading(roomId, false);
                     setSseConnectionStatus('disconnected');
                     return;
@@ -839,7 +849,7 @@ const ChatMate = () => {
   return (
     <NeonBackground className="flex flex-col h-full font-cyberpunk">
       {/* 헤더: sticky */}
-      <header className="sticky top-0 py-4 px-6 z-10">
+      <header className="sticky top-0 py-4 px-6 z-50">
         <div className="flex items-center gap-3">
           {/* 여러 캐릭터 프로필 이미지 */}
           <div className="flex -space-x-2">
@@ -848,8 +858,24 @@ const ChatMate = () => {
               return (
                 <div
                   key={participant.personaId}
-                  className="w-9 h-9 rounded-full border-2 border-cyan-300 shadow-[0_0_4px_#0ff] relative"
+                  className="w-9 h-9 rounded-full border-2 border-cyan-300 shadow-[0_0_4px_#0ff] relative cursor-pointer hover:scale-110 transition-transform"
                   style={{ zIndex: roomInfoParticipants.length - index }}
+                  onClick={() => {
+                    if (ai) {
+                      setSelectedCharacter(ai);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      if (ai) {
+                        setSelectedCharacter(ai);
+                      }
+                    }
+                  }}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`${ai?.name || 'AI'} 프로필 보기`}
                 >
             <img
                     src={ai?.imageUrl || '/assets/icon-character.png'}
@@ -869,27 +895,7 @@ const ChatMate = () => {
                   : '채팅방'
               }
             </span>
-            {/* 연결 상태 표시 */}
-            <div className="flex items-center gap-2">
-              {/* SSE 연결 상태 (1대1과 그룹 모두) */}
-              <div className={`w-3 h-3 rounded-full ${
-                sseConnectionStatus === 'connected' ? 'bg-green-400 shadow-[0_0_4px_#0f0]' :
-                sseConnectionStatus === 'connecting' ? 'bg-yellow-400 shadow-[0_0_4px_#ff0]' :
-                sseConnectionStatus === 'error' ? 'bg-red-400 shadow-[0_0_4px_#f00]' :
-                'bg-gray-400'
-              }`} />
-              <span className={`text-xs font-bold ${
-                sseConnectionStatus === 'connected' ? 'text-green-400' :
-                sseConnectionStatus === 'connecting' ? 'text-yellow-400' :
-                sseConnectionStatus === 'error' ? 'text-red-400' :
-                'text-gray-400'
-              }`}>
-                {sseConnectionStatus === 'connected' ? 'SSE 연결됨' :
-                 sseConnectionStatus === 'connecting' ? 'SSE 연결 중' :
-                 sseConnectionStatus === 'error' ? 'SSE 연결 오류' :
-                 'SSE 연결 안됨'}
-              </span>
-            </div>
+            {/* 연결 상태 표시 제거 */}
             {/* 레벨 박스 - 1대1 채팅에서만 표시 */}
             {isOneOnOneChat && roomInfoParticipants[0] && (
               <div className="flex gap-2">
@@ -907,7 +913,7 @@ const ChatMate = () => {
 {/* 경험치 게이지 - 1대1 채팅에서만 표시 */}
 {isOneOnOneChat && roomInfoParticipants[0] && (
   <div className="mt-2 flex justify-start ml-12">
-    <div 
+    <div
       className="group w-48 h-5 bg-black/60 border-2 border-cyan-700 rounded-full shadow-[0_0_8px_#0ff] relative overflow-hidden cursor-pointer"
     >
       <div
@@ -931,7 +937,7 @@ const ChatMate = () => {
       {/* 스크롤 영역: 프로필 + 메시지 */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 px-4 overflow-y-auto no-scrollbar sm:px-6 md:px-8 lg:px-12 pb-28 font-cyberpunk relative z-10"
+        className="flex-1 px-4 overflow-y-auto no-scrollbar sm:px-6 md:px-8 lg:px-12 pb-28 font-cyberpunk relative z-1"
       >
         {/* 프로필 */}
         {isOneOnOneChat ? (
@@ -1019,7 +1025,7 @@ const ChatMate = () => {
         {/* 메시지들 */}
         <div className="space-y-4 pb-4 max-w-3xl mx-auto font-cyberpunk">
           {messages.map((msg, idx) => {
-            console.log(msg);
+            // console.log(msg);
             const isAI = msg.sender === 'ai';
             // 메시지 렌더링 시에도 aiObj를 myAIs가 아니라 roomInfoParticipants에서 찾아 exp, personality 등 활용
             const aiObj = isAI ? roomInfoParticipants.find(ai => String(ai.personaId) === String(msg.aiId)) : null;
@@ -1041,7 +1047,7 @@ const ChatMate = () => {
             const showTime = isLast || msg.time !== nextMsg?.time || msg.sender !== "prevMsg?.sender";
             const showProfile = idx === 0 || msg.time !== prevMsg?.time || msg.sender !== "prevMsg?.sender";
             return (<ChatMessageItem
-                key={msg.id}
+              key={msg.id}
               msg={msg}
               showProfile={showProfile}
               showTime={showTime}
@@ -1052,6 +1058,7 @@ const ChatMate = () => {
               aiColor={aiColor} // AI 말풍선 색상 설정
               roomId={roomId} // 현재 채팅방 ID 전달
               userId={user.id} // 현재 로그인한 사용자 ID 전달
+              isLast={isLast} // 마지막 메시지 여부
           />)
           })}
           <div ref={messagesEndRef} />
@@ -1084,7 +1091,6 @@ const ChatMate = () => {
                       레벨 10 이상에서 게임이 열립니다
                     </div>
                   )}
-                  
                   {/* 10레벨 이상: 게임 버튼들 표시 */}
                   {roomInfoParticipants[0]?.friendship >= 10 && (
                     <>
@@ -1103,7 +1109,6 @@ const ChatMate = () => {
                       >
                         끝말잇기
                       </button>
-                      
                                         {/* 스무고개 - 20레벨 이상에서만 활성화, 그 전에는 회색 */}
                   <button
                     className={`w-full px-4 py-2 rounded-full font-cyberpunk font-bold transition-all ${
@@ -1125,7 +1130,6 @@ const ChatMate = () => {
                   >
                     {roomInfoParticipants[0]?.friendship >= 20 ? '스무고개' : '20Lv 이후 잠금해제'}
                   </button>
-                  
                   {/* 밸런스 게임 - 30레벨 이상에서만 활성화, 그 전에는 회색 */}
                   <button
                     className={`w-full px-4 py-2 rounded-full font-cyberpunk font-bold transition-all ${
@@ -1222,6 +1226,18 @@ const ChatMate = () => {
           </button>
         </div>
       </footer>
+
+      {/* 캐릭터 프로필 모달 */}
+      {selectedCharacter && (
+        <CharacterProfile
+          character={selectedCharacter}
+          liked={false}
+          origin="chat"
+          onClose={() => setSelectedCharacter(null)}
+          onLikeToggle={() => {}} // 빈 함수로 설정하여 버튼 비활성화
+          onEdit={() => {}} // 빈 함수로 설정하여 버튼 비활성화
+        />
+      )}
     </NeonBackground>
   );
 };

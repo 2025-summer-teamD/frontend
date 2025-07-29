@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // ChatMessageItem 컴포넌트라고 가정하고 작성합니다.
@@ -11,7 +11,31 @@ const ChatMessageItem = ({ msg, showProfile, showTime, profileImg, displayName, 
   console.log(msg);
   // TTS 오디오 캐싱을 위한 유틸리티 함수들
   const getTTSCacheKey = (roomId, msgId) => `tts_${roomId}_${msgId}`;
-  
+
+  const TypingEffectText = ({ text, speed = 50 }) => {
+    const [displayedText, setDisplayedText] = useState('');
+    const [index, setIndex] = useState(0);
+
+    useEffect(() => {
+      if (index < text.length) {
+        const timeoutId = setTimeout(() => {
+          setDisplayedText((prev) => prev + text.charAt(index));
+          setIndex((prev) => prev + 1);
+        }, speed); // `speed` 밀리초마다 한 글자씩 추가
+
+        return () => clearTimeout(timeoutId); // 클린업 함수
+      }
+    }, [index, text, speed]);
+
+    // text가 변경되었을 때 displayedText와 index를 초기화
+    useEffect(() => {
+      setDisplayedText('');
+      setIndex(0);
+    }, [text]);
+
+    return <p className="font-cyberpunk">{displayedText}</p>;
+  }
+
   const getCachedTTSUrl = (cacheKey) => {
     try {
       const cachedData = localStorage.getItem(cacheKey);
@@ -40,7 +64,7 @@ const ChatMessageItem = ({ msg, showProfile, showTime, profileImg, displayName, 
     }
     return null;
   };
-  
+
   const cacheTTSData = async (cacheKey, audioBlob) => {
     try {
       // Blob을 Base64로 변환
@@ -51,7 +75,7 @@ const ChatMessageItem = ({ msg, showProfile, showTime, profileImg, displayName, 
           audioBase64: base64,
           timestamp: Date.now()
         };
-        
+
         // localStorage 용량 체크 (5MB 제한)
         const dataSize = JSON.stringify(cacheData).length;
         if (dataSize < 5 * 1024 * 1024) { // 5MB
@@ -83,14 +107,14 @@ const ChatMessageItem = ({ msg, showProfile, showTime, profileImg, displayName, 
 
     try {
       const cacheKey = getTTSCacheKey(roomId, msg.id);
-      
+
       // 먼저 캐시된 데이터가 있는지 확인
       let audioUrl = getCachedTTSUrl(cacheKey);
-      
+
       if (!audioUrl) {
         // 캐시된 데이터가 없으면 API 호출
         console.log('캐시된 TTS 데이터가 없습니다. API 호출합니다:', cacheKey);
-        
+
         const ttsApiUrl = `${API_BASE_URL}/chat/tts/${roomId}/${msg.id}`;
         const response = await fetch(ttsApiUrl);
 
@@ -102,7 +126,7 @@ const ChatMessageItem = ({ msg, showProfile, showTime, profileImg, displayName, 
         // MP3 오디오 데이터를 Blob으로 받아서 URL 생성
         const audioBlob = await response.blob();
         audioUrl = URL.createObjectURL(audioBlob);
-        
+
         // 백그라운드에서 캐싱 (재생과 병렬로 처리)
         cacheTTSData(cacheKey, audioBlob);
       } else {
@@ -144,7 +168,6 @@ const ChatMessageItem = ({ msg, showProfile, showTime, profileImg, displayName, 
 
   return (
     <div
-      key={msg.id}
       className={`flex flex-col w-full ${msg.sender === 'me' ? 'items-end' : 'items-start'} font-cyberpunk`}
     >
       {showProfile && (
@@ -199,8 +222,11 @@ const ChatMessageItem = ({ msg, showProfile, showTime, profileImg, displayName, 
             src={msg.imageUrl.startsWith('http') ? msg.imageUrl : API_BASE_URL + msg.imageUrl}
             alt="전송된 이미지"
             className="max-w-xs rounded-lg border-2 border-cyan-200 shadow-[0_0_4px_#0ff] font-cyberpunk"
-          />
-          : <p className="font-cyberpunk">{msg.text}</p>
+            />
+            : <p className="font-cyberpunk">{msg.text}</p>
+          // :  isLast // 현재 메시지가 마지막 요소인지 확인
+          // ? <TypingEffectText text={msg.text} speed={30} />
+          // : <p className="font-cyberpunk">{msg.text}</p>
         }
       </div>
       {showTime && (
