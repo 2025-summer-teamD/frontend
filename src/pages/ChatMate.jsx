@@ -9,6 +9,7 @@ import { useMyCharacters } from '../data/characters';
 import { v4 as uuidv4 } from 'uuid';
 import NeonBackground from '../components/NeonBackground';
 import ChatMessageItem from '../components/ChatMessageItem';
+import CharacterProfile from '../components/CharacterProfile';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -77,7 +78,7 @@ const SOCKET_URL = 'http://localhost:3001'; // 포트 3002로 명시적으로 �
 // AI별 네온 컬러 팔레트 (고정 or 랜덤)
 const AI_NEON_COLORS = [
   { bg: 'bg-fuchsia-100/80', border: 'border-fuchsia-200', shadow: 'shadow-[0_0_4px_#f0f]', text: 'text-fuchsia-900' },
-  { bg: 'bg-cyan-100/80', border: 'border-cyan-200', shadow: 'shadow-[0_0_4px_#0ff]', text: 'text-cyan-900' },
+  { bg: 'bg-purple-100/80', border: 'border-purple-200', shadow: 'shadow-[0_0_4px_#a0f]', text: 'text-purple-900' },
   { bg: 'bg-green-100/80', border: 'border-green-200', shadow: 'shadow-[0_0_4px_#0f0]', text: 'text-green-900' },
   { bg: 'bg-pink-100/80', border: 'border-pink-200', shadow: 'shadow-[0_0_4px_#f0c]', text: 'text-pink-900' },
   { bg: 'bg-blue-100/80', border: 'border-blue-200', shadow: 'shadow-[0_0_4px_#0cf]', text: 'text-blue-900' },
@@ -157,6 +158,9 @@ const ChatMate = () => {
   const [showAttachModal, setShowAttachModal] = useState(false);
   const [showGameModal, setShowGameModal] = useState(false);
   const fileInputRef = useRef(null);
+  
+  // 캐릭터 프로필 모달 상태
+  const [selectedCharacter, setSelectedCharacter] = useState(null);
 
   // 🆕 사이드바 채팅방 전환 감지: state 변경 시 상태 업데이트
   useEffect(() => {
@@ -640,7 +644,7 @@ const ChatMate = () => {
   return (
     <NeonBackground className="flex flex-col h-full font-cyberpunk">
       {/* 헤더: sticky */}
-      <header className="sticky top-0 py-4 px-6 z-10">
+      <header className="sticky top-0 py-4 px-6 z-50">
         <div className="flex items-center gap-3">
           {/* 여러 캐릭터 프로필 이미지 */}
           <div className="flex -space-x-2">
@@ -649,8 +653,24 @@ const ChatMate = () => {
               return (
                 <div
                   key={participant.personaId}
-                  className="w-9 h-9 rounded-full border-2 border-cyan-300 shadow-[0_0_4px_#0ff] relative"
+                  className="w-9 h-9 rounded-full border-2 border-cyan-300 shadow-[0_0_4px_#0ff] relative cursor-pointer hover:scale-110 transition-transform"
                   style={{ zIndex: roomInfoParticipants.length - index }}
+                  onClick={() => {
+                    if (ai) {
+                      setSelectedCharacter(ai);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      if (ai) {
+                        setSelectedCharacter(ai);
+                      }
+                    }
+                  }}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`${ai?.name || 'AI'} 프로필 보기`}
                 >
             <img
                     src={ai?.imageUrl || '/assets/icon-character.png'}
@@ -757,7 +777,7 @@ const ChatMate = () => {
       {/* 스크롤 영역: 프로필 + 메시지 */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 px-4 overflow-y-auto no-scrollbar sm:px-6 md:px-8 lg:px-12 pb-28 font-cyberpunk relative z-10"
+        className="flex-1 px-4 overflow-y-auto no-scrollbar sm:px-6 md:px-8 lg:px-12 pb-28 font-cyberpunk relative z-1"
       >
         {/* 프로필 */}
         {isOneOnOneChat ? (
@@ -1048,6 +1068,18 @@ const ChatMate = () => {
           </button>
         </div>
       </footer>
+
+      {/* 캐릭터 프로필 모달 */}
+      {selectedCharacter && (
+        <CharacterProfile
+          character={selectedCharacter}
+          liked={false}
+          origin="chat"
+          onClose={() => setSelectedCharacter(null)}
+          onLikeToggle={() => {}} // 빈 함수로 설정하여 버튼 비활성화
+          onEdit={() => {}} // 빈 함수로 설정하여 버튼 비활성화
+        />
+      )}
     </NeonBackground>
   );
 };

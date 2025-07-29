@@ -311,12 +311,21 @@ export default function CreateCharacter() {
                           <img
                             src={getSafeImageUrl(imagePreview)}
                             alt="Preview"
-                            className="w-full h-72 object-contain"
+                            className="w-full h-72 object-contain cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => document.getElementById('image-upload')?.click()}
                             onError={(e) => {
                               e.target.src = '/api/uploads/default-character.svg';
                             }}
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="bg-black/60 text-white text-xs px-3 py-1 rounded opacity-0 hover:opacity-100 transition-opacity">
+                              이미지 클릭하여 업로드
+                            </div>
+                          </div>
+                          <div className="text-center mt-2">
+                            <p className="text-cyan-300 text-xs font-mono tracking-widest">이미지 파일 선택</p>
+                          </div>
                         </div>
                       ) : (
                         <SwipeableImageGallery
@@ -327,27 +336,22 @@ export default function CreateCharacter() {
                         />
                       )}
                       {/* 이미지 업로드 */}
-                      {activeTab === 'custom' ? (
-                        <div className="flex flex-col items-center mt-2 mb-4">
-                          <label className="block text-white text-xs font-medium mb-1">캐릭터 이미지 업로드</label>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={e => {
-                              const file = e.target.files[0];
-                              setImageFile(file);
-                              if (file) {
-                                setImagePreview(URL.createObjectURL(file));
-                              } else {
-                                setImagePreview(CAMERA);
-                              }
-                            }}
-                            className="text-white text-xs text-center file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-[#413ebc] file:text-white file:text-xs hover:file:bg-[#5a4ee5] transition-colors duration-150"
-                          />
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center mt-2 mb-4">
-                        </div>
+                      {activeTab === 'custom' && (
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={e => {
+                            const file = e.target.files[0];
+                            setImageFile(file);
+                            if (file) {
+                              setImagePreview(URL.createObjectURL(file));
+                            } else {
+                              setImagePreview(CAMERA);
+                            }
+                          }}
+                          className="hidden"
+                          id="image-upload"
+                        />
                       )}
                       <div className="p-6">
                         <h4 className="text-white font-bold text-xl mb-2">{name || '캐릭터 이름'}</h4>
