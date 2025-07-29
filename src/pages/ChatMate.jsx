@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 import NeonBackground from '../components/NeonBackground';
 import ChatMessageItem from '../components/ChatMessageItem';
 import CharacterProfile from '../components/CharacterProfile';
+import TypingIndicator from '../components/TypingIndicator';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -1061,6 +1062,30 @@ const ChatMate = () => {
               isLast={isLast} // 마지막 메시지 여부
           />)
           })}
+          
+          {/* AI 응답 중 타이핑 인디케이터 */}
+          {aiResponseLoading && (
+            <div className="mt-4">
+              {isOneOnOneChat ? (
+                // 1대1 채팅: 해당 AI의 정보를 사용
+                roomInfoParticipants[0] && (
+                  <TypingIndicator
+                    aiColor={AI_NEON_COLORS[getAiColorIdx(roomInfoParticipants[0].personaId)]}
+                    aiName={roomInfoParticipants[0].name || 'AI'}
+                    profileImg={roomInfoParticipants[0].imageUrl || '/assets/icon-character.png'}
+                  />
+                )
+              ) : (
+                // 그룹 채팅: 기본 AI 스타일 사용
+                <TypingIndicator
+                  aiColor={AI_NEON_COLORS[0]}
+                  aiName="AI"
+                  profileImg="/assets/icon-character.png"
+                />
+              )}
+            </div>
+          )}
+          
           <div ref={messagesEndRef} />
         </div>
       </div>
