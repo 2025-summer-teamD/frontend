@@ -264,24 +264,24 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
         throw new Error('캐릭터 ID를 찾을 수 없습니다.');
       }
 
-      // API를 통해 캐릭터 수정
+      // API를 통해 캐릭터 수정 (isPublic 포함)
       const updatedCharacter = await updateCharacter(characterId, {
         name: formData.name,
         introduction: formData.description,
         personality: formData.personality,
         tone: formData.tone,
         tag: formData.tags,
-        isPublic: isPublic
+        isPublic: isPublic // Save 버튼 클릭 시에만 isPublic 포함하여 업데이트
       });
 
       console.log('✅ CharacterEditModal - Save successful:', updatedCharacter);
 
-      // 부모 컴포넌트에 수정 완료 알림 (alert는 부모에서 처리)
+      // 부모 컴포넌트에 수정 완료 알림 (Save 버튼 클릭 시에만)
       if (onSave) {
         onSave(updatedCharacter);
       }
 
-      // 모달 닫기
+      // 수정 완료 후 모달 닫기
       onClose();
 
     } catch (error) {

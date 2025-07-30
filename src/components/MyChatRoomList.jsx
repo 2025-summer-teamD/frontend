@@ -169,8 +169,10 @@ export default function MyChatRoomList({ refetchPublicRooms }) {
         throw new Error(`채팅방 정보 조회 실패: ${infoResponse.status}`);
       }
       const infoResult = await infoResponse.json();
+
       // 페이지 전체 새로고침으로 이동 (Context 상태 초기화) - PR #169 방식 수정
       window.location.href = `/chatMate/${room.roomId}`;
+
     } catch (error) {
       alert('채팅방 입장에 실패했습니다: ' + error.message);
     }

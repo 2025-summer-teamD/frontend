@@ -43,7 +43,11 @@ export const CharacterHeader = ({ character, liked, onLikeToggle, showLikeButton
           <div className="mb-3"></div>
         )}
       </div>
+
       {/* 하트와 좋아요 숫자 제거됨 - PR #170 */}
+
+      {/* 하트와 좋아요 숫자 제거됨 */}
+
     </div>
   );
 };

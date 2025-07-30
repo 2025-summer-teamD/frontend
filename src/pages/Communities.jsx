@@ -26,7 +26,7 @@ export default function Communities() {
   const [sortBy, setSortBy] = useState('likes'); // 정렬 기준 추가
 
   const { characters, loading, error, setCharacters } = useCommunityCharacters(sortBy);
-  const { chatRooms, loading: chatRoomsLoading, error: chatRoomsError, refetch: refetchMyChatCharacters } = useChatRooms();
+  const { chatRooms, loading: chatRoomsLoading, error: chatRoomsError, refetch: refetchMyChatCharacters, refetchPublicRooms } = useChatRooms();
 
   // 캐릭터 목록 새로고침 함수
   const refetchCharacters = async () => {
@@ -48,6 +48,25 @@ export default function Communities() {
   React.useEffect(() => {
     localStorage.setItem('likedIds', JSON.stringify(likedIds));
   }, [likedIds]);
+
+  // 페이지 포커스 시 공개 채팅방 목록 새로고침
+  React.useEffect(() => {
+    const handleFocus = () => {
+      console.log('🔄 페이지 포커스 감지 - 공개 채팅방 목록 새로고침');
+      if (refetchPublicRooms) {
+        refetchPublicRooms();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    
+    // 컴포넌트 마운트 시에도 새로고침
+    handleFocus();
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [refetchPublicRooms]);
 
   // 정렬 버튼 클릭 핸들러
   const handleSortChange = (newSort) => {
@@ -142,8 +161,10 @@ export default function Communities() {
       
       const infoResult = await infoResponse.json();
       
+
       // 페이지 전체 새로고침으로 이동 (Context 상태 초기화) - PR #169 방식 수정
       window.location.href = `/chatMate/${room.id}`;
+
     } catch (error) {
       console.error('채팅방 입장 실패:', error);
       alert('채팅방 입장에 실패했습니다: ' + error.message);
@@ -298,9 +319,16 @@ export default function Communities() {
                   {/* 채팅방 정보 오버레이 */}
                   <div className="relative z-10 p-6 h-full flex flex-col justify-between">
                     {/* 채팅방 이름 */}
-                    <div className="text-pink-300 text-xl sm:text-2xl font-extrabold mb-4 text-center drop-shadow-[0_0_8px_#f0f] pixel-font" style={{letterSpacing:'0.04em', textShadow:'0 0 8px #0ff, 0 0 16px #f0f'}}>
+                    <div className="text-pink-300 text-xl sm:text-2xl font-extrabold mb-2 text-center drop-shadow-[0_0_8px_#f0f] pixel-font" style={{letterSpacing:'0.04em', textShadow:'0 0 8px #0ff, 0 0 16px #f0f'}}>
                       {room.name || `${room.participants?.length || 0}명의 AI와 대화`}
                     </div>
+                    
+                    {/* 채팅방 설명 */}
+                    {room.description && (
+                      <div className="text-cyan-300 text-sm text-center mb-3 font-mono line-clamp-2 px-2" style={{textShadow:'0 0 4px #0ff'}}>
+                        {room.description}
+                      </div>
+                    )}
                     
                     {/* 참여자 이름들 */}
                     <div className="flex flex-wrap justify-center items-center gap-2 mb-4">
