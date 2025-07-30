@@ -50,7 +50,7 @@ function App() {
                     }
                   />
                   <Route
-                    path="/chatMate/:roomId"
+                    path="/chatmate/:roomId"
                     element={
                       <ProtectedRoute>
                         <ChatMate />

@@ -122,13 +122,25 @@ export const ChatMessagesProvider = ({ children }) => {
   // ⭐ 로딩 메시지를 제거하는 함수
   // AI 응답이 완료되면 해당 AI의 로딩 메시지를 제거합니다.
   const removeLoadingMessage = useCallback((roomId, aiId) => {
+    // aiId를 문자열로 변환하여 일관성 유지
+    const aiIdString = aiId ? String(aiId) : undefined;
+    console.log('🔍 removeLoadingMessage 호출:', { roomId, aiId, aiIdString });
+    
     setAllMessages(prev => {
       const currentMessages = prev[roomId] || [];
+      const filteredMessages = currentMessages.filter(msg => 
+        !(msg.sender === 'ai' && msg.aiId === aiIdString && msg.text === '...' && msg.isStreaming)
+      );
+      
+      console.log('🔍 removeLoadingMessage 결과:', {
+        beforeCount: currentMessages.length,
+        afterCount: filteredMessages.length,
+        removedCount: currentMessages.length - filteredMessages.length
+      });
+      
       return {
         ...prev,
-        [roomId]: currentMessages.filter(msg => 
-          !(msg.sender === 'ai' && msg.aiId === aiId && msg.text === '...' && msg.isStreaming)
-        ),
+        [roomId]: filteredMessages,
       };
     });
   }, []);
