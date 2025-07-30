@@ -80,8 +80,8 @@ const Sidebar = ({ children }) => {
         }
       }
 
-                      // 채팅방 정보 조회
-                const infoResponse = await fetch(`${API_BASE_URL}/chat/room-info?roomId=${roomId}`, {
+      // 채팅방 정보 조회
+      const infoResponse = await fetch(`${API_BASE_URL}/chat/room-info?roomId=${roomId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -98,7 +98,7 @@ const Sidebar = ({ children }) => {
 
       return {
         roomId: roomId,
-        character: infoResult.data?.persona,
+        character: infoResult.data?.character || infoResult.data?.persona,
         chatHistory: infoResult.data?.chatHistory || []
       };
     } catch (err) {

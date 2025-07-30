@@ -173,7 +173,7 @@ export default function MyChatRoomList({ refetchPublicRooms }) {
       const infoResult = await infoResponse.json();
       navigate(`/chatMate/${room.roomId}`, {
         state: {
-          persona: infoResult.data?.persona || room,
+          character: infoResult.data?.character || infoResult.data?.persona || room,
           chatHistory: infoResult.data?.chatHistory || [],
           roomId: room.roomId
         }

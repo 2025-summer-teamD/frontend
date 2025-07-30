@@ -857,7 +857,7 @@ export default function CharacterList() {
 
               navigate(`/chatMate/${roomId}`, {
                 state: {
-                  character: infoResult.data?.persona,
+                  character: infoResult.data?.character || infoResult.data?.persona,
                   chatHistory: infoResult.data?.chatHistory || [],
                   roomId: roomId
                 }

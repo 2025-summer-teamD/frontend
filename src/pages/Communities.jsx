@@ -166,7 +166,7 @@ export default function Communities() {
       // 채팅방으로 이동하면서 정보 전달
       navigate(`/chatMate/${room.id}`, {
         state: {
-          character: infoResult.data?.persona || room,
+          character: infoResult.data?.character || infoResult.data?.persona || room,
           chatHistory: infoResult.data?.chatHistory || [],
           roomId: room.id
         }

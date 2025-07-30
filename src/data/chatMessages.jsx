@@ -256,7 +256,7 @@ export function useCreateChatRoom() {
 
       return {
         roomId: data.data.id,
-        character: data.data.persona || data.data,
+        character: data.data.character || data.data.persona || data.data,
         chatHistory: data.data.chatHistory || []
       };
     } catch (err) {
@@ -324,7 +324,7 @@ export function useEnterOrCreateChatRoom() {
 
       const result = {
         roomId: postData.data.roomId,
-        character: postData.data.persona,
+        character: postData.data.character || postData.data.persona,
         chatHistory: postData.data.chatHistory || [],
         isNewRoom: postData.data.isNewRoom || true
       };
