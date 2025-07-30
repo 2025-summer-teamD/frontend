@@ -1,6 +1,7 @@
 {
-  "build": { "command": "npm run build", "outputDirectory": "dist" },
-  "routes": [
-    { "src": "/(.*)", "dest": "/index.html", "status": 200 }
+  "version": 2,
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
