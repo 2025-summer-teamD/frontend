@@ -4,7 +4,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 
 import { useChatRooms } from '../contexts/ChatRoomsContext';
 import { useAuth } from '@clerk/clerk-react';
-import logo from '/assets/logo.png';
+import logo2 from '/assets/logo2.png';
 import AnimatedAuthHeader from './AnimatedAuthHeader';
 import ChatRoomCreateModal from './ChatRoomCreateModal';
 
@@ -225,7 +225,7 @@ const Sidebar = ({ children }) => {
           {/* logo + close */}
           <div className="flex items-center justify-between p-4.5">
             <Link to="/" className="flex items-center">
-              <img src={logo} alt="Logo" className="w-10 h-10 drop-shadow-[0_0_12px_#0ff]" />
+              <img src={logo2} alt="Logo2" className="w-14 h-14 drop-shadow-[0_0_12px_#0ff]" />
               <span className="text-cyan-200 font-extrabold text-[24px] ml-2 drop-shadow-[0_0_8px_#0ff] logo-font">Anima</span>
             </Link>
           </div>
@@ -309,14 +309,7 @@ const Sidebar = ({ children }) => {
               })
             )}
           </div>
-          {/* Footer */}
-          <div className="p-4 border-t border-cyan-400/30 flex flex-col space-y-3">
-            <div className="flex justify-between text-cyan-400 text-sm">
-              <a href="#" className="hover:text-fuchsia-400">Privacy Policy</a>
-              <span>•</span>
-              <a href="#" className="hover:text-fuchsia-400">Terms of Service</a>
-            </div>
-          </div>
+          
         </div>
       </div>
       {/* Main content */}
@@ -334,7 +327,7 @@ const Sidebar = ({ children }) => {
             </button>
             {!sidebarOpen && (
               <Link to="/" className="flex items-center">
-                <img src={logo} alt="Logo" className="w-8 h-8 drop-shadow-[0_0_8px_#0ff]" />
+                <img src={logo2} alt="Logo2" className="w-18 h-18 drop-shadow-[0_0_8px_#0ff]" />
                 <span className="text-cyan-200 font-extrabold text-[24px] ml-2 drop-shadow-[0_0_6px_#0ff] logo-font">Anima</span>
               </Link>
             )}
