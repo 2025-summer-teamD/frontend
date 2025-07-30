@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { useNavigate } from 'react-router-dom';
 import { Heart as OutlineHeart, Heart as SolidHeart } from 'lucide-react';
 import { getSafeImageUrl } from '../utils/imageUtils';
 import { useAuth } from '@clerk/clerk-react';
@@ -44,27 +43,11 @@ export const CharacterHeader = ({ character, liked, onLikeToggle, showLikeButton
           <div className="mb-3"></div>
         )}
       </div>
-      {showLikeButton && (
-        <>
-          <button
-            onClick={handleLikeToggle}
-            className="absolute top-0 right-0 focus:outline-none flex items-center gap-1"
-            aria-label={liked ? '좋아요 취소' : '좋아요'}
-          >
-            {liked ? (
-              <>
-                <SolidHeart className="w-6 h-6 text-pink-400 drop-shadow-[0_0_3px_#f0f] transition-transform transform scale-110" />
-                <span className="ml-1 text-pink-400 font-bold text-lg drop-shadow-[0_0_2px_#f0f]">{character.likes ?? 0}</span>
-              </>
-            ) : (
-              <>
-                <OutlineHeart className="w-6 h-6 text-cyan-400 hover:text-pink-400 transition-colors drop-shadow-[0_0_2px_#0ff]" />
-                <span className="ml-1 text-cyan-400 font-bold text-lg drop-shadow-[0_0_2px_#0ff]">{character.likes ?? 0}</span>
-              </>
-            )}
-          </button>
-        </>
-      )}
+
+      {/* 하트와 좋아요 숫자 제거됨 - PR #170 */}
+
+      {/* 하트와 좋아요 숫자 제거됨 */}
+
     </div>
   );
 };
@@ -189,40 +172,28 @@ CharacterInfo.propTypes = {
 
 const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onEdit }) => {
   const isMyCharacter = origin === 'my';
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
   const [showImage, setShowImage] = useState(false);
-  const [isPublic, setIsPublic] = useState(character?.isPublic ?? true); // character의 실제 isPublic 값으로 초기화
   const { getToken, userId } = useAuth();
   const { enterOrCreateChatRoom } = useEnterOrCreateChatRoom();
 
   // Determine if character is created by current user
   const isCharacterCreatedByMe = character?.clerkId === userId;
 
-  // character가 변경될 때 isPublic 상태 업데이트
-  React.useEffect(() => {
-    setIsPublic(character?.isPublic ?? true);
-  }, [character?.isPublic]);
-
-  // isPublic 상태가 변경될 때마다 로그 출력 (디버깅용)
-  React.useEffect(() => {
-    console.log('CharacterProfile - isPublic changed:', isPublic);
-  }, [isPublic]);
-
   // 채팅 시작 함수
   const handleStartChat = async () => {
     setChatLoading(true);
     try {
       const characterId = character.id;
-      console.log('CharacterProfile - Starting chat with isPublic:', isPublic);
-      const { roomId, character: updatedCharacter, chatHistory, isNewRoom } = await enterOrCreateChatRoom(characterId, isPublic);
+      console.log('CharacterProfile - Starting chat with character isPublic:', character?.isPublic);
+      const { roomId, character: updatedCharacter, chatHistory, isNewRoom } = await enterOrCreateChatRoom(characterId, character?.isPublic ?? true);
       
       console.log(isNewRoom ? '🆕 새 채팅방 생성됨' : '🔄 기존 채팅방 입장 (히스토리 ' + chatHistory.length + '개)');
 
-      navigate(`/chatMate/${roomId}`, {
-        state: { character: updatedCharacter, chatHistory: chatHistory, roomId: roomId }
-      });
+      console.log('🔍 [CharacterProfile] window.location.href 호출:', `/chatMate/${roomId}`);
+      // 페이지 전체 새로고침으로 이동 (Context 상태 초기화) - PR #169 방식 수정
+      window.location.href = `/chatMate/${roomId}`;
     } catch (error) {
       alert('채팅방 처리에 실패했습니다: ' + error.message);
     } finally {
@@ -301,6 +272,16 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
   return (
     <div className="fixed inset-0 flex justify-center items-center z-[500] p-5" onClick={handleBackdropClick} style={{fontFamily:'Share Tech Mono, monospace', zIndex: 500, background: 'rgba(0,0,0,0.8)', alignItems: 'flex-start'}}>
       <div className="bg-[rgba(34,34,40,0.85)] glass border-2 border-cyan-700 rounded-3xl p-6 md:p-8 w-full max-w-md md:max-w-lg lg:max-w-xl shadow-[0_0_24px_#0ff,0_0_48px_#f0f] max-h-[85vh] animate-fadeIn flex flex-col z-[500]" style={{boxShadow:'0 0 24px #0ff, 0 0 48px #f0f', border:'2px solid #099', backdropFilter:'blur(16px)', zIndex: 500, marginTop: '80px'}}>
+        {/* 수정하기 버튼 - 오른쪽 위에 위치, 내가 만든 캐릭터이고 origin이 'my'일 때만 표시 */}
+        {isCharacterCreatedByMe && origin === 'my' && (
+          <button
+            onClick={handleEditClick}
+            className="absolute top-4 right-4 bg-gradient-to-r from-green-700 to-emerald-700 hover:from-green-600 hover:to-emerald-600 text-green-100 font-bold py-2 px-4 rounded-xl transition-all duration-200 text-sm transform hover:scale-105 flex items-center justify-center gap-1 shadow-[0_0_8px_#0f0,0_0_16px_#0f0] animate-neonPulse z-10"
+            style={{textShadow:'0 0 4px #0f0, 0 0 8px #0f0', boxShadow:'0 0 8px #0f0, 0 0 16px #0f0'}}>
+            수정하기
+          </button>
+        )}
+        
         <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar">
           {/* 캐릭터 헤더 */}
           <CharacterHeader 
@@ -316,31 +297,9 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
         </div>
         {/* 버튼 영역: 항상 하단 고정 */}
         <div className="space-y-3 pt-4">
-          {/* 수정하기 버튼 - 내가 만든 캐릭터일 때만 표시 (채팅방에서는 숨김) */}
-          {isCharacterCreatedByMe && origin !== 'chat' && (
-            <button
-              onClick={handleEditClick}
-              className="w-full bg-gradient-to-r from-green-700 to-emerald-700 hover:from-green-600 hover:to-emerald-600 text-green-100 font-bold py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2 shadow-[0_0_8px_#0f0,0_0_16px_#0f0] animate-neonPulse"
-              style={{textShadow:'0 0 4px #0f0, 0 0 8px #0f0', boxShadow:'0 0 8px #0f0, 0 0 16px #0f0'}}>
-              수정하기
-            </button>
-          )}
+          {/* 수정하기 버튼 제거됨 - 오른쪽 위로 이동 */}
           
-          {/* 공개 설정 토글 - 채팅방에서만 숨김 */}
-          {origin !== 'chat' && (
-            <div className="flex items-center justify-between p-3 bg-black/30 border border-cyan-700 rounded-xl">
-              <span className="text-cyan-200 text-sm font-bold">다른 사람에게 공개</span>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isPublic}
-                  onChange={(e) => setIsPublic(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600"></div>
-              </label>
-            </div>
-          )}
+          {/* 공개 설정 토글 제거됨 - 수정하기에서만 설정 가능 */}
           
           {/* 1:1 채팅하기 버튼 - 채팅방에서만 숨김 */}
           {origin !== 'chat' && (

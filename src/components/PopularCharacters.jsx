@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useCommunityCharacters, incrementViewCount, toggleLike } from '../data/characters';
 import { useAuth } from "@clerk/clerk-react";
-import { useNavigate } from 'react-router-dom';
 import { useEnterOrCreateChatRoom } from '../data/chatMessages';
 import { getSafeImageUrl } from '../utils/imageUtils';
 import BaseCard from './BaseCard';
@@ -17,7 +16,6 @@ const PopularCharacters = React.memo(({ onChatRoomCreated }) => {
   const containerRef = useDragScroll();
   const { characters, loading, error } = useCommunityCharacters();
   const { getToken } = useAuth();
-  const navigate = useNavigate();
   const [chatLoading, setChatLoading] = useState(false);
   const { enterOrCreateChatRoom } = useEnterOrCreateChatRoom();
   const [likedIds, setLikedIds] = useState(() =>
@@ -94,15 +92,14 @@ const PopularCharacters = React.memo(({ onChatRoomCreated }) => {
       console.log(isNewRoom ? '🆕 새 채팅방 생성됨' : '🔄 기존 채팅방 입장 (히스토리 ' + chatHistory.length + '개)');
 
       if (onChatRoomCreated) onChatRoomCreated();
-      navigate(`/chatMate/${roomId}`, {
-        state: { character: updatedCharacter, chatHistory: chatHistory, roomId: roomId }
-      });
+      // 페이지 전체 새로고침으로 이동 (Context 상태 초기화) - PR #169 방식 수정
+      window.location.href = `/chatMate/${roomId}`;
     } catch (error) {
       alert('채팅방 처리에 실패했습니다: ' + error.message);
     } finally {
       setChatLoading(false);
     }
-  }, [handleViewCount, enterOrCreateChatRoom, onChatRoomCreated, navigate]);
+  }, [handleViewCount, enterOrCreateChatRoom, onChatRoomCreated]);
 
   // 키보드 이벤트 핸들러
   const handleKeyDown = useCallback((event, characterId) => {

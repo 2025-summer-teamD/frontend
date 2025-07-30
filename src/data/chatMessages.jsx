@@ -24,8 +24,8 @@ export function useSendMessageToAI() {
       
       if (response.ok) {
         const data = await response.json();
-        // character 필드가 있으면 1대1 채팅 (기존 구조)
-        return data.data?.character !== null && data.data?.character !== undefined;
+        // persona 필드가 있으면 1대1 채팅 (새로운 구조)
+        return data.data?.persona !== null && data.data?.persona !== undefined;
       }
       return false;
     } catch (error) {
@@ -54,9 +54,9 @@ export function useSendMessageToAI() {
 
       // 1대1 채팅방인지 확인
       const isOneOnOne = await isOneOnOneChat(roomId);
-      const endpoint = isOneOnOne ? `/chat/rooms/${roomId}/sse` : `/chat/rooms/${roomId}`;
+      const endpoint = `/chat/rooms/${roomId}/send`; // 1대1, 그룹 채팅 모두 동일한 SSE 엔드포인트 사용
       
-      console.log(`💬 메시지 전송 API 호출 (${isOneOnOne ? '1대1 SSE' : '1대다 WebSocket'}):`, `${API_BASE_URL}${endpoint}`);
+      console.log(`💬 메시지 전송 API 호출 (통합 SSE 엔드포인트):`, `${API_BASE_URL}${endpoint}`);
 
       const timestamp = new Date().toISOString();
       const requestData = {
@@ -230,7 +230,7 @@ export function useCreateChatRoom() {
       console.log('✅ 토큰 가져오기 성공');
 
       const requestData = {
-        characterId: characterId,
+        personaId: characterId,
         isPublic: isPublic
       };
 
@@ -256,7 +256,7 @@ export function useCreateChatRoom() {
 
       return {
         roomId: data.data.id,
-        character: data.data.character || data.data,
+        character: data.data.persona || data.data,
         chatHistory: data.data.chatHistory || []
       };
     } catch (err) {
@@ -290,11 +290,12 @@ export function useEnterOrCreateChatRoom() {
       const token = await getToken();
 
       // 1대1 채팅방 생성/입장 (POST)
-      console.log('🆕 1대1 채팅방 생성/입장 시도...');
+      console.log('🔍 [enterOrCreateChatRoom] 1대1 채팅방 생성/입장 시도...');
       const requestData = {
         personaId: characterId,
         isPublic: isPublic
       };
+      console.log('🔍 [enterOrCreateChatRoom] 요청 데이터:', requestData);
 
       const postResponse = await fetch(`${API_BASE_URL}/chat/rooms`, {
         method: 'POST',
@@ -319,14 +320,17 @@ export function useEnterOrCreateChatRoom() {
       }
 
       const postData = await postResponse.json();
-      console.log('✅ 1대1 채팅방 생성 완료:', postData);
+      console.log('🔍 [enterOrCreateChatRoom] API 응답:', postData);
 
-      return {
+      const result = {
         roomId: postData.data.roomId,
-        character: postData.data.character,
+        character: postData.data.persona,
         chatHistory: postData.data.chatHistory || [],
         isNewRoom: postData.data.isNewRoom || true
       };
+      
+      console.log('🔍 [enterOrCreateChatRoom] 최종 결과:', result);
+      return result;
     } catch (err) {
       console.error('💥 채팅방 입장/생성 에러:', err);
       setError(err.message || '채팅방 처리에 실패했습니다.');

@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { useMyChatRooms } from '../data/chatRooms';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
+import { io } from 'socket.io-client';
 
-export default function MyChatRoomList() {
+export default function MyChatRoomList({ refetchPublicRooms }) {
   const { rooms, loading, refetch } = useMyChatRooms();
-  const navigate = useNavigate();
   const { getToken } = useAuth();
   const [editingRoom, setEditingRoom] = useState(null);
   const [editName, setEditName] = useState('');
@@ -16,6 +15,30 @@ export default function MyChatRoomList() {
   React.useEffect(() => {
     setLocalRooms(rooms);
   }, [rooms]);
+
+  // WebSocket 이벤트 수신을 위한 useEffect
+  React.useEffect(() => {
+    const socket = io('http://localhost:3001', { transports: ['websocket'] });
+
+    // 채팅방 이름 변경 이벤트 수신
+    socket.on('roomNameUpdated', (data) => {
+      setLocalRooms(prevRooms => {
+        return prevRooms.map(room => {
+          if (room.roomId === data.roomId) {
+            return {
+              ...room,
+              name: data.name
+            };
+          }
+          return room;
+        });
+      });
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   const handleEditClick = (e, room) => {
     e.stopPropagation();
@@ -48,6 +71,11 @@ export default function MyChatRoomList() {
           )
         );
         console.log('✅ 채팅방 공개 설정 업데이트 완료:', !room.isPublic);
+        
+        // 커뮤니티 페이지의 공개 채팅방 목록도 새로고침
+        if (refetchPublicRooms) {
+          refetchPublicRooms();
+        }
       } else {
         console.error('채팅방 공개 설정 수정 실패');
         alert('채팅방 공개 설정 수정에 실패했습니다.');
@@ -61,10 +89,16 @@ export default function MyChatRoomList() {
   };
 
   const getDefaultRoomName = (room) => {
+    // AI 참가자가 있는 경우
     if (room.aiParticipants && room.aiParticipants.length > 0) {
-      const participantNames = room.aiParticipants.map(p => p.name).join(',');
+      const participantNames = room.aiParticipants.map(p => p.name).join(', ');
       return `${participantNames}와의 채팅방`;
     }
+    // persona 정보가 있는 경우
+    if (room.persona && room.persona.name) {
+      return `${room.persona.name}와의 채팅방`;
+    }
+    // 기본값
     return room.name || '채팅방';
   };
 
@@ -95,9 +129,9 @@ export default function MyChatRoomList() {
         console.log('✅ 채팅방 이름 업데이트 완료:', editName.trim());
         setEditingRoom(null);
         setEditName('');
-        // refetch도 호출하여 서버와 동기화
+        // 즉시 서버에서 최신 데이터 가져오기
         if (refetch) {
-          setTimeout(() => refetch(), 100);
+          refetch();
         }
       } else {
         console.error('채팅방 이름 수정 실패');
@@ -135,13 +169,10 @@ export default function MyChatRoomList() {
         throw new Error(`채팅방 정보 조회 실패: ${infoResponse.status}`);
       }
       const infoResult = await infoResponse.json();
-      navigate(`/chatMate/${room.roomId}`, {
-        state: {
-          character: infoResult.data?.character || room,
-          chatHistory: infoResult.data?.chatHistory || [],
-          roomId: room.roomId
-        }
-      });
+
+      // 페이지 전체 새로고침으로 이동 (Context 상태 초기화) - PR #169 방식 수정
+      window.location.href = `/chatMate/${room.roomId}`;
+
     } catch (error) {
       alert('채팅방 입장에 실패했습니다: ' + error.message);
     }
@@ -155,7 +186,7 @@ export default function MyChatRoomList() {
       {localRooms.map(room => (
         <div
           key={room.roomId}
-          className="group bg-black/60 border-2 border-cyan-700 rounded-xl p-4 cursor-pointer hover:shadow-[0_0_8px_#0ff] flex items-center justify-between"
+          className="group bg-black/60 border-2 border-cyan-700 rounded-xl p-4 cursor-pointer hover:shadow-[0_0_8px_#0ff] hover:border-cyan-500 transition-all duration-200"
           onClick={() => handleRoomClick(room)}
           role="button"
           tabIndex={0}
@@ -165,11 +196,11 @@ export default function MyChatRoomList() {
             }
           }}
         >
-          <div className="flex items-center gap-4 flex-1">
+          <div className="flex items-start gap-4">
             {room.imageUrl && (
-              <img src={room.imageUrl} alt={room.name} className="w-12 h-12 rounded-full border-2 border-cyan-700 shadow-[0_0_8px_#0ff] object-cover" />
+              <img src={room.imageUrl} alt={room.name} className="w-16 h-16 rounded-full border-2 border-cyan-700 shadow-[0_0_8px_#0ff] object-cover flex-shrink-0" />
             )}
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               {editingRoom === room.roomId ? (
                 <div className="flex items-center gap-2">
                   <input
@@ -235,15 +266,31 @@ export default function MyChatRoomList() {
                   </button>
                 </div>
               )}
-              <div className="text-cyan-400 text-xs font-mono">{room.lastChat ? `"${room.lastChat}"` : '대화 내역 없음'}</div>
+              {/* 설명 표시 */}
+              {room.description && (
+                <div className="text-cyan-300 text-sm mt-2 font-mono line-clamp-2">
+                  {room.description}
+                </div>
+              )}
+              <div className="text-cyan-400 text-xs font-mono mt-1">{room.lastChat ? `"${room.lastChat}"` : '대화 내역 없음'}</div>
               <div className="text-cyan-500 text-xs font-mono">{room.time && new Date(room.time).toLocaleString()}</div>
             </div>
           </div>
-          {room.unreadCount > 0 && (
-            <span className="ml-4 px-3 py-1 rounded-full bg-fuchsia-700 text-cyan-100 font-bold text-xs shadow-[0_0_8px_#f0f] animate-pulse border-2 border-cyan-400">
-              {room.unreadCount} NEW
+          <div className="flex flex-col items-end gap-2 ml-4">
+            {room.unreadCount > 0 && (
+              <span className="px-3 py-1 rounded-full bg-fuchsia-700 text-cyan-100 font-bold text-xs shadow-[0_0_8px_#f0f] animate-pulse border-2 border-cyan-400">
+                {room.unreadCount} NEW
+              </span>
+            )}
+            {/* 공개/비공개 상태 표시 */}
+            <span className={`px-2 py-1 rounded text-xs font-mono ${
+              room.isPublic 
+                ? 'bg-green-700/50 text-green-300' 
+                : 'bg-gray-700/50 text-gray-300'
+            }`}>
+              {room.isPublic ? '공개' : '비공개'}
             </span>
-          )}
+          </div>
         </div>
       ))}
     </div>

@@ -74,6 +74,21 @@ export function useMyChatRooms() {
       });
     });
 
+    // 채팅방 이름 변경 이벤트 수신
+    newSocket.on('roomNameUpdated', (data) => {
+      setRooms(prevRooms => {
+        return prevRooms.map(room => {
+          if (room.roomId === data.roomId) {
+            return {
+              ...room,
+              name: data.name
+            };
+          }
+          return room;
+        });
+      });
+    });
+
     return () => {
       newSocket.disconnect();
     };
