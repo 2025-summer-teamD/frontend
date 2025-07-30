@@ -1,6 +1,5 @@
 // src/pages/Communities.jsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useCommunityCharacters, toggleLike, incrementViewCount } from '../data/characters';
 import { useChatRooms } from '../contexts/ChatRoomsContext';
 import CharacterProfile from '../components/CharacterProfile';
@@ -15,7 +14,6 @@ import { useAuth } from "@clerk/clerk-react";
 import { CharacterCard } from '../components/CharacterGrid';
 
 export default function Communities() {
-  const navigate = useNavigate();
   const { getToken, userId } = useAuth();
 
   const [likedIds, setLikedIds] = useState(() =>

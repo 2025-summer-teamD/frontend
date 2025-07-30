@@ -115,6 +115,8 @@ const ChatMate = () => {
     removeLoadingMessage // 로딩 메시지 제거 함수 추가
   } = useChatMessages();
 
+  // PR #169 방식: sendMessage 함수에서 직접 SSE 처리
+
   // 소켓 상태
   // const socketRef = useRef(null); // WebSocket 제거로 인해 주석 처리
   const [participants, setParticipants] = useState([]);
@@ -197,6 +199,10 @@ const ChatMate = () => {
 
   // roomId가 변경될 때 인사 플래그 리셋
   useEffect(() => {
+    console.log('🔄 [ChatMate] roomId 변경 감지!');
+    console.log('🔄 [ChatMate] 이전 roomId → 새 roomId:', roomId);
+    console.log('🔄 [ChatMate] 변경 시점 URL:', window.location.pathname);
+    console.log('🔄 [ChatMate] 변경 시점 state:', state);
     hasSentInitialGreeting.current = false;
   }, [roomId]);
 
@@ -218,14 +224,33 @@ const ChatMate = () => {
         console.log('🔍 [room-info] API 응답:', JSON.stringify(data, null, 2));
         console.log('🔍 [room-info] 받은 채팅방 정보:', {
           roomId: data.data?.roomId,
-          characterName: data.data?.character?.name,
+          characterName: data.data?.character?.name || data.data?.persona?.name,
           participantsCount: data.data?.participants?.length,
           isOneOnOne: data.data?.isOneOnOne,
-          participants: data.data?.participants?.map(p => ({ id: p.id, name: p.name, personaId: p.personaId }))
+          participants: data.data?.participants?.map(p => ({ 
+            id: p.id, 
+            name: p.name, 
+            personaId: p.personaId,
+            clerkId: p.clerkId 
+          }))
         });
         
-            if (data.success && data.data && data.data.character) {
-              setCharacter(data.data.character);
+        console.log('🔍 [room-info] 전체 participants 상세 정보:');
+        data.data?.participants?.forEach((p, index) => {
+          console.log(`🔍 [room-info] Participant ${index + 1}:`, {
+            id: p.id,
+            name: p.name,
+            personaId: p.personaId,
+            clerkId: p.clerkId,
+            imageUrl: p.imageUrl
+          });
+        });
+        
+                      if (data.success && data.data && (data.data.character || data.data.persona)) {
+            // character 또는 persona 데이터 사용
+            const characterData = data.data.character || data.data.persona;
+            console.log('🔍 [room-info] 사용할 캐릭터 데이터:', characterData);
+            setCharacter(characterData);
           setRoomInfoParticipants(data.data.participants || []);
           setParticipants(data.data.participants || []); // 참여자 목록도 동기화
 
@@ -233,19 +258,43 @@ const ChatMate = () => {
           const isOneOnOne = data.data.isOneOnOne || false;
           console.log('🔍 [room-info] isOneOnOne 값:', isOneOnOne);
           console.log('🔍 [room-info] participants 수:', data.data.participants?.length);
+          console.log('🔍 [room-info] 채팅방 정보 처리 성공!');
+          setError(null); // 에러 상태 초기화
           setIsOneOnOneChat(isOneOnOne);
+
+          // 백엔드에서 받은 채팅 기록을 Context에 추가
+          const chatHistory = data.data.chatHistory || [];
+          console.log('🔍 [room-info] chatHistory 길이:', chatHistory.length);
+          
+          if (chatHistory.length > 0) {
+            console.log('🔍 [room-info] chatHistory 샘플:', chatHistory[0]);
+            const convertedMessages = convertChatHistoryToMessages(chatHistory, characterData);
+            console.log('🔍 [room-info] 변환된 메시지 수:', convertedMessages.length);
+            setMessagesForRoom(roomId, convertedMessages);
+          } else {
+            console.log('🔍 [room-info] 채팅 기록 없음 - 빈 배열로 초기화');
+            setMessagesForRoom(roomId, []);
+          }
 
           // 채팅방에 처음 들어왔을 때 AI들이 자동으로 인사 (새로운 방이고 AI가 2명 이상일 때만)
           const currentMessages = getMessages(roomId);
-          const chatHistory = data.data.chatHistory || [];
 
           // 백엔드에서 받은 채팅 기록이 없고, 현재 메시지도 없고, AI 참여자가 2명 이상이고, 아직 인사를 보내지 않았을 때만
 
             } else {
+              console.error('🚨 [room-info] 조건 실패:');
+              console.error('🚨 [room-info] data.success:', data.success);
+              console.error('🚨 [room-info] data.data 존재:', !!data.data);
+              console.error('🚨 [room-info] data.data.character 존재:', !!data.data?.character);
+              console.error('🚨 [room-info] data.data.persona 존재:', !!data.data?.persona);
+              console.error('🚨 [room-info] 전체 data:', data);
               setError('존재하지 않거나 삭제된 채팅방입니다.');
             }
       } catch (error) {
-        console.error('❌ room-info API 호출 실패:', error);
+        console.error('🚨 [room-info] API 호출 실패:');
+        console.error('🚨 [room-info] 에러 타입:', error.constructor.name);
+        console.error('🚨 [room-info] 에러 메시지:', error.message);
+        console.error('🚨 [room-info] 전체 에러:', error);
             setError('존재하지 않거나 삭제된 채팅방입니다.');
       } finally {
         setLoading(false);
@@ -429,16 +478,13 @@ const ChatMate = () => {
   if (error) return <div className="text-red-500 p-8">{error}</div>;
   if (!character) return null;
 
-  // 메시지 전송 함수 수정
+  // 올바른 아키텍처: 메시지 전송과 AI 응답 수신 분리
   const sendMessage = async () => {
     if (!newMessage.trim() || aiResponseLoading) return;
     const messageText = newMessage.trim();
     setNewMessage('');
 
-    console.log('🔍 [sendMessage] 채팅 타입 확인:');
-    console.log('🔍 [sendMessage] roomId:', roomId);
-    console.log('🔍 [sendMessage] isOneOnOneChat:', isOneOnOneChat);
-    console.log('🔍 [sendMessage] participants:', roomInfoParticipants);
+    console.log('🔍 [sendMessage] 메시지 전송 시작:', { roomId, messageText, isOneOnOneChat });
 
     if (isOneOnOneChat) {
       // 1대1 채팅: SSE 사용
@@ -719,34 +765,65 @@ const ChatMate = () => {
                     console.log('🔍 [그룹채팅] JSON 파싱 실패:', e.message);
                     console.log('🔍 [그룹채팅] 파싱 실패한 데이터:', data);
                   }
+
                 }
+                setAiLoading(roomId, false);
+                setSseConnectionStatus('disconnected');
+                return;
               } else {
-                console.log('🔍 [그룹채팅] data:로 시작하지 않는 라인 (무시):', JSON.stringify(line));
+                try {
+                  const parsedData = JSON.parse(data);
+                  console.log('🔍 [sendMessage] SSE 데이터:', parsedData);
+
+                  if (parsedData.type === 'text_chunk') {
+                    aiResponse += parsedData.content;
+                  } else if (parsedData.type === 'ai_message' || parsedData.type === 'ai_response') {
+                    // 그룹 채팅에서 완성된 AI 메시지 수신
+                    addMessageToRoom(roomId, {
+                      id: uuidv4(),
+                      text: parsedData.message || parsedData.content,
+                      sender: 'ai',
+                      aiId: parsedData.aiId ? String(parsedData.aiId) : undefined,
+                      aiName: parsedData.aiName ? String(parsedData.aiName) : undefined,
+                      time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
+                      characterId: parsedData.aiId,
+                    });
+                  } else if (parsedData.type === 'message_saved') {
+                    console.log('🔍 [sendMessage] 메시지 저장됨:', parsedData);
+                    chatId = parsedData.chatLogId;
+                  } else if (parsedData.type === 'exp_updated') {
+                    console.log('🔍 [sendMessage] 친밀도 업데이트:', parsedData);
+                  } else if (parsedData.type === 'complete') {
+                    console.log('🔍 [sendMessage] 완료 신호 수신');
+                    setAiLoading(roomId, false);
+                    setSseConnectionStatus('disconnected');
+                    return;
+                  }
+                } catch (e) {
+                  console.log('🔍 [sendMessage] JSON 파싱 실패:', e.message);
+                }
               }
             }
           }
-        } finally {
-          console.log('🔍 [그룹채팅] finally 블록: reader 해제');
-          reader.releaseLock();
-          console.log('🔍 [그룹채팅] reader 해제 완료');
         }
-      } catch (error) {
-        console.error('🚨 [그룹채팅] 메시지 전송 실패:');
-        console.error('🚨 [그룹채팅] 에러 타입:', error.constructor.name);
-        console.error('🚨 [그룹채팅] 에러 메시지:', error.message);
-        console.error('🚨 [그룹채팅] 전체 에러:', error);
-        console.error('🚨 [그룹채팅] 네트워크 상태:', navigator.onLine ? '온라인' : '오프라인');
-        
-        // 에러 유형별 세부 정보
-        if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-          console.error('🚨 [그룹채팅] fetch 실패 - 네트워크 또는 CORS 문제');
-        } else if (error.name === 'AbortError') {
-          console.error('🚨 [그룹채팅] 요청이 중단됨');
-        }
-        
-        setAiLoading(roomId, false);
-        setSseConnectionStatus('error');
+      } finally {
+        reader.releaseLock();
       }
+
+    } catch (error) {
+      console.error('🚨 [sendMessage] 실패:', error);
+      
+      // 에러 메시지를 채팅방에 추가
+      addMessageToRoom(roomId, {
+        id: uuidv4(),
+        text: `오류: ${error.message}`,
+        sender: 'system',
+        time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
+        isError: true
+      });
+      
+      setAiLoading(roomId, false);
+      setSseConnectionStatus('error');
     }
   };
 
@@ -818,28 +895,45 @@ const ChatMate = () => {
             })
           });
 
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
 
-          setSseConnectionStatus('connected');
+        // 1. 통합 API: 이미지 메시지 전송 + AI 응답 SSE 스트리밍
+        console.log('🔍 [handleImageUpload] 통합 SSE API 호출...');
+        setAiLoading(roomId, true);
+        setSseConnectionStatus('connecting');
 
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder();
-          let aiResponse = '';
+        const sseResponse = await fetch(`${API_BASE_URL}/chat/rooms/${roomId}/send`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: imageMessage,
+            sender: user.id,
+            userName: userName,
+            timestamp: new Date().toISOString()
+          })
+        });
 
-      try {
-            while (true) {
-              const { done, value } = await reader.read();
+        if (!sseResponse.ok) {
+          throw new Error(`이미지 통합 SSE API 실패: ${sseResponse.status}`);
+        }
 
-              if (done) break;
+        setSseConnectionStatus('connected');
+        console.log('✅ [handleImageUpload] 통합 SSE API 연결 성공');
 
-              const chunk = decoder.decode(value);
-              const lines = chunk.split('\n');
+        const reader = sseResponse.body.getReader();
+        const decoder = new TextDecoder();
+        let aiResponse = '';
 
-              for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                  const data = line.slice(6); // 'data: ' 제거
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
+            let chatId = null;
 
                   if (data === '[DONE]') {
                     // AI 응답 완료
@@ -862,22 +956,21 @@ const ChatMate = () => {
       } catch (e) {
                       // JSON 파싱 실패 시 무시
                     }
+                  } catch (e) {
+                    // JSON 파싱 실패 시 무시
                   }
                 }
               }
             }
-      } finally {
-            reader.releaseLock();
           }
-
-        } catch (error) {
-          console.error('1대1 채팅 이미지 메시지 전송 실패:', error);
-        setAiLoading(roomId, false);
-          setSseConnectionStatus('error');
+        } finally {
+          reader.releaseLock();
         }
-      } else {
-        // 그룹 채팅: 이미지 업로드는 현재 지원하지 않음 (SSE로 변경됨)
-        console.log('🔍 그룹 채팅에서는 이미지 업로드를 아직 지원하지 않습니다.');
+
+      } catch (error) {
+        console.error('🚨 [handleImageUpload] 이미지 메시지 처리 실패:', error);
+        setAiLoading(roomId, false);
+        setSseConnectionStatus('error');
       }
     } else {
       alert('이미지 업로드 실패');

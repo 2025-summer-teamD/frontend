@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import { useMyChatRooms } from '../data/chatRooms';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
 import { io } from 'socket.io-client';
 
 export default function MyChatRoomList({ refetchPublicRooms }) {
   const { rooms, loading, refetch } = useMyChatRooms();
-  const navigate = useNavigate();
   const { getToken } = useAuth();
   const [editingRoom, setEditingRoom] = useState(null);
   const [editName, setEditName] = useState('');

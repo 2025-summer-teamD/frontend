@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { useNavigate } from 'react-router-dom';
 import { Heart as OutlineHeart, Heart as SolidHeart } from 'lucide-react';
 import { getSafeImageUrl } from '../utils/imageUtils';
 import { useAuth } from '@clerk/clerk-react';
@@ -44,7 +43,11 @@ export const CharacterHeader = ({ character, liked, onLikeToggle, showLikeButton
           <div className="mb-3"></div>
         )}
       </div>
+
+      {/* 하트와 좋아요 숫자 제거됨 - PR #170 */}
+
       {/* 하트와 좋아요 숫자 제거됨 */}
+
     </div>
   );
 };
@@ -169,7 +172,6 @@ CharacterInfo.propTypes = {
 
 const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onEdit }) => {
   const isMyCharacter = origin === 'my';
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
   const [showImage, setShowImage] = useState(false);
@@ -189,10 +191,9 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
       
       console.log(isNewRoom ? '🆕 새 채팅방 생성됨' : '🔄 기존 채팅방 입장 (히스토리 ' + chatHistory.length + '개)');
 
-      console.log('🔍 [CharacterProfile] navigate 호출:', `/chatMate/${roomId}`);
-      navigate(`/chatMate/${roomId}`, {
-        state: { character: updatedCharacter, chatHistory: chatHistory, roomId: roomId }
-      });
+      console.log('🔍 [CharacterProfile] window.location.href 호출:', `/chatMate/${roomId}`);
+      // 페이지 전체 새로고침으로 이동 (Context 상태 초기화) - PR #169 방식 수정
+      window.location.href = `/chatMate/${roomId}`;
     } catch (error) {
       alert('채팅방 처리에 실패했습니다: ' + error.message);
     } finally {
