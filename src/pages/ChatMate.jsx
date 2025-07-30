@@ -656,7 +656,7 @@ const ChatMate = () => {
     const formData = new FormData();
     formData.append('image', file);
     
-    const res = await fetch('/api/chat/upload-image', {
+    const res = await fetch(`${API_BASE_URL}/chat/upload-image`, {
       method: 'POST',
       body: formData,
     });

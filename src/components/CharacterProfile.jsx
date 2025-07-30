@@ -177,6 +177,24 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
   const [showImage, setShowImage] = useState(false);
   const { getToken, userId } = useAuth();
   const { enterOrCreateChatRoom } = useEnterOrCreateChatRoom();
+  
+  // 디버깅을 위한 로그 추가
+  console.log('🔍 CharacterProfile 렌더링:', { 
+    characterId: character?.id, 
+    characterName: character?.name, 
+    liked, 
+    origin 
+  });
+
+  // liked prop이 변경될 때마다 로그 출력
+  React.useEffect(() => {
+    console.log('🔍 CharacterProfile liked prop 변경:', { 
+      characterId: character?.id, 
+      characterName: character?.name, 
+      liked, 
+      origin 
+    });
+  }, [liked, character?.id, character?.name, origin]);
 
   // Determine if character is created by current user
   const isCharacterCreatedByMe = character?.clerkId === userId;
@@ -224,11 +242,15 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
       console.log('🔍 CharacterProfile handleLikeToggle - API 호출 전:', { characterId, token });
       const result = await toggleLike(characterId, token);
       console.log('🔍 CharacterProfile handleLikeToggle - API 응답:', result);
+      console.log('🔍 CharacterProfile handleLikeToggle - API 응답 data:', result.data);
+      console.log('🔍 CharacterProfile handleLikeToggle - API 응답 isLiked:', result.data?.isLiked);
       
       // Call parent's onLikeToggle if provided
       if (onLikeToggle) {
-        console.log('🔍 CharacterProfile handleLikeToggle - 부모 onLikeToggle 호출:', { characterId, newLiked: !liked });
-        onLikeToggle(characterId, !liked);
+        // Pass the new state that we expect after the API call
+        const newLikedState = result.data?.isLiked;
+        console.log('🔍 CharacterProfile handleLikeToggle - 부모 onLikeToggle 호출:', { characterId, newLiked: newLikedState });
+        onLikeToggle(characterId, newLikedState);
       }
     } catch (error) {
       console.error('❌ CharacterProfile handleLikeToggle - 오류:', error);
@@ -251,7 +273,9 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
     console.log('🔍 CharacterProfile getButtonConfig - 현재 상태:', { 
       isCharacterCreatedByMe, 
       liked, 
-      characterId: character?.id 
+      characterId: character?.id,
+      characterName: character?.name,
+      origin
     });
     
     if (isCharacterCreatedByMe) {
@@ -262,14 +286,14 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
       };
     } else {
       if (liked) {
-        console.log('🔍 CharacterProfile getButtonConfig - 찜 취소하기 버튼');
+        console.log('🔍 CharacterProfile getButtonConfig - 찜 취소하기 버튼 (liked=true)');
         return {
           text: '찜 취소하기',
           disabled: false,
           className: 'w-full bg-gradient-to-r from-pink-700 to-red-700 hover:from-pink-600 hover:to-red-600 text-pink-100 font-bold py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2 shadow-[0_0_8px_#f0f,0_0_16px_#f0f] animate-neonPulse'
         };
       } else {
-        console.log('🔍 CharacterProfile getButtonConfig - 찜 하기 버튼');
+        console.log('🔍 CharacterProfile getButtonConfig - 찜 하기 버튼 (liked=false)');
         return {
           text: '찜 하기',
           disabled: false,

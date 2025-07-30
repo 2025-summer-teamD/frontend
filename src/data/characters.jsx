@@ -307,14 +307,18 @@ export function useDeleteCharacter() {
 
 // 좋아요 토글 API 호출 함수
 export const toggleLike = async (characterId, token) => {
-  console.log('좋아요 토글 요청:', characterId, token);
+  console.log('🔍 toggleLike API 호출 - 시작:', { characterId, token });
+  console.log('🔍 toggleLike API 호출 - URL:', `${API_BASE_URL}/characters/${characterId}/like`);
 
-  return apiCall(`${API_BASE_URL}/characters/${characterId}/like`, {
+  const result = await apiCall(`${API_BASE_URL}/characters/${characterId}/like`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
+
+  console.log('🔍 toggleLike API 호출 - 결과:', result);
+  return result;
 };
 
 // 조회수 증가 API 호출 함수

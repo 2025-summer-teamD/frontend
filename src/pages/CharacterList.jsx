@@ -47,6 +47,39 @@ export default function CharacterList() {
     localStorage.setItem('likedIds', JSON.stringify(likedIds));
   }, [likedIds]);
 
+  // 페이지 로드 시 백엔드에서 찜한 캐릭터 목록을 가져와서 likedIds 동기화
+  useEffect(() => {
+    const fetchLikedIdsFromBackend = async () => {
+      try {
+        const token = await getToken();
+        const timestamp = Date.now();
+        const url = `${import.meta.env.VITE_API_BASE_URL}/my/characters?type=liked&_t=${timestamp}`;
+        
+        console.log('🔍 CharacterList - 백엔드에서 찜한 캐릭터 목록 가져오기:', { url });
+        
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const likedCharacterIds = (data.data || []).map(char => char.id);
+          console.log('🔍 CharacterList - 백엔드에서 가져온 찜한 캐릭터 ID들:', likedCharacterIds);
+          
+          setLikedIds(likedCharacterIds);
+        } else {
+          console.error('❌ CharacterList - 찜한 캐릭터 목록 가져오기 실패:', response.status);
+        }
+      } catch (error) {
+        console.error('❌ CharacterList - 찜한 캐릭터 목록 가져오기 오류:', error);
+      }
+    };
+    
+    fetchLikedIdsFromBackend();
+  }, [getToken]);
+
   const [tab, setTab] = useState('created'); // 'created', 'liked', 'mychats'
   const [searchQuery, setSearchQuery] = useState(''); // 검색어 상태
   const [editingCharacter, setEditingCharacter] = useState(null);
@@ -213,6 +246,7 @@ export default function CharacterList() {
       const isLiked = result.data?.isLiked;
       console.log('🔍 handleLikeToggle - API 응답 isLiked:', isLiked);
       
+      // likedIds 상태 업데이트
       setLikedIds(prev => {
         const newLikedIds = isLiked 
           ? [...prev, characterId] 

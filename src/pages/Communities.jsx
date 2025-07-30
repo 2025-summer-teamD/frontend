@@ -49,6 +49,49 @@ export default function Communities() {
     localStorage.setItem('likedIds', JSON.stringify(likedIds));
   }, [likedIds]);
 
+  // likedIds가 변경될 때마다 로그 출력
+  React.useEffect(() => {
+    console.log('🔍 Communities likedIds 변경:', { 
+      likedIds, 
+      likedIdsLength: likedIds.length,
+      selectedCharacterId: selectedCharacter?.id,
+      selectedCharacterLiked: selectedCharacter ? likedIds.includes(selectedCharacter.id) : null
+    });
+  }, [likedIds, selectedCharacter]);
+
+  // 페이지 로드 시 백엔드에서 찜한 캐릭터 목록을 가져와서 likedIds 동기화
+  React.useEffect(() => {
+    const fetchLikedIdsFromBackend = async () => {
+      try {
+        const token = await getToken();
+        const timestamp = Date.now();
+        const url = `${import.meta.env.VITE_API_BASE_URL}/my/characters?type=liked&_t=${timestamp}`;
+        
+        console.log('🔍 Communities - 백엔드에서 찜한 캐릭터 목록 가져오기:', { url });
+        
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const likedCharacterIds = (data.data || []).map(char => char.id);
+          console.log('🔍 Communities - 백엔드에서 가져온 찜한 캐릭터 ID들:', likedCharacterIds);
+          
+          setLikedIds(likedCharacterIds);
+        } else {
+          console.error('❌ Communities - 찜한 캐릭터 목록 가져오기 실패:', response.status);
+        }
+      } catch (error) {
+        console.error('❌ Communities - 찜한 캐릭터 목록 가져오기 오류:', error);
+      }
+    };
+    
+    fetchLikedIdsFromBackend();
+  }, [getToken]);
+
   // 페이지 포커스 시 공개 채팅방 목록 새로고침
   React.useEffect(() => {
     const handleFocus = () => {
@@ -90,19 +133,14 @@ export default function Communities() {
       const isLiked = result.data?.isLiked;
       console.log('🔍 Communities handleLikeToggle - API 응답 isLiked:', isLiked);
       
-      if (isLiked) {
-        setLikedIds(prev => {
-          const newLikedIds = [...prev, id];
-          console.log('🔍 Communities handleLikeToggle - likedIds 업데이트 (추가):', { prev, newLikedIds });
-          return newLikedIds;
-        });
-      } else {
-        setLikedIds(prev => {
-          const newLikedIds = prev.filter(x => x !== id);
-          console.log('🔍 Communities handleLikeToggle - likedIds 업데이트 (제거):', { prev, newLikedIds });
-          return newLikedIds;
-        });
-      }
+      // likedIds 상태 업데이트
+      setLikedIds(prev => {
+        const newLikedIds = isLiked 
+          ? [...prev, id] 
+          : prev.filter(x => x !== id);
+        console.log('🔍 Communities handleLikeToggle - likedIds 업데이트:', { prev, newLikedIds });
+        return newLikedIds;
+      });
       
       // 해당 캐릭터의 좋아요 수와 상태 업데이트
       const character = characters.find(c => c.id === id);
@@ -464,14 +502,16 @@ export default function Communities() {
       )}
 
       {/* 디버깅 로그 추가 */}
-      {selectedCharacter && console.log('Communities CharacterProfile Debug:', {
+      {selectedCharacter && console.log('🔍 Communities CharacterProfile Debug:', {
         selectedCharacterId: selectedCharacter.id,
         selectedCharacterName: selectedCharacter.name,
         selectedCharacterClerkId: selectedCharacter.clerkId,
         userId,
         isMyCharacter: selectedCharacter.clerkId === userId,
         likedIds,
-        isLiked: likedIds.includes(selectedCharacter.id)
+        isLiked: likedIds.includes(selectedCharacter.id),
+        likedIdsLength: likedIds.length,
+        selectedCharacterLiked: selectedCharacter.liked
       })}
 
       {/* 디버깅 로그 추가 */}

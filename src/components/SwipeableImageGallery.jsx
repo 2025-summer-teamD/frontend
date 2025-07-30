@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const SwipeableImageGallery = ({ imageUrls, getSafeImageUrl, setImagePreview, imagePreview }) => {
   console.log('받은 imageUrls:', imageUrls);
 
@@ -172,7 +174,7 @@ const ImagePreviewSection = ({ activeTab, imagePreview, imageUrls, getSafeImageU
             alt="Preview"
             className="w-full h-72 object-contain"
             onError={(e) => {
-              e.target.src = '/api/uploads/default-character.svg';
+              e.target.src = `${API_BASE_URL}/uploads/default-character.svg`;
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
