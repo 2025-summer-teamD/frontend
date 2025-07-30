@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import { useMyChatRooms } from '../data/chatRooms';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
 import { io } from 'socket.io-client';
 
 export default function MyChatRoomList({ refetchPublicRooms }) {
   const { rooms, loading, refetch } = useMyChatRooms();
-  const navigate = useNavigate();
   const { getToken } = useAuth();
   const [editingRoom, setEditingRoom] = useState(null);
   const [editName, setEditName] = useState('');
@@ -171,13 +169,10 @@ export default function MyChatRoomList({ refetchPublicRooms }) {
         throw new Error(`채팅방 정보 조회 실패: ${infoResponse.status}`);
       }
       const infoResult = await infoResponse.json();
-      navigate(`/chatMate/${room.roomId}`, {
-        state: {
-          persona: infoResult.data?.persona || room,
-          chatHistory: infoResult.data?.chatHistory || [],
-          roomId: room.roomId
-        }
-      });
+
+      // 페이지 전체 새로고침으로 이동 (Context 상태 초기화) - PR #169 방식 수정
+      window.location.href = `/chatMate/${room.roomId}`;
+
     } catch (error) {
       alert('채팅방 입장에 실패했습니다: ' + error.message);
     }
