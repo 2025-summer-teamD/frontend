@@ -12,17 +12,6 @@ const ChatMessageItem = ({ msg, showProfile, showTime, profileImg, displayName, 
   // TTS 오디오 캐싱을 위한 유틸리티 함수들
   const getTTSCacheKey = (roomId, msgId) => `tts_${roomId}_${msgId}`;
 
-  // TTS 캐시 전체 삭제 함수 (디버깅용)
-  const clearAllTTSCache = () => {
-    const keys = Object.keys(localStorage);
-    const ttsKeys = keys.filter(key => key.startsWith('tts_'));
-    ttsKeys.forEach(key => {
-      localStorage.removeItem(key);
-      console.log('🗑️ TTS 캐시 삭제:', key);
-    });
-    console.log(`🗑️ 총 ${ttsKeys.length}개의 TTS 캐시 삭제 완료`);
-  };
-
   const TypingEffectText = ({ text, speed = 50 }) => {
     const [displayedText, setDisplayedText] = useState('');
     const [index, setIndex] = useState(0);
@@ -51,12 +40,10 @@ const ChatMessageItem = ({ msg, showProfile, showTime, profileImg, displayName, 
     try {
       const cachedData = localStorage.getItem(cacheKey);
       if (cachedData) {
-        console.log('🔊 캐시된 TTS 데이터 발견:', cacheKey);
         const { audioBase64, timestamp } = JSON.parse(cachedData);
         // 24시간 후 캐시 만료
         const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24시간
         if (Date.now() - timestamp < CACHE_DURATION) {
-          console.log('🔊 캐시된 TTS 데이터가 유효합니다. 사용합니다.');
           // Base64를 Blob으로 변환
           const byteCharacters = atob(audioBase64);
           const byteNumbers = new Array(byteCharacters.length);
@@ -67,15 +54,12 @@ const ChatMessageItem = ({ msg, showProfile, showTime, profileImg, displayName, 
           const audioBlob = new Blob([byteArray], { type: 'audio/mpeg' });
           return URL.createObjectURL(audioBlob);
         } else {
-          console.log('🔊 캐시된 TTS 데이터가 만료되었습니다. 삭제합니다.');
           // 만료된 캐시 삭제
           localStorage.removeItem(cacheKey);
         }
-      } else {
-        console.log('🔊 캐시된 TTS 데이터가 없습니다.');
       }
     } catch (error) {
-      console.error('🔊 캐시된 TTS 데이터 로드 실패:', error);
+      console.error('캐시된 TTS 데이터 로드 실패:', error);
       localStorage.removeItem(cacheKey);
     }
     return null;
@@ -121,21 +105,18 @@ const ChatMessageItem = ({ msg, showProfile, showTime, profileImg, displayName, 
 
     setIsPlaying(true); // 재생 시작 상태로 변경
 
-          try {
-        const cacheKey = getTTSCacheKey(roomId, msg.id);
-        console.log('🔊 TTS 재생 시작 - 메시지 ID:', msg.id, '텍스트:', msg.text.substring(0, 50) + '...');
-        console.log('🔊 TTS 캐시 키:', cacheKey);
+    try {
+      const cacheKey = getTTSCacheKey(roomId, msg.id);
 
-        // 먼저 캐시된 데이터가 있는지 확인
-        let audioUrl = getCachedTTSUrl(cacheKey);
+      // 먼저 캐시된 데이터가 있는지 확인
+      let audioUrl = getCachedTTSUrl(cacheKey);
 
-        if (!audioUrl) {
-          // 캐시된 데이터가 없으면 API 호출
-          console.log('🔊 캐시된 TTS 데이터가 없습니다. API 호출합니다:', cacheKey);
+      if (!audioUrl) {
+        // 캐시된 데이터가 없으면 API 호출
+        console.log('캐시된 TTS 데이터가 없습니다. API 호출합니다:', cacheKey);
 
-          const ttsApiUrl = `${API_BASE_URL}/chat/tts/${roomId}/${msg.id}`;
-          console.log('🔊 TTS API URL:', ttsApiUrl);
-          const response = await fetch(ttsApiUrl);
+        const ttsApiUrl = `${API_BASE_URL}/chat/tts/${roomId}/${msg.id}`;
+        const response = await fetch(ttsApiUrl);
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -149,8 +130,7 @@ const ChatMessageItem = ({ msg, showProfile, showTime, profileImg, displayName, 
         // 백그라운드에서 캐싱 (재생과 병렬로 처리)
         cacheTTSData(cacheKey, audioBlob);
       } else {
-        console.log('🔊 캐시된 TTS 데이터를 사용합니다:', cacheKey);
-        console.log('🔊 캐시된 오디오 URL:', audioUrl);
+        console.log('캐시된 TTS 데이터를 사용합니다:', cacheKey);
       }
 
       // Audio 객체 생성 및 재생
@@ -222,14 +202,6 @@ const ChatMessageItem = ({ msg, showProfile, showTime, profileImg, displayName, 
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd"></path>
                     </svg>
                   )}
-                </button>
-                {/* TTS 캐시 삭제 버튼 (디버깅용) */}
-                <button
-                  onClick={clearAllTTSCache}
-                  className="ml-1 p-1 rounded-full bg-yellow-500 hover:bg-yellow-600 text-white transition-all duration-200"
-                  title="TTS 캐시 삭제"
-                >
-                  🗑️
                 </button>
               </span>
             )}
