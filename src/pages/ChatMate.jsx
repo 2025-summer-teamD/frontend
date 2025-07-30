@@ -806,7 +806,7 @@ const ChatMate = () => {
             }
           }
         }
-      } finally {
+      finally {
         reader.releaseLock();
       }
 
