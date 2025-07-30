@@ -1,9 +1,6 @@
 {
-    "rewrites": [
-        {
-        "source": "/(.*)",
-        "destination": "/index.html"
-        }
-    ],
-    "cleanUrls": true
-}   
+  "build": { "command": "npm run build", "outputDirectory": "dist" },
+  "routes": [
+    { "src": "/(.*)", "dest": "/index.html", "status": 200 }
+  ]
+}
