@@ -1,6 +1,6 @@
 import React from 'react';
 
-const TypingIndicator = ({ aiColor, aiName = 'AI', profileImg }) => {
+const TypingIndicator = ({ aiColor, aiName = 'Unknown AI', profileImg }) => {
   return (
     <div className="flex flex-col w-full items-start font-cyberpunk">
       {/* AI 프로필 */}
@@ -32,7 +32,6 @@ const TypingIndicator = ({ aiColor, aiName = 'AI', profileImg }) => {
             <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
             <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
           </div>
-          <span className="text-sm opacity-70 ml-2">...</span>
         </div>
       </div>
     </div>

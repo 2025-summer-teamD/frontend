@@ -67,6 +67,7 @@ export const ChatMessagesProvider = ({ children }) => {
       sender: 'ai', // AI가 보낸 것이므로 'ai'
       aiId: characterId ? String(characterId) : undefined, // AI ID 설정
       aiName: aiName, // AI 이름 설정
+      imageUrl: null, // AI 응답은 이미지가 아닌 텍스트이므로 명시적으로 null 설정
       time: new Date().toLocaleTimeString('ko-KR', {
         hour: 'numeric',
         minute: '2-digit',
@@ -118,6 +119,20 @@ export const ChatMessagesProvider = ({ children }) => {
     });
   }, []);
 
+  // ⭐ 로딩 메시지를 제거하는 함수
+  // AI 응답이 완료되면 해당 AI의 로딩 메시지를 제거합니다.
+  const removeLoadingMessage = useCallback((roomId, aiId) => {
+    setAllMessages(prev => {
+      const currentMessages = prev[roomId] || [];
+      return {
+        ...prev,
+        [roomId]: currentMessages.filter(msg => 
+          !(msg.sender === 'ai' && msg.aiId === aiId && msg.text === '...' && msg.isStreaming)
+        ),
+      };
+    });
+  }, []);
+
   // ⭐ AI가 생성한 비디오 메시지를 추가하는 함수
   // 비디오 메시지는 별도의 ChatLog로 저장되므로, 새 메시지로 추가합니다.
   const addVideoMessageToRoom = useCallback((roomId, videoUrl, characterId) => {
@@ -151,6 +166,7 @@ export const ChatMessagesProvider = ({ children }) => {
     setAiLoading,         // AI 로딩 상태 설정
     updateStreamingAiMessage, // ⭐ 스트리밍 AI 메시지 업데이트
     finishStreamingAiMessage, // ⭐ 스트리밍 AI 메시지 완료 처리
+    removeLoadingMessage, // ⭐ 로딩 메시지 제거
     addVideoMessageToRoom,    // ⭐ 비디오 메시지 추가
   };
 

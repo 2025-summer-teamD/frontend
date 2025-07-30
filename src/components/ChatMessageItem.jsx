@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import TypingIndicator from './TypingIndicator.jsx';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // ChatMessageItem 컴포넌트라고 가정하고 작성합니다.
@@ -208,27 +209,36 @@ const ChatMessageItem = ({ msg, showProfile, showTime, profileImg, displayName, 
           </span>
         </div>
       )}
-      <div
-        className={`max-w-[80%] sm:max-w-[70%] lg:max-w-[60%] px-4 py-3 rounded-xl break-words tracking-widest font-cyberpunk ${msg.sender === 'me'
-          ? 'bg-cyan-100/80 border-2 border-cyan-200 text-[#1a1a2e] shadow-[0_0_4px_#0ff]'
-          : isAI
-            ? `${aiColor.bg} border-2 ${aiColor.border} ${aiColor.text} ${aiColor.shadow}`
-            : 'bg-fuchsia-100/80 border-2 border-fuchsia-200 text-[#1a1a2e] shadow-[0_0_4px_#f0f]'
-          }`}
-        style={isAI ? { boxShadow: aiColor.shadow.replace('shadow-', '').replace('[', '').replace(']', '') } : {}}
-      >
-        {msg.imageUrl
-          ? <img
-            src={msg.imageUrl.startsWith('http') ? msg.imageUrl : API_BASE_URL + msg.imageUrl}
-            alt="전송된 이미지"
-            className="max-w-xs rounded-lg border-2 border-cyan-200 shadow-[0_0_4px_#0ff] font-cyberpunk"
-            />
-            : <p className="font-cyberpunk">{msg.text}</p>
-          // :  isLast // 현재 메시지가 마지막 요소인지 확인
-          // ? <TypingEffectText text={msg.text} speed={30} />
-          // : <p className="font-cyberpunk">{msg.text}</p>
-        }
-      </div>
+      {/* 로딩 메시지인 경우 TypingIndicator 렌더링 (프로필은 TypingIndicator 내부에서 처리) */}
+      {msg.sender === 'ai' && msg.isStreaming && msg.text === '...' ? (
+        <TypingIndicator 
+          aiColor={aiColor}
+          aiName={msg.aiName || displayName}
+          profileImg={profileImg}
+        />
+      ) : (
+        <div
+          className={`max-w-[80%] sm:max-w-[70%] lg:max-w-[60%] px-4 py-3 rounded-xl break-words tracking-widest font-cyberpunk ${msg.sender === 'me'
+            ? 'bg-cyan-100/80 border-2 border-cyan-200 text-[#1a1a2e] shadow-[0_0_4px_#0ff]'
+            : isAI
+              ? `${aiColor.bg} border-2 ${aiColor.border} ${aiColor.text} ${aiColor.shadow}`
+              : 'bg-fuchsia-100/80 border-2 border-fuchsia-200 text-[#1a1a2e] shadow-[0_0_4px_#f0f]'
+            }`}
+          style={isAI ? { boxShadow: aiColor.shadow.replace('shadow-', '').replace('[', '').replace(']', '') } : {}}
+        >
+          {msg.imageUrl
+            ? <img
+              src={msg.imageUrl.startsWith('http') ? msg.imageUrl : API_BASE_URL + msg.imageUrl}
+              alt="전송된 이미지"
+              className="max-w-xs rounded-lg border-2 border-cyan-200 shadow-[0_0_4px_#0ff] font-cyberpunk"
+              />
+              : <p className="font-cyberpunk">{msg.text}</p>
+            // :  isLast // 현재 메시지가 마지막 요소인지 확인
+            // ? <TypingEffectText text={msg.text} speed={30} />
+            // : <p className="font-cyberpunk">{msg.text}</p>
+          }
+        </div>
+      )}
       {showTime && (
         <div className={`flex w-full mt-1 ${msg.sender === 'me' ? 'justify-end pr-2' : 'justify-start pl-2'}`}>
           <span className="text-xs text-cyan-400 font-cyberpunk">

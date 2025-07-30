@@ -103,12 +103,16 @@ const ChatMate = () => {
 
   // 전역 메시지 Context 사용
   const {
+    allMessages,
     getMessages,
+    getMessage,
     setMessagesForRoom,
     addMessageToRoom,
     addAiResponseToRoom,
     getAiLoading,
-    setAiLoading
+    setAiLoading,
+    updateStreamingAiMessage, // 추가된 함수
+    removeLoadingMessage // 로딩 메시지 제거 함수 추가
   } = useChatMessages();
 
   // 소켓 상태
@@ -452,9 +456,24 @@ const ChatMate = () => {
         };
         addMessageToRoom(roomId, userMessage);
 
-        // AI 로딩 상태 시작
+        // AI 로딩 상태 시작 - AI 정보 포함
         setAiLoading(roomId, true);
         setSseConnectionStatus('connecting');
+
+        // AI 로딩 메시지 추가 (TypingIndicator용)
+        const loadingMessageId = uuidv4();
+        const loadingMessage = {
+          id: loadingMessageId,
+          text: '...',
+          sender: 'ai',
+          aiId: character?.id ? String(character.id) : undefined,
+          aiName: character?.name || 'Unknown AI',
+          imageUrl: character?.imageUrl || null, // 캐릭터 이미지 URL 포함
+          time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
+          characterId: character?.id,
+          isStreaming: true, // 스트리밍 중임을 표시
+        };
+        addMessageToRoom(roomId, loadingMessage);
 
         // SSE 스트리밍 요청 (fetch 사용)
         const userName = user?.username || user?.firstName || user?.fullName || user?.id;
@@ -500,41 +519,36 @@ const ChatMate = () => {
         try {
           while (true) {
             const { done, value } = await reader.read();
-
             if (done) break;
 
-            const chunk = decoder.decode(value);
+            const chunk = decoder.decode(value, { stream: true });
             const lines = chunk.split('\n');
-            let chatId = null;
+
             for (const line of lines) {
               if (line.startsWith('data: ')) {
-                const data = line.slice(6); // 'data: ' 제거
-
+                const data = line.slice(6);
                 if (data === '[DONE]') {
-                  // AI 응답 완료
-                  if (aiResponse.trim()) {
-                    // 1대1 채팅에서는 첫 번째 AI 참여자의 정보를 사용
-                    const aiParticipant = roomInfoParticipants.find(p => p.personaId);
-                    addAiResponseToRoom(roomId, chatId, aiResponse.trim(), character?.id, aiParticipant?.name);
-                  }
+                  console.log('🔍 [1대1채팅] [DONE] 신호 수신');
                   setAiLoading(roomId, false);
                   setSseConnectionStatus('disconnected');
                   return;
                 } else {
                   try {
                     const parsedData = JSON.parse(data);
-                    if (parsedData.type === 'text_chunk') {
-                      aiResponse += parsedData.content;
-                    }
-                    else if (parsedData.type === 'message_saved') {
-                      console.log('메시지가 저장되었습니다:', parsedData);
-                      // console.log(`메시지 새로고침: ${parsedData.messageId}`, msg);
-                      chatId = parsedData.chatLogId; // chatRoomId 변경
-                      // chatRoomId 변경
-
+                    if (parsedData.type === 'ai_response' || parsedData.type === 'ai_message') {
+                      aiResponse = parsedData.message || parsedData.content;
+                      // 스트리밍 메시지 업데이트
+                      updateStreamingAiMessage(roomId, loadingMessageId, aiResponse, false);
+                      // 로딩 메시지 제거
+                      removeLoadingMessage(roomId, parsedData.aiId || character?.id);
+                    } else if (parsedData.type === 'complete') {
+                      console.log('🔍 [1대1채팅] 완료 신호 수신');
+                      setAiLoading(roomId, false);
+                      setSseConnectionStatus('disconnected');
+                      return;
                     }
                   } catch (e) {
-                    // JSON 파싱 실패 시 무시
+                    console.log('🔍 [1대1채팅] JSON 파싱 실패:', e.message);
                   }
                 }
               }
@@ -543,26 +557,18 @@ const ChatMate = () => {
         } finally {
           reader.releaseLock();
         }
-    } catch (error) {
-        console.error('🚨 [1대1채팅] 메시지 전송 실패:');
-        console.error('🚨 [1대1채팅] 에러 타입:', error.constructor.name);
-        console.error('🚨 [1대1채팅] 에러 메시지:', error.message);
-        console.error('🚨 [1대1채팅] 전체 에러:', error);
-        console.error('🚨 [1대1채팅] 네트워크 상태:', navigator.onLine ? '온라인' : '오프라인');
-        
+      } catch (error) {
+        console.error('🚨 [1대1채팅] 메시지 전송 실패:', error);
         setAiLoading(roomId, false);
         setSseConnectionStatus('error');
       }
     } else {
-      // 그룹 채팅: SSE 사용 (WebSocket에서 변경)
-      console.log('🔍 [sendMessage] 그룹 채팅 모드 - SSE 요청 시작');
-      console.log('🔍 [그룹채팅] try 블록 진입 전');
+      // 그룹 채팅: SSE 사용
+      console.log('🔍 [sendMessage] 그룹 채팅 모드 - /chat/rooms/${roomId}/sse 호출');
       try {
-        console.log('🔍 [그룹채팅] try 블록 진입 성공!');
         const token = await getToken();
-        const userName = user?.username || user?.firstName || user?.fullName || user?.id;
 
-        // 사용자 메시지를 먼저 추가 (1대1 채팅과 동일하게)
+        // 사용자 메시지를 먼저 추가
         const userMessage = {
           id: uuidv4(),
           text: messageText,
@@ -572,40 +578,46 @@ const ChatMate = () => {
         };
         addMessageToRoom(roomId, userMessage);
 
-        // 요청 정보 상세 로깅
+        // AI 로딩 상태 시작
+        setAiLoading(roomId, true);
+        setSseConnectionStatus('connecting');
+
+        // 각 AI별 로딩 메시지 추가
+        const loadingMessageIds = [];
+        if (roomInfoParticipants && roomInfoParticipants.length > 0) {
+          roomInfoParticipants.forEach((participant, index) => {
+            const loadingMessageId = uuidv4();
+            loadingMessageIds.push(loadingMessageId);
+            const loadingMessage = {
+              id: loadingMessageId,
+              text: '...',
+              sender: 'ai',
+              aiId: participant.id ? String(participant.id) : undefined,
+              aiName: participant.name || 'Unknown AI',
+              imageUrl: participant.imageUrl || null, // 참여자 이미지 URL 포함
+              time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
+              characterId: participant.id,
+              isStreaming: true, // 스트리밍 중임을 표시
+            };
+            addMessageToRoom(roomId, loadingMessage);
+          });
+        }
+
+        // SSE 스트리밍 요청
+        const userName = user?.username || user?.firstName || user?.fullName || user?.id;
+        
         const requestUrl = `${API_BASE_URL}/chat/rooms/${roomId}/sse`;
-        // 🔍 participants 상세 로깅 추가
-        console.log('🔍 [그룹채팅] roomInfoParticipants 원본:', roomInfoParticipants);
-        console.log('🔍 [그룹채팅] roomInfoParticipants 타입:', typeof roomInfoParticipants);
-        console.log('🔍 [그룹채팅] roomInfoParticipants 배열인가?:', Array.isArray(roomInfoParticipants));
-        
-        const participantIds = roomInfoParticipants?.map(p => {
-          console.log('🔍 [그룹채팅] participant:', p);
-          return p.personaId || p.id;
-        }) || [];
-        
-        console.log('🔍 [그룹채팅] 최종 participantIds:', participantIds);
-        
         const requestBody = {
           message: messageText,
           sender: user.id,
           userName: userName,
           timestamp: new Date().toISOString()
-          // chatType, participants 제거 - 백엔드에서 roomId로 판별
         };
         
-        console.log('🔍 [그룹채팅] API_BASE_URL:', API_BASE_URL);
         console.log('🔍 [그룹채팅] 요청 URL:', requestUrl);
         console.log('🔍 [그룹채팅] 요청 body:', requestBody);
         console.log('🔍 [그룹채팅] token 존재:', !!token);
-
-        // AI 로딩 상태 시작
-        setAiLoading(roomId, true);
-        setSseConnectionStatus('connecting');
-
-        console.log('🔍 [그룹채팅] fetch 요청 시작...');
         
-        // 그룹 채팅용 SSE 엔드포인트 (임시로 1대1과 동일한 엔드포인트 사용)
         const response = await fetch(requestUrl, {
           method: 'POST',
           headers: {
@@ -615,11 +627,11 @@ const ChatMate = () => {
           body: JSON.stringify(requestBody)
         });
         
-        console.log('🔍 [그룹채팅] fetch 응답 수신:');
-        console.log('🔍 [그룹채팅] response.status:', response.status);
-        console.log('🔍 [그룹채팅] response.statusText:', response.statusText);
-        console.log('🔍 [그룹채팅] response.ok:', response.ok);
-        console.log('🔍 [그룹채팅] response.headers.get("content-type"):', response.headers.get('content-type'));
+        console.log('🔍 [그룹채팅] fetch 응답:', {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok
+        });
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -627,26 +639,15 @@ const ChatMate = () => {
 
         setSseConnectionStatus('connected');
 
-        console.log('🔍 [그룹채팅] SSE 스트리밍 시작...');
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
-        console.log('🔍 [그룹채팅] reader 생성 완료');
 
         try {
-          let chunkCount = 0;
           while (true) {
-            console.log('🔍 [그룹채팅] reader.read() 호출 중...');
             const { done, value } = await reader.read();
-            chunkCount++;
-            console.log('🔍 [그룹채팅] chunk', chunkCount, '수신, done:', done, 'value length:', value?.length);
-            if (done) {
-              console.log('🔍 [그룹채팅] 스트리밍 완료');
-              break;
-            }
+            if (done) break;
 
-            const chunk = decoder.decode(value);
-            console.log('🔍 [그룹채팅] chunk 내용:', JSON.stringify(chunk));
-            console.log('🔍 [그룹채팅] chunk 길이:', chunk.length);
+            const chunk = decoder.decode(value, { stream: true });
             const lines = chunk.split('\n');
             console.log('🔍 [그룹채팅] 분할된 라인 수:', lines.length);
             lines.forEach((line, index) => {
@@ -673,15 +674,32 @@ const ChatMate = () => {
                     if (parsedData.type === 'ai_message' || parsedData.type === 'ai_response') {
                       // 그룹 채팅에서 AI 메시지 수신
                       console.log('🔍 [그룹채팅] AI 메시지 추가:', parsedData);
-                      addMessageToRoom(roomId, {
-                        id: uuidv4(),
-                        text: parsedData.message || parsedData.content,
-                        sender: 'ai',
-                        aiId: parsedData.aiId ? String(parsedData.aiId) : undefined,
-                        aiName: parsedData.aiName ? String(parsedData.aiName) : undefined,
-                        time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
-                        characterId: parsedData.aiId,
-                      });
+                      
+                      // AI 응답을 즉시 추가하지 않고 약간의 딜레이 후 추가 (실제 채팅처럼)
+                      setTimeout(() => {
+                        addMessageToRoom(roomId, {
+                          id: uuidv4(),
+                          text: parsedData.message || parsedData.content,
+                          sender: 'ai',
+                          aiId: parsedData.aiId ? String(parsedData.aiId) : undefined,
+                          aiName: parsedData.aiName ? String(parsedData.aiName) : undefined,
+                          imageUrl: null, // AI 응답은 이미지가 아닌 텍스트이므로 명시적으로 null 설정
+                          time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
+                          characterId: parsedData.aiId,
+                        });
+                        // 로딩 메시지 제거
+                        removeLoadingMessage(roomId, parsedData.aiId);
+                        
+                        // 모든 AI 응답이 완료되었는지 확인하고 로딩 상태 해제
+                        const remainingLoadingMessages = getMessages(roomId).filter(msg => 
+                          msg.isStreaming && msg.sender === 'ai'
+                        );
+                        if (remainingLoadingMessages.length === 0) {
+                          console.log('🔍 [그룹채팅] 모든 AI 응답 완료 - 로딩 상태 해제');
+                          setAiLoading(roomId, false);
+                          setSseConnectionStatus('disconnected');
+                        }
+                      }, Math.random() * 1000 + 500); // 0.5-1.5초 랜덤 딜레이
                     } else if (parsedData.type === 'exp_updated') {
                       console.log('🔍 [그룹채팅] 친밀도 업데이트:', parsedData);
                       // 친밀도 업데이트 처리 (필요시 추가)
@@ -766,8 +784,23 @@ const ChatMate = () => {
         // 1대1 채팅: SSE 사용
         try {
           const token = await getToken();
-      setAiLoading(roomId, true);
+          setAiLoading(roomId, true);
           setSseConnectionStatus('connecting');
+
+          // AI 로딩 메시지 추가 (TypingIndicator용)
+          const loadingMessageId = uuidv4();
+          const loadingMessage = {
+            id: loadingMessageId,
+            text: '...',
+            sender: 'ai',
+            aiId: character?.id ? String(character.id) : undefined,
+            aiName: character?.name || 'Unknown AI',
+            imageUrl: character?.imageUrl || null, // 캐릭터 이미지 URL 포함
+            time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
+            characterId: character?.id,
+            isStreaming: true, // 스트리밍 중임을 표시
+          };
+          addMessageToRoom(roomId, loadingMessage);
 
           // SSE 스트리밍 요청 (fetch 사용)
           const userName = user?.username || user?.firstName || user?.fullName || user?.id;
@@ -811,7 +844,9 @@ const ChatMate = () => {
                   if (data === '[DONE]') {
                     // AI 응답 완료
                     if (aiResponse.trim()) {
-                      addAiResponseToRoom(roomId, chatId, aiResponse.trim(), character?.id);
+                      addAiResponseToRoom(roomId, uuidv4(), aiResponse.trim(), character?.id);
+                      // 로딩 메시지 제거
+                      removeLoadingMessage(roomId, character?.id);
                     }
                     setAiLoading(roomId, false);
                     setSseConnectionStatus('disconnected');
@@ -821,6 +856,8 @@ const ChatMate = () => {
                       const parsedData = JSON.parse(data);
                       if (parsedData.type === 'text_chunk') {
                         aiResponse += parsedData.content;
+                        // 스트리밍 메시지 업데이트
+                        updateStreamingAiMessage(roomId, loadingMessageId, aiResponse, false);
                       }
       } catch (e) {
                       // JSON 파싱 실패 시 무시
@@ -1038,15 +1075,17 @@ const ChatMate = () => {
             const displayName = msg.sender === 'me'
               ? user?.username || user?.firstName || 'You'
               : isAI
-                ? (msg.aiName || aiObj?.name || `AI#${msg.aiId}`)
-                : 'AI';
+                ? (msg.aiName || aiObj?.name || `Unknown AI#${msg.aiId}`)
+                : 'Unknown';
             const aiColorIdx = isAI ? getAiColorIdx(msg.aiId) : 0;
             const aiColor = isAI ? AI_NEON_COLORS[aiColorIdx] : null;
             const isLast = idx === messages.length - 1;
             const nextMsg = messages[idx + 1];
             const prevMsg = messages[idx - 1];
             const showTime = isLast || msg.time !== nextMsg?.time || msg.sender !== "prevMsg?.sender";
-            const showProfile = idx === 0 || msg.time !== prevMsg?.time || msg.sender !== "prevMsg?.sender";
+            // 로딩 메시지인 경우 프로필을 표시하지 않음 (TypingIndicator에서 처리)
+            const showProfile = (idx === 0 || msg.time !== prevMsg?.time || msg.sender !== "prevMsg?.sender") && 
+                              !(msg.sender === 'ai' && msg.isStreaming && msg.text === '...');
             return (<ChatMessageItem
               key={msg.id}
               msg={msg}
@@ -1063,28 +1102,7 @@ const ChatMate = () => {
           />)
           })}
           
-          {/* AI 응답 중 타이핑 인디케이터 */}
-          {aiResponseLoading && (
-            <div className="mt-4">
-              {isOneOnOneChat ? (
-                // 1대1 채팅: 해당 AI의 정보를 사용
-                roomInfoParticipants[0] && (
-                  <TypingIndicator
-                    aiColor={AI_NEON_COLORS[getAiColorIdx(roomInfoParticipants[0].personaId)]}
-                    aiName={roomInfoParticipants[0].name || 'AI'}
-                    profileImg={roomInfoParticipants[0].imageUrl || '/assets/icon-character.png'}
-                  />
-                )
-              ) : (
-                // 그룹 채팅: 기본 AI 스타일 사용
-                <TypingIndicator
-                  aiColor={AI_NEON_COLORS[0]}
-                  aiName="AI"
-                  profileImg="/assets/icon-character.png"
-                />
-              )}
-            </div>
-          )}
+          {/* AI 응답 중 타이핑 인디케이터는 이제 ChatMessageItem 내부에서 처리됨 */}
           
           <div ref={messagesEndRef} />
         </div>
