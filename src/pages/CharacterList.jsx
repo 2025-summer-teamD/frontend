@@ -12,15 +12,19 @@ import EmptyState from '../components/EmptyState';
 import PageLayout from '../components/PageLayout';
 import TabButton from '../components/TabButton';
 import Button from '../components/Button';
+import ChatRoomCreateModal from '../components/ChatRoomCreateModal';
 import { useMyCharacters, useCharacterDetail, useUpdateCharacter, toggleLike, useDeleteCharacter } from '../data/characters';
 import { useAuth, useUser } from '@clerk/clerk-react';
 import { useChatRooms } from '../contexts/ChatRoomsContext';
 import { getSafeImageUrl } from '../utils/imageUtils';
 import MyChatRoomList from '../components/MyChatRoomList';
+import { useNavigate } from 'react-router-dom';
 
 export default function CharacterList() {
+  console.log('🔥 [CharacterList] 컴포넌트 로드됨 - 코드 변경사항 반영 테스트!');
   const { userId, getToken } = useAuth();
   const { user } = useUser(); // username을 가져오기 위해 useUser 추가
+  const navigate = useNavigate();
 
   // username 정보 출력 (디버깅용)
   useEffect(() => {
@@ -51,6 +55,11 @@ export default function CharacterList() {
   const [selectedCharacterIds, setSelectedCharacterIds] = useState([]); // 선택된 캐릭터 ID들
   const [chatType, setChatType] = useState(''); // 'oneOnOne' 또는 'group'
   const [showChatTypeModal, setShowChatTypeModal] = useState(false); // 채팅 타입 선택 모달
+  
+  // ChatRoomCreateModal 관련 상태
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedCharacter, setSelectedCharacter] = useState(null);
+  const [showCharacterSelectModal, setShowCharacterSelectModal] = useState(false);
 
   // 찜한 캐릭터 목록을 가져오는 상태
   const [likedCharacters, setLikedCharacters] = useState([]);
@@ -69,7 +78,7 @@ export default function CharacterList() {
   // 캐릭터 삭제를 위한 훅
   const { deleteCharacter } = useDeleteCharacter();
   // 사이드바 채팅방 목록 갱신용
-  const { refetch: refetchMyChatRooms } = useChatRooms();
+  const { refetch: refetchMyChatRooms, refetchPublicRooms } = useChatRooms();
 
   // 페이지 포커스 시 캐릭터 목록 새로고침
   useEffect(() => {
@@ -266,10 +275,14 @@ export default function CharacterList() {
     }
   };
 
-  const handleCreateChatRoom = async (selectedCharacterIds) => {
+  const handleCreateChatRoom = async (selectedCharacterIds, description = '', isPublic = true) => {
     try {
-      console.log('handleCreateChatRoom - selectedCharacterIds:', selectedCharacterIds);
-      console.log('handleCreateChatRoom - chatType:', chatType);
+      console.log('🔍 [채팅방생성] ==================== 시작 ====================');
+      console.log('🔍 [채팅방생성] selectedCharacterIds:', selectedCharacterIds);
+      console.log('🔍 [채팅방생성] selectedCharacterIds 길이:', selectedCharacterIds.length);
+      console.log('🔍 [채팅방생성] chatType:', chatType);
+      console.log('🔍 [채팅방생성] description:', description);
+      console.log('🔍 [채팅방생성] isPublic:', isPublic);
       
       const token = await getToken();
       
@@ -280,18 +293,23 @@ export default function CharacterList() {
         // 1대1 채팅의 경우 personaId 하나만 전송
         endpoint = '/chat/rooms';
         requestBody = {
-          personaId: selectedCharacterIds[0]
+          personaId: selectedCharacterIds[0],
+          description: description,
+          isPublic: isPublic
         };
       } else {
         // 단체 채팅의 경우 participantIds 배열 사용
         endpoint = '/chat/rooms';
         requestBody = {
-          participantIds: selectedCharacterIds
+          participantIds: selectedCharacterIds,
+          description: description,
+          isPublic: isPublic
         };
       }
       
-      console.log('handleCreateChatRoom - endpoint:', endpoint);
-      console.log('handleCreateChatRoom - requestBody:', requestBody);
+      console.log('🔍 [채팅방생성] endpoint:', endpoint);
+      console.log('🔍 [채팅방생성] requestBody:', JSON.stringify(requestBody, null, 2));
+      console.log('🔍 [채팅방생성] 최종 URL:', `${import.meta.env.VITE_API_BASE_URL}${endpoint}`);
       
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${endpoint}`, {
         method: 'POST',
@@ -302,9 +320,10 @@ export default function CharacterList() {
         body: JSON.stringify(requestBody)
       });
 
-      console.log('handleCreateChatRoom - response status:', response.status);
+      console.log('🔍 [채팅방생성] response status:', response.status);
+      console.log('🔍 [채팅방생성] response ok:', response.ok);
       const data = await response.json();
-      console.log('handleCreateChatRoom - response data:', data);
+      console.log('🔍 [채팅방생성] response data:', JSON.stringify(data, null, 2));
       
       if (data.success) {
         // 채팅방 생성 성공 시 ChatMate로 이동
@@ -327,21 +346,32 @@ export default function CharacterList() {
     // Use character.id consistently (backend returns id field)
     const id = characterId;
     
+    console.log('🔍 [캐릭터선택] characterId:', id);
+    
     if (!id) {
       console.error('Character ID is missing');
       return;
     }
     
     setSelectedCharacterIds(prev => {
-      if (prev.includes(id)) {
-        return prev.filter(x => x !== id);
-      } else {
-        return [...prev, id];
-      }
+      const newSelection = prev.includes(id) 
+        ? prev.filter(x => x !== id)
+        : [...prev, id];
+      
+      console.log('🔍 [캐릭터선택] 이전 선택:', prev);
+      console.log('🔍 [캐릭터선택] 새 선택:', newSelection);
+      console.log('🔍 [캐릭터선택] 선택된 개수:', newSelection.length);
+      
+      return newSelection;
     });
   };
 
   const handleCreateChatRoomWithSelected = () => {
+    console.log('🔍 [채팅시작] ==================== 버튼 클릭 ====================');
+    console.log('🔍 [채팅시작] selectedCharacterIds:', selectedCharacterIds);
+    console.log('🔍 [채팅시작] selectedCharacterIds 길이:', selectedCharacterIds.length);
+    console.log('🔍 [채팅시작] chatType:', chatType);
+    
     if (selectedCharacterIds.length === 0) {
       alert('최소 1명의 캐릭터를 선택해주세요.');
       return;
@@ -351,8 +381,16 @@ export default function CharacterList() {
       alert('단체 채팅은 최소 2명의 캐릭터를 선택해야 합니다.');
       return;
     }
+
+    // 설명과 공개/비공개 설정 가져오기
+    const description = document.getElementById('chatRoomDescription')?.value || '';
+    const isPublic = document.getElementById('isPublicChat')?.checked || true;
     
-    handleCreateChatRoom(selectedCharacterIds);
+    console.log('🔍 [채팅시작] description:', description);
+    console.log('🔍 [채팅시작] isPublic:', isPublic);
+    console.log('🔍 [채팅시작] handleCreateChatRoom 함수 호출 시작...');
+    
+    handleCreateChatRoom(selectedCharacterIds, description, isPublic);
     setShowCreateChatModal(false);
     setSelectedCharacterIds([]);
   };
@@ -448,7 +486,7 @@ export default function CharacterList() {
       </div>
 
       {tab === 'mychats' ? (
-        <MyChatRoomList />
+        <MyChatRoomList refetchPublicRooms={refetchPublicRooms} />
       ) : (
         /* 캐릭터 카드 그리드 */
         showCharacters.length === 0 ? (
@@ -557,11 +595,18 @@ export default function CharacterList() {
                       selectedCharacterIds.includes(character.id) ? 'bg-cyan-900/60 border border-cyan-400' : ''
                     }`}
                     onClick={() => {
+                      console.log('🔍 [모달-캐릭터선택] ==================== 클릭 ====================');
+                      console.log('🔍 [모달-캐릭터선택] character.id:', character.id);
+                      console.log('🔍 [모달-캐릭터선택] character.name:', character.name);
+                      console.log('🔍 [모달-캐릭터선택] chatType:', chatType);
+                      
                       if (chatType === 'oneOnOne') {
                         // 1대1 채팅의 경우 하나만 선택 가능
+                        console.log('🔍 [모달-캐릭터선택] 1대1 모드 - 직접 설정');
                         setSelectedCharacterIds([character.id]);
                       } else {
                         // 단체 채팅의 경우 여러 개 선택 가능
+                        console.log('🔍 [모달-캐릭터선택] 단체 모드 - handleCharacterSelect 호출');
                         handleCharacterSelect(character.id);
                       }
                     }}
@@ -603,7 +648,13 @@ export default function CharacterList() {
                 닫기
               </Button>
               <Button
-                onClick={handleCreateChatRoomWithSelected}
+                onClick={() => {
+                  console.log('🔍 [모달-채팅시작] ==================== 버튼 클릭 ====================');
+                  console.log('🔍 [모달-채팅시작] selectedCharacterIds:', selectedCharacterIds);
+                  console.log('🔍 [모달-채팅시작] chatType:', chatType);
+                  console.log('🔍 [모달-채팅시작] handleCreateChatRoomWithSelected 호출...');
+                  handleCreateChatRoomWithSelected();
+                }}
                 disabled={
                   selectedCharacterIds.length === 0 || 
                   (chatType === 'group' && selectedCharacterIds.length < 2)

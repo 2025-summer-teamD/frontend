@@ -54,9 +54,9 @@ export function useSendMessageToAI() {
 
       // 1대1 채팅방인지 확인
       const isOneOnOne = await isOneOnOneChat(roomId);
-      const endpoint = isOneOnOne ? `/chat/rooms/${roomId}/sse` : `/chat/rooms/${roomId}`;
+      const endpoint = `/chat/rooms/${roomId}/send`; // 1대1, 그룹 채팅 모두 동일한 SSE 엔드포인트 사용
       
-      console.log(`💬 메시지 전송 API 호출 (${isOneOnOne ? '1대1 SSE' : '1대다 WebSocket'}):`, `${API_BASE_URL}${endpoint}`);
+      console.log(`💬 메시지 전송 API 호출 (통합 SSE 엔드포인트):`, `${API_BASE_URL}${endpoint}`);
 
       const timestamp = new Date().toISOString();
       const requestData = {

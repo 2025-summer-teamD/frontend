@@ -22,15 +22,48 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
   // Determine if character is created by current user
   const isCharacterCreatedByMe = character?.clerkId === userId;
 
-  // character가 변경될 때 isPublic 상태 업데이트
+  // character가 변경될 때 isPublic 상태 업데이트 (초기 로드 시에만)
   useEffect(() => {
-    setIsPublic(character?.isPublic ?? true);
+    if (character?.isPublic !== undefined) {
+      setIsPublic(character.isPublic);
+    }
   }, [character?.isPublic]);
 
-  // isPublic 상태가 변경될 때마다 로그 출력 (디버깅용)
+  // isPublic 상태가 변경될 때마다 즉시 API 호출하여 업데이트 (디바운스 처리)
   useEffect(() => {
-    console.log('CharacterEditModal - isPublic changed:', isPublic);
-  }, [isPublic]);
+    if (character?.id && isCharacterCreatedByMe) {
+      console.log('CharacterEditModal - isPublic changed, updating API:', isPublic);
+      
+      // 디바운스 처리하여 연속된 API 호출 방지
+      const timeoutId = setTimeout(async () => {
+        try {
+          const token = await getToken();
+          const response = await fetch(`/api/characters/${character.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              isPublic: isPublic
+            })
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            console.log('✅ isPublic updated successfully:', isPublic);
+            // 부모 컴포넌트에 즉시 업데이트 알림하지 않음 - Save 버튼 클릭 시에만 알림
+          } else {
+            console.error('❌ Failed to update isPublic');
+          }
+        } catch (error) {
+          console.error('❌ Error updating isPublic:', error);
+        }
+      }, 500); // 500ms 디바운스
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [isPublic, character?.id, isCharacterCreatedByMe, getToken]);
 
   // Handle like/unlike functionality
   const handleLikeToggle = async () => {

@@ -1,6 +1,5 @@
 // src/pages/Communities.jsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useCommunityCharacters, toggleLike, incrementViewCount } from '../data/characters';
 import { useChatRooms } from '../contexts/ChatRoomsContext';
 import CharacterProfile from '../components/CharacterProfile';
@@ -15,7 +14,6 @@ import { useAuth } from "@clerk/clerk-react";
 import { CharacterCard } from '../components/CharacterGrid';
 
 export default function Communities() {
-  const navigate = useNavigate();
   const { getToken, userId } = useAuth();
 
   const [likedIds, setLikedIds] = useState(() =>
@@ -144,14 +142,8 @@ export default function Communities() {
       
       const infoResult = await infoResponse.json();
       
-      // 채팅방으로 이동하면서 정보 전달
-      navigate(`/chatMate/${room.id}`, {
-        state: {
-          character: infoResult.data?.character || room,
-          chatHistory: infoResult.data?.chatHistory || [],
-          roomId: room.id
-        }
-      });
+      // 페이지 전체 새로고침으로 이동 (Context 상태 초기화) - PR #169 방식 수정
+      window.location.href = `/chatMate/${room.id}`;
     } catch (error) {
       console.error('채팅방 입장 실패:', error);
       alert('채팅방 입장에 실패했습니다: ' + error.message);
