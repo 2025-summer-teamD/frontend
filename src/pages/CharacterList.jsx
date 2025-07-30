@@ -103,6 +103,7 @@ export default function CharacterList() {
 
   // 찜한 캐릭터 목록을 가져오는 함수
   const fetchLikedCharacters = async () => {
+    console.log('🔍 fetchLikedCharacters - 시작');
     setLikedLoading(true);
     setLikedError(null);
     try {
@@ -131,8 +132,10 @@ export default function CharacterList() {
       
       const data = await response.json();
       console.log('✅ fetchLikedCharacters - Response data:', data);
+      console.log('✅ fetchLikedCharacters - Response data.data:', data.data);
       
       setLikedCharacters(data.data || []);
+      console.log('✅ fetchLikedCharacters - likedCharacters 상태 업데이트 완료');
     } catch (error) {
       console.error('❌ fetchLikedCharacters - Error:', error);
       // 오류가 발생해도 빈 배열로 설정하여 UI가 깨지지 않도록 함
@@ -140,6 +143,7 @@ export default function CharacterList() {
       setLikedError(null); // 오류 메시지를 표시하지 않음
     } finally {
       setLikedLoading(false);
+      console.log('🔍 fetchLikedCharacters - 완료');
     }
   };
 
@@ -191,6 +195,8 @@ export default function CharacterList() {
 
   const handleLikeToggle = async (id, newLiked) => {
     try {
+      console.log('🔍 handleLikeToggle - 시작:', { id, newLiked, tab });
+      
       const token = await getToken();
       // Use character.id consistently (backend returns id field)
       const characterId = id;
@@ -199,21 +205,43 @@ export default function CharacterList() {
         throw new Error('캐릭터 ID를 찾을 수 없습니다.');
       }
       
+      console.log('🔍 handleLikeToggle - API 호출 전:', { characterId, token });
       const result = await toggleLike(characterId, token);
+      console.log('🔍 handleLikeToggle - API 응답:', result);
 
-      // API 호출 성공 시 로컬 상태 업데이트
-      setLikedIds(prev =>
-        newLiked ? [...prev, characterId] : prev.filter(x => x !== characterId)
-      );
+      // API 응답에 따라 로컬 상태 업데이트
+      const isLiked = result.data?.isLiked;
+      console.log('🔍 handleLikeToggle - API 응답 isLiked:', isLiked);
+      
+      setLikedIds(prev => {
+        const newLikedIds = isLiked 
+          ? [...prev, characterId] 
+          : prev.filter(x => x !== characterId);
+        console.log('🔍 handleLikeToggle - likedIds 업데이트:', { prev, newLikedIds });
+        return newLikedIds;
+      });
 
       // 목록 새로고침하여 좋아요 수 업데이트
       if (tab === 'liked') {
+        console.log('🔍 handleLikeToggle - 찜한 캐릭터 목록 새로고침');
         await fetchLikedCharacters();
       } else {
-      await fetchMyCharacters();
+        console.log('🔍 handleLikeToggle - 내 캐릭터 목록 새로고침');
+        await fetchMyCharacters();
       }
+      
+      // editingCharacter가 현재 토글된 캐릭터라면 업데이트
+      if (editingCharacter && editingCharacter.id === characterId) {
+        setEditingCharacter(prev => ({
+          ...prev,
+          liked: isLiked
+        }));
+        console.log('🔍 handleLikeToggle - editingCharacter 업데이트:', { characterId, liked: isLiked });
+      }
+      
+      console.log('🔍 handleLikeToggle - 완료');
     } catch (error) {
-      console.error('좋아요 토글 실패:', error);
+      console.error('❌ handleLikeToggle - 오류:', error);
       alert('좋아요 처리 중 오류가 발생했습니다.');
     }
   };
@@ -256,7 +284,67 @@ export default function CharacterList() {
     setEditingCharacter(character);
   };
 
+  const handleCreateChatRoomWithLikedCharacter = async (character) => {
+    try {
+      const token = await getToken();
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+      
+      // 찜한 캐릭터와 채팅방 생성
+      const createResponse = await fetch(`${API_BASE_URL}/chat/rooms`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          personaId: character.id,
+          description: `${character.name}와의 채팅방`,
+          isPublic: false
+        }),
+      });
+
+      if (!createResponse.ok) {
+        const errorText = await createResponse.text();
+        throw new Error(`채팅방 생성 실패: ${createResponse.status}`);
+      }
+
+      const createResult = await createResponse.json();
+      const roomId = createResult.data?.roomId;
+
+      if (!roomId) {
+        throw new Error('채팅방 ID를 받지 못했습니다.');
+      }
+
+      // 채팅방 정보 조회
+      const infoResponse = await fetch(`${API_BASE_URL}/chat/room-info?roomId=${roomId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!infoResponse.ok) {
+        const errorText = await infoResponse.text();
+        throw new Error(`채팅방 정보 조회 실패: ${infoResponse.status}`);
+      }
+
+      const infoResult = await infoResponse.json();
+
+      navigate(`/chatMate/${roomId}`, {
+        state: {
+          character: infoResult.data?.character || infoResult.data?.persona || character,
+          chatHistory: infoResult.data?.chatHistory || [],
+          roomId: roomId
+        }
+      });
+    } catch (error) {
+      alert('채팅방 생성에 실패했습니다: ' + error.message);
+    }
+  };
+
   const handleRemoveFromLiked = async (character) => {
+    console.log('🔍 handleRemoveFromLiked - 시작:', { characterId: character?.id, characterName: character?.name });
     try {
       const token = await getToken();
       // Use character.id consistently (backend returns id field)
@@ -266,11 +354,26 @@ export default function CharacterList() {
         throw new Error('캐릭터 ID를 찾을 수 없습니다.');
       }
       
-      await toggleLike(characterId, token);
+      console.log('🔍 handleRemoveFromLiked - API 호출 전:', { characterId, token });
+      const result = await toggleLike(characterId, token);
+      console.log('🔍 handleRemoveFromLiked - API 응답:', result);
+      
       // 찜 목록에서 제거 후 목록 새로고침
+      console.log('🔍 handleRemoveFromLiked - 찜한 캐릭터 목록 새로고침');
       await fetchLikedCharacters();
+      
+      // editingCharacter가 현재 제거된 캐릭터라면 업데이트
+      if (editingCharacter && editingCharacter.id === characterId) {
+        setEditingCharacter(prev => ({
+          ...prev,
+          liked: false
+        }));
+        console.log('🔍 handleRemoveFromLiked - editingCharacter 업데이트:', { characterId, liked: false });
+      }
+      
+      console.log('🔍 handleRemoveFromLiked - 완료');
     } catch (error) {
-      console.error('Error removing from liked:', error);
+      console.error('❌ handleRemoveFromLiked - 오류:', error);
       alert('찜 목록에서 제거 중 오류가 발생했습니다.');
     }
   };
@@ -834,6 +937,18 @@ export default function CharacterList() {
         />
       )}
 
+      {/* 디버깅 로그 추가 */}
+      {editingCharacter && console.log('CharacterList CharacterProfile Debug:', {
+        editingCharacterId: editingCharacter.id,
+        editingCharacterName: editingCharacter.name,
+        editingCharacterClerkId: editingCharacter.clerkId,
+        userId,
+        isMyCharacter: editingCharacter.clerkId === userId,
+        likedIds,
+        isLiked: likedIds.includes(editingCharacter.id),
+        tab
+      })}
+
       {/* ChatRoomCreateModal */}
       {showCreateModal && selectedCharacter && (
         <ChatRoomCreateModal
@@ -891,7 +1006,7 @@ export default function CharacterList() {
 
               const infoResult = await infoResponse.json();
 
-              navigate(`/chatMate/${roomId}`, {
+              navigate(`/chatmate/${roomId}`, {
                 state: {
                   character: infoResult.data?.character || infoResult.data?.persona,
                   chatHistory: infoResult.data?.chatHistory || [],

@@ -203,6 +203,12 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
 
   // Handle like/unlike functionality
   const handleLikeToggle = async () => {
+    console.log('🔍 CharacterProfile handleLikeToggle - 시작:', { 
+      characterId: character?.id, 
+      liked, 
+      isCharacterCreatedByMe 
+    });
+    
     if (isCharacterCreatedByMe) return; // Cannot like own character
     
     setLoading(true);
@@ -215,17 +221,21 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
         throw new Error('캐릭터 ID를 찾을 수 없습니다.');
       }
       
-      await toggleLike(characterId, token);
+      console.log('🔍 CharacterProfile handleLikeToggle - API 호출 전:', { characterId, token });
+      const result = await toggleLike(characterId, token);
+      console.log('🔍 CharacterProfile handleLikeToggle - API 응답:', result);
       
       // Call parent's onLikeToggle if provided
       if (onLikeToggle) {
+        console.log('🔍 CharacterProfile handleLikeToggle - 부모 onLikeToggle 호출:', { characterId, newLiked: !liked });
         onLikeToggle(characterId, !liked);
       }
     } catch (error) {
-      console.error('찜하기 처리 실패:', error);
+      console.error('❌ CharacterProfile handleLikeToggle - 오류:', error);
       alert('찜하기 처리 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
+      console.log('🔍 CharacterProfile handleLikeToggle - 완료');
     }
   };
 
@@ -238,6 +248,12 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
 
   // Get button text and disabled state
   const getButtonConfig = () => {
+    console.log('🔍 CharacterProfile getButtonConfig - 현재 상태:', { 
+      isCharacterCreatedByMe, 
+      liked, 
+      characterId: character?.id 
+    });
+    
     if (isCharacterCreatedByMe) {
       return {
         text: '내가 만든 캐릭터',
@@ -246,12 +262,14 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
       };
     } else {
       if (liked) {
+        console.log('🔍 CharacterProfile getButtonConfig - 찜 취소하기 버튼');
         return {
           text: '찜 취소하기',
           disabled: false,
           className: 'w-full bg-gradient-to-r from-pink-700 to-red-700 hover:from-pink-600 hover:to-red-600 text-pink-100 font-bold py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2 shadow-[0_0_8px_#f0f,0_0_16px_#f0f] animate-neonPulse'
         };
       } else {
+        console.log('🔍 CharacterProfile getButtonConfig - 찜 하기 버튼');
         return {
           text: '찜 하기',
           disabled: false,
