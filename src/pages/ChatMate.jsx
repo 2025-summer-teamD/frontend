@@ -128,6 +128,7 @@ const ChatMate = () => {
   // 현재 채팅방의 메시지와 AI 로딩 상태
   const messages = getMessages(roomId);
   const aiResponseLoading = getAiLoading(roomId);
+  console.log('🔍 [ChatMate] aiResponseLoading 상태:', { roomId, aiResponseLoading });
 
   // 이전 대화기록을 메시지 형식으로 변환하는 함수
   const convertChatHistoryToMessages = (chatHistory, characterData) => {
@@ -393,10 +394,36 @@ const ChatMate = () => {
                     const parsedData = JSON.parse(data);
                     if (parsedData.type === 'ai_response' || parsedData.type === 'ai_message') {
                       aiResponse = parsedData.message || parsedData.content;
-                      updateStreamingAiMessage(roomId, loadingMessageId, aiResponse, false);
+                      console.log('🔍 [1대1채팅] AI 응답 수신:', { 
+                        aiId: parsedData.aiId, 
+                        aiIdType: typeof parsedData.aiId,
+                        characterId: character?.id,
+                        characterIdType: typeof character?.id
+                      });
+                      
+                      // AI 응답 메시지 추가
+                      addMessageToRoom(roomId, {
+                        id: uuidv4(),
+                        text: aiResponse,
+                        sender: 'ai',
+                        aiId: parsedData.aiId ? String(parsedData.aiId) : undefined,
+                        aiName: parsedData.aiName ? String(parsedData.aiName) : undefined,
+                        imageUrl: parsedData.aiProfileImageUrl || null,
+                        time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
+                        characterId: parsedData.aiId || character?.id,
+                      });
+                      
+                      // 로딩 메시지 제거
+                      console.log('🔍 [1대1채팅] removeLoadingMessage 호출:', { 
+                        roomId, 
+                        aiId: parsedData.aiId, 
+                        characterId: character?.id,
+                        finalAiId: parsedData.aiId || character?.id 
+                      });
                       removeLoadingMessage(roomId, parsedData.aiId || character?.id);
                     } else if (parsedData.type === 'complete') {
                       console.log('🔍 [1대1채팅] 완료 신호 수신');
+                      console.log('🔍 [1대1채팅] AI 로딩 상태 해제:', { roomId, currentLoadingState: getAiLoading(roomId) });
                       setAiLoading(roomId, false);
                       setSseConnectionStatus('disconnected');
                       return;
@@ -446,6 +473,11 @@ const ChatMate = () => {
           roomInfoParticipants.forEach((participant, index) => {
             const loadingMessageId = uuidv4();
             loadingMessageIds.push(loadingMessageId);
+            console.log('🔍 [그룹채팅] 로딩 메시지 생성:', { 
+              participantId: participant.id, 
+              participantName: participant.name,
+              aiId: participant.id ? String(participant.id) : undefined 
+            });
             const loadingMessage = {
               id: loadingMessageId,
               text: '...',
@@ -527,33 +559,51 @@ const ChatMate = () => {
                     
                     if (parsedData.type === 'ai_message' || parsedData.type === 'ai_response') {
                       console.log('🔍 [그룹채팅] AI 메시지 추가:', parsedData);
+                      console.log('🔍 [그룹채팅] AI ID 비교:', { 
+                        receivedAiId: parsedData.aiId, 
+                        receivedAiIdType: typeof parsedData.aiId,
+                        roomInfoParticipants: roomInfoParticipants.map(p => ({ id: p.id, name: p.name }))
+                      });
                       
-                      setTimeout(() => {
-                        addMessageToRoom(roomId, {
-                          id: uuidv4(),
-                          text: parsedData.message || parsedData.content,
-                          sender: 'ai',
-                          aiId: parsedData.aiId ? String(parsedData.aiId) : undefined,
-                          aiName: parsedData.aiName ? String(parsedData.aiName) : undefined,
-                          imageUrl: null,
-                          time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
-                          characterId: parsedData.aiId,
-                        });
-                        removeLoadingMessage(roomId, parsedData.aiId);
-                        
-                        const remainingLoadingMessages = getMessages(roomId).filter(msg => 
-                          msg.isStreaming && msg.sender === 'ai'
-                        );
-                        if (remainingLoadingMessages.length === 0) {
-                          console.log('🔍 [그룹채팅] 모든 AI 응답 완료 - 로딩 상태 해제');
-                          setAiLoading(roomId, false);
-                          setSseConnectionStatus('disconnected');
-                        }
-                      }, Math.random() * 1000 + 500);
+                      addMessageToRoom(roomId, {
+                        id: uuidv4(),
+                        text: parsedData.message || parsedData.content,
+                        sender: 'ai',
+                        aiId: parsedData.aiId ? String(parsedData.aiId) : undefined,
+                        aiName: parsedData.aiName ? String(parsedData.aiName) : undefined,
+                        imageUrl: parsedData.aiProfileImageUrl || null,
+                        time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
+                        characterId: parsedData.aiId,
+                      });
+                      console.log('🔍 [그룹채팅] removeLoadingMessage 호출:', { 
+                        roomId, 
+                        aiId: parsedData.aiId 
+                      });
+                      removeLoadingMessage(roomId, parsedData.aiId);
+                      
+                      const remainingLoadingMessages = getMessages(roomId).filter(msg => 
+                        msg.isStreaming && msg.sender === 'ai'
+                      );
+                      console.log('🔍 [그룹채팅] 남은 로딩 메시지 확인:', {
+                        totalMessages: getMessages(roomId).length,
+                        loadingMessages: remainingLoadingMessages.length,
+                        loadingMessageDetails: remainingLoadingMessages.map(msg => ({
+                          id: msg.id,
+                          aiId: msg.aiId,
+                          text: msg.text,
+                          isStreaming: msg.isStreaming
+                        }))
+                      });
+                      if (remainingLoadingMessages.length === 0) {
+                        console.log('🔍 [그룹채팅] 모든 AI 응답 완료 - 로딩 상태 해제');
+                        setAiLoading(roomId, false);
+                        setSseConnectionStatus('disconnected');
+                      }
                     } else if (parsedData.type === 'exp_updated') {
                       console.log('🔍 [그룹채팅] 친밀도 업데이트:', parsedData);
                     } else if (parsedData.type === 'complete') {
                       console.log('🔍 [그룹채팅] 완료 신호 수신');
+                      console.log('🔍 [그룹채팅] AI 로딩 상태 해제:', { roomId, currentLoadingState: getAiLoading(roomId) });
                       setAiLoading(roomId, false);
                       setSseConnectionStatus('disconnected');
                       return;
@@ -606,7 +656,7 @@ const ChatMate = () => {
     const formData = new FormData();
     formData.append('image', file);
     
-    const res = await fetch('/api/chat/upload-image', {
+    const res = await fetch(`${API_BASE_URL}/chat/upload-image`, {
       method: 'POST',
       body: formData,
     });
@@ -742,25 +792,28 @@ const ChatMate = () => {
                   className="w-9 h-9 rounded-full border-2 border-cyan-300 shadow-[0_0_4px_#0ff] relative cursor-pointer hover:scale-110 transition-transform"
                   style={{ zIndex: roomInfoParticipants.length - index }}
                   onClick={() => {
-                    if (ai) {
-                      setSelectedCharacter(ai);
+                    // participant에 직접 캐릭터 정보가 있으면 사용, 없으면 myAIs에서 찾기
+                    const characterInfo = participant.name ? participant : ai;
+                    if (characterInfo) {
+                      setSelectedCharacter(characterInfo);
                     }
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      if (ai) {
-                        setSelectedCharacter(ai);
+                      const characterInfo = participant.name ? participant : ai;
+                      if (characterInfo) {
+                        setSelectedCharacter(characterInfo);
                       }
                     }
                   }}
                   tabIndex={0}
                   role="button"
-                  aria-label={`${ai?.name || 'AI'} 프로필 보기`}
+                  aria-label={`${participant.name || ai?.name || 'AI'} 프로필 보기`}
                 >
                   <img
-                    src={ai?.imageUrl || '/assets/icon-character.png'}
-                    alt={ai?.name || `AI#${participant.personaId}`}
+                    src={participant.imageUrl || ai?.imageUrl || '/assets/icon-character.png'}
+                    alt={participant.name || ai?.name || `AI#${participant.personaId}`}
                     className="w-full h-full object-cover rounded-full"
                   />
                 </div>
@@ -772,7 +825,7 @@ const ChatMate = () => {
               {roomInfoParticipants.length > 1
                 ? `${roomInfoParticipants.length}명의 AI와 대화`
                 : roomInfoParticipants[0]
-                  ? myAIs.find(ai => String(ai.id) === String(roomInfoParticipants[0].personaId))?.name || 'AI'
+                  ? roomInfoParticipants[0].name || myAIs.find(ai => String(ai.id) === String(roomInfoParticipants[0].personaId))?.name || 'AI'
                   : '채팅방'
               }
             </span>

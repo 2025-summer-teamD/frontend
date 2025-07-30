@@ -49,6 +49,49 @@ export default function Communities() {
     localStorage.setItem('likedIds', JSON.stringify(likedIds));
   }, [likedIds]);
 
+  // likedIds가 변경될 때마다 로그 출력
+  React.useEffect(() => {
+    console.log('🔍 Communities likedIds 변경:', { 
+      likedIds, 
+      likedIdsLength: likedIds.length,
+      selectedCharacterId: selectedCharacter?.id,
+      selectedCharacterLiked: selectedCharacter ? likedIds.includes(selectedCharacter.id) : null
+    });
+  }, [likedIds, selectedCharacter]);
+
+  // 페이지 로드 시 백엔드에서 찜한 캐릭터 목록을 가져와서 likedIds 동기화
+  React.useEffect(() => {
+    const fetchLikedIdsFromBackend = async () => {
+      try {
+        const token = await getToken();
+        const timestamp = Date.now();
+        const url = `${import.meta.env.VITE_API_BASE_URL}/my/characters?type=liked&_t=${timestamp}`;
+        
+        console.log('🔍 Communities - 백엔드에서 찜한 캐릭터 목록 가져오기:', { url });
+        
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const likedCharacterIds = (data.data || []).map(char => char.id);
+          console.log('🔍 Communities - 백엔드에서 가져온 찜한 캐릭터 ID들:', likedCharacterIds);
+          
+          setLikedIds(likedCharacterIds);
+        } else {
+          console.error('❌ Communities - 찜한 캐릭터 목록 가져오기 실패:', response.status);
+        }
+      } catch (error) {
+        console.error('❌ Communities - 찜한 캐릭터 목록 가져오기 오류:', error);
+      }
+    };
+    
+    fetchLikedIdsFromBackend();
+  }, [getToken]);
+
   // 페이지 포커스 시 공개 채팅방 목록 새로고침
   React.useEffect(() => {
     const handleFocus = () => {
@@ -74,6 +117,7 @@ export default function Communities() {
   };
 
   const handleLikeToggle = async (id, newLiked) => {
+    console.log('🔍 Communities handleLikeToggle - 시작:', { id, newLiked });
     try {
       if (!id) {
         console.error('캐릭터 ID가 없습니다.');
@@ -81,25 +125,46 @@ export default function Communities() {
       }
       
       const token = await getToken();
+      console.log('🔍 Communities handleLikeToggle - API 호출 전:', { id, token });
       const result = await toggleLike(id, token);
+      console.log('🔍 Communities handleLikeToggle - API 응답:', result);
       
       // API 응답에 따라 로컬 상태 업데이트
-      if (result.data.isLiked) {
-        setLikedIds(prev => [...prev, id]);
-      } else {
-        setLikedIds(prev => prev.filter(x => x !== id));
-      }
+      const isLiked = result.data?.isLiked;
+      console.log('🔍 Communities handleLikeToggle - API 응답 isLiked:', isLiked);
+      
+      // likedIds 상태 업데이트
+      setLikedIds(prev => {
+        const newLikedIds = isLiked 
+          ? [...prev, id] 
+          : prev.filter(x => x !== id);
+        console.log('🔍 Communities handleLikeToggle - likedIds 업데이트:', { prev, newLikedIds });
+        return newLikedIds;
+      });
       
       // 해당 캐릭터의 좋아요 수와 상태 업데이트
       const character = characters.find(c => c.id === id);
       if (character) {
         character.likes = result.data.likesCount;
-        character.liked = result.data.isLiked; // character.liked 속성도 업데이트
+        character.liked = isLiked; // character.liked 속성도 업데이트
         // 상태 강제 업데이트를 위해 배열을 새로 생성
         setCharacters(prev => [...prev]);
+        console.log('🔍 Communities handleLikeToggle - 캐릭터 상태 업데이트:', { characterId: id, likes: result.data.likesCount, liked: isLiked });
       }
+      
+      // selectedCharacter가 현재 토글된 캐릭터라면 업데이트
+      if (selectedCharacter && selectedCharacter.id === id) {
+        setSelectedCharacter(prev => ({
+          ...prev,
+          likes: result.data.likesCount,
+          liked: isLiked
+        }));
+        console.log('🔍 Communities handleLikeToggle - selectedCharacter 업데이트:', { characterId: id, likes: result.data.likesCount, liked: isLiked });
+      }
+      
+      console.log('🔍 Communities handleLikeToggle - 완료');
     } catch (error) {
-      console.error('좋아요 토글 실패:', error);
+      console.error('❌ Communities handleLikeToggle - 오류:', error);
       alert('내가 만든 캐릭터는 찜할 수 없습니다.');
     }
   };
@@ -111,6 +176,65 @@ export default function Communities() {
       refetchCharacters();
     }
     setEditingCharacter(null);
+  };
+
+  const handleCreateChatRoomWithCharacter = async (character) => {
+    try {
+      const token = await getToken();
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+      
+      // 캐릭터와 채팅방 생성
+      const createResponse = await fetch(`${API_BASE_URL}/chat/rooms`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          personaId: character.id,
+          description: `${character.name}와의 채팅방`,
+          isPublic: false
+        }),
+      });
+
+      if (!createResponse.ok) {
+        const errorText = await createResponse.text();
+        throw new Error(`채팅방 생성 실패: ${createResponse.status}`);
+      }
+
+      const createResult = await createResponse.json();
+      const roomId = createResult.data?.roomId;
+
+      if (!roomId) {
+        throw new Error('채팅방 ID를 받지 못했습니다.');
+      }
+
+      // 채팅방 정보 조회
+      const infoResponse = await fetch(`${API_BASE_URL}/chat/room-info?roomId=${roomId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!infoResponse.ok) {
+        const errorText = await infoResponse.text();
+        throw new Error(`채팅방 정보 조회 실패: ${infoResponse.status}`);
+      }
+
+      const infoResult = await infoResponse.json();
+
+      navigate(`/chatMate/${roomId}`, {
+        state: {
+          character: infoResult.data?.character || infoResult.data?.persona || character,
+          chatHistory: infoResult.data?.chatHistory || [],
+          roomId: roomId
+        }
+      });
+    } catch (error) {
+      alert('채팅방 생성에 실패했습니다: ' + error.message);
+    }
   };
 
   // 검색 필터링 (API 데이터 구조에 맞게 수정)
@@ -248,6 +372,8 @@ export default function Communities() {
                   } catch (error) {
                     console.error('조회수 증가 실패:', error);
                   }
+                  
+                  // 모달 열기
                   setSelectedCharacter(character);
                 };
                 return (
@@ -374,6 +500,19 @@ export default function Communities() {
           style={{ zIndex: 100 }}
         />
       )}
+
+      {/* 디버깅 로그 추가 */}
+      {selectedCharacter && console.log('🔍 Communities CharacterProfile Debug:', {
+        selectedCharacterId: selectedCharacter.id,
+        selectedCharacterName: selectedCharacter.name,
+        selectedCharacterClerkId: selectedCharacter.clerkId,
+        userId,
+        isMyCharacter: selectedCharacter.clerkId === userId,
+        likedIds,
+        isLiked: likedIds.includes(selectedCharacter.id),
+        likedIdsLength: likedIds.length,
+        selectedCharacterLiked: selectedCharacter.liked
+      })}
 
       {/* 디버깅 로그 추가 */}
       {selectedCharacter && console.log('Communities CharacterProfile Debug:', {

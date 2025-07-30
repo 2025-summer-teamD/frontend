@@ -6,6 +6,7 @@ import { useUpdateCharacter, useDeleteCharacter } from '../data/characters';
 import { useUser, useAuth } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 import { toggleLike } from '../data/characters';
+import { API_BASE_URL } from '../data/characters';
 
 
 
@@ -38,7 +39,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
       const timeoutId = setTimeout(async () => {
         try {
           const token = await getToken();
-          const response = await fetch(`/api/characters/${character.id}`, {
+          const response = await fetch(`${API_BASE_URL}/characters/${character.id}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -140,7 +141,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
       
       // 1. 조회수 증가
       try {
-        await fetch(`/api/personas/${character.id}/view`, {
+        await fetch(`${API_BASE_URL}/characters/${character.id}/view`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -149,7 +150,7 @@ const CharacterEditModal = ({ character, liked, onClose, onSave, onLikeToggle, o
       }
       
       // 2. 캐릭터 상세 정보 조회
-      const res = await fetch(`/api/my/characters/${character.id}`, {
+      const res = await fetch(`${API_BASE_URL}/my/characters/${character.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
