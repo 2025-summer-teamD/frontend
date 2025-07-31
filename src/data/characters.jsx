@@ -71,65 +71,32 @@ export function useCommunityCharacters(sortBy = 'likes') {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
 
-  const fetchCharacters = useCallback(async (pageNum = 1, append = false) => {
-    try {
-      if (pageNum === 1) {
-        setLoading(true);
-      } else {
-        setLoadingMore(true);
-      }
-      
-      const response = await axios.get(`${API_BASE_URL}/communities/characters?sortBy=${sortBy}&page=${pageNum}&limit=20`);
-      const newCharacters = response.data.data || [];
-      const totalPages = response.data.totalPages || 0;
-      
-      if (append) {
-        setCharacters(prev => [...prev, ...newCharacters]);
-      } else {
-        setCharacters(newCharacters);
-      }
-      
-      setHasMore(pageNum < totalPages);
-      setTotalPages(totalPages);
-      setPage(pageNum);
+const fetchCharacters = useCallback(async () => {
+  try {
+    setLoading(true);
+    
+    const response = await axios.get(`${API_BASE_URL}/communities/characters?sortBy=${sortBy}&page=1&limit=100`);
+    console.log('🔍 useCommunityCharacters - API 응답:', response.data);
+    const newCharacters = response.data.data?.data || [];
+    console.log('🔍 useCommunityCharacters - 파싱된 데이터:', { newCharacters: newCharacters.length });
+    
+    setCharacters(newCharacters);
     } catch (err) {
       const errorMessage = handleApiError(err, '캐릭터 목록을 불러오는데 실패했습니다.');
       setError(errorMessage);
       if (err.code === 'ERR_NETWORK' || err.code === 'ERR_CONNECTION_REFUSED' || err.code === 'ERR_EMPTY_RESPONSE') {
-        if (!append) {
-          setCharacters([]);
-        }
+                setCharacters([]);
       }
     } finally {
       setLoading(false);
-      setLoadingMore(false);
     }
   }, [sortBy]);
 
-  // 초기 로드
   useEffect(() => {
-    setPage(1);
-    setHasMore(true);
-    setCharacters([]);
-    fetchCharacters(1, false);
-  }, [sortBy, fetchCharacters]);
+    fetchCharacters();
+  }, [fetchCharacters]);
 
-  // 더 많은 캐릭터 로드
-  const loadMore = useCallback(() => {
-    if (!loading && !loadingMore && hasMore) {
-      fetchCharacters(page + 1, true);
-    }
-  }, [loading, loadingMore, hasMore, page, fetchCharacters]);
-
-  return { 
-    characters, 
-    loading, 
-    loadingMore,
-    error, 
-    hasMore,
-    loadMore,
-    setCharacters 
-  };
+  return { characters, loading, error, setCharacters };
 }
 
 // 내가 채팅한 캐릭터 목록을 가져오는 커스텀 훅
