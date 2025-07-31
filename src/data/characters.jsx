@@ -18,14 +18,14 @@ const apiCall = async (url, options = {}) => {
       ...options,
     });
 
+    const result = await response.json();
+    console.log('API 응답:', result);
+
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('API 에러 응답:', errorText);
-      throw new Error(`API 호출 실패: ${response.status} ${response.statusText}`);
+      console.error('API 에러 응답:', result);
+      throw new Error(result.message || `API 호출 실패: ${response.status} ${response.statusText}`);
     }
 
-    const result = await response.json();
-    console.log('API 성공:', result);
     return result;
   } catch (error) {
     console.error('API 에러:', error);

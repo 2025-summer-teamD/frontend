@@ -6,11 +6,12 @@ import { io } from 'socket.io-client';
 
 export default function MyChatRoomList({ refetchPublicRooms }) {
   const { rooms, loading, refetch } = useMyChatRooms();
-  const { getToken } = useAuth();
+  const { getToken, userId } = useAuth();
   const navigate = useNavigate();
   const [editingRoom, setEditingRoom] = useState(null);
   const [editName, setEditName] = useState('');
   const [updatingPublic, setUpdatingPublic] = useState(null);
+  const [deletingRoom, setDeletingRoom] = useState(null);
   const [localRooms, setLocalRooms] = useState([]);
 
   // rooms가 변경될 때 localRooms 업데이트
@@ -151,6 +152,44 @@ export default function MyChatRoomList({ refetchPublicRooms }) {
     setEditName('');
   };
 
+  const handleDeleteRoom = async (e, room) => {
+    e.stopPropagation();
+    
+    if (!confirm('정말로 이 채팅방을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+      return;
+    }
+    
+    setDeletingRoom(room.roomId);
+    
+    try {
+      const token = await getToken();
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/chat/rooms/${room.roomId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        // 로컬 상태에서 채팅방 제거
+        setLocalRooms(prevRooms => 
+          prevRooms.filter(r => r.roomId !== room.roomId)
+        );
+        console.log('✅ 채팅방 삭제 완료:', room.roomId);
+      } else {
+        const errorData = await response.json();
+        console.error('채팅방 삭제 실패:', errorData);
+        alert(errorData.message || '채팅방 삭제에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('채팅방 삭제 중 오류:', error);
+      alert('채팅방 삭제 중 오류가 발생했습니다.');
+    } finally {
+      setDeletingRoom(null);
+    }
+  };
+
   const handleRoomClick = async (room) => {
     // 채팅방 클릭 시 unreadCount 초기화를 위해 목록 새로고침
     refetch();
@@ -269,6 +308,16 @@ export default function MyChatRoomList({ refetchPublicRooms }) {
                   >
                     {updatingPublic === room.roomId ? '처리중...' : (room.isPublic ? '공개' : '비공개')}
                   </button>
+                  {/* 삭제 버튼 (생성자만 표시) */}
+                  {room.clerkId === userId && (
+                    <button
+                      onClick={(e) => handleDeleteRoom(e, room)}
+                      disabled={deletingRoom === room.roomId}
+                      className="px-2 py-1 bg-red-700/50 text-red-300 text-xs rounded hover:bg-red-600/50 font-mono opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      {deletingRoom === room.roomId ? '삭제중...' : '삭제'}
+                    </button>
+                  )}
                 </div>
               )}
               {/* 설명 표시 */}

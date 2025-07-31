@@ -327,7 +327,7 @@ const ChatMate = () => {
           sender: 'ai',
           aiId: character?.id ? String(character.id) : undefined,
           aiName: character?.name || 'Unknown AI',
-          imageUrl: character?.imageUrl || null,
+          imageUrl: null, // 로딩 메시지는 imageUrl을 가지지 않음
           time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
           characterId: character?.id,
           isStreaming: true,
@@ -408,7 +408,7 @@ const ChatMate = () => {
                         sender: 'ai',
                         aiId: parsedData.aiId ? String(parsedData.aiId) : undefined,
                         aiName: parsedData.aiName ? String(parsedData.aiName) : undefined,
-                        imageUrl: parsedData.aiProfileImageUrl || null,
+                        imageUrl: null, // 프로필 이미지는 imageUrl에 저장하지 않음
                         time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
                         characterId: parsedData.aiId || character?.id,
                       });
@@ -484,7 +484,7 @@ const ChatMate = () => {
               sender: 'ai',
               aiId: participant.id ? String(participant.id) : undefined,
               aiName: participant.name || 'Unknown AI',
-              imageUrl: participant.imageUrl || null,
+              imageUrl: null, // 로딩 메시지는 imageUrl을 가지지 않음
               time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
               characterId: participant.id,
               isStreaming: true,
@@ -571,7 +571,7 @@ const ChatMate = () => {
                         sender: 'ai',
                         aiId: parsedData.aiId ? String(parsedData.aiId) : undefined,
                         aiName: parsedData.aiName ? String(parsedData.aiName) : undefined,
-                        imageUrl: parsedData.aiProfileImageUrl || null,
+                        imageUrl: null, // 프로필 이미지는 imageUrl에 저장하지 않음
                         time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
                         characterId: parsedData.aiId,
                       });
@@ -953,7 +953,7 @@ const ChatMate = () => {
         <div className="space-y-4 pb-4 max-w-3xl mx-auto font-cyberpunk">
           {messages.map((msg, idx) => {
             const isAI = msg.sender === 'ai';
-            const aiObj = isAI ? roomInfoParticipants.find(ai => String(ai.personaId) === String(msg.aiId)) : null;
+            const aiObj = isAI ? roomInfoParticipants.find(ai => String(ai.id) === String(msg.aiId)) : null;
             const profileImg = msg.sender === 'me'
               ? user?.imageUrl || '/assets/icon-character.png'
               : isAI
@@ -970,7 +970,8 @@ const ChatMate = () => {
             const nextMsg = messages[idx + 1];
             const prevMsg = messages[idx - 1];
             const showTime = isLast || msg.time !== nextMsg?.time || msg.sender !== nextMsg?.sender;
-            const showProfile = (idx === 0 || msg.time !== prevMsg?.time || msg.sender !== prevMsg?.sender) && 
+            const showProfile = (idx === 0 || msg.time !== prevMsg?.time || msg.sender !== prevMsg?.sender || 
+                              (msg.sender === 'ai' && prevMsg?.sender === 'ai' && msg.aiId !== prevMsg?.aiId)) && 
                               !(msg.sender === 'ai' && msg.isStreaming && msg.text === '...');
             
             return (
