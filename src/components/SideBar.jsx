@@ -4,7 +4,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 
 import { useChatRooms } from '../contexts/ChatRoomsContext';
 import { useAuth } from '@clerk/clerk-react';
-import Logo from '/assets/Logo.png';
+
 import AnimatedAuthHeader from './AnimatedAuthHeader';
 import ChatRoomCreateModal from './ChatRoomCreateModal';
 
@@ -225,7 +225,7 @@ const Sidebar = ({ children }) => {
           {/* logo + close */}
           <div className="flex items-center justify-between p-4.5">
             <Link to="/" className="flex items-center">
-              <img src={Logo} alt="Logo" className="w-8 h-8 drop-shadow-[0_0_12px_#0ff]" />
+              <img src="/assets/Logo.png" alt="Logo" className="w-8 h-8 drop-shadow-[0_0_12px_#0ff]" />
               <span className="text-cyan-200 font-extrabold text-[24px] ml-2 drop-shadow-[0_0_8px_#0ff] logo-font">Anima</span>
             </Link>
           </div>
@@ -327,7 +327,7 @@ const Sidebar = ({ children }) => {
             </button>
             {!sidebarOpen && (
               <Link to="/" className="flex items-center">
-                <img src={Logo} alt="Logo" className="w-8 h-8 drop-shadow-[0_0_8px_#0ff]" />
+                <img src="/assets/Logo.png" alt="Logo" className="w-8 h-8 drop-shadow-[0_0_8px_#0ff]" />
                 <span className="text-cyan-200 font-extrabold text-[24px] ml-2 drop-shadow-[0_0_6px_#0ff] logo-font">Anima</span>
               </Link>
             )}
