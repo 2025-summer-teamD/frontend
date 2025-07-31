@@ -7,7 +7,7 @@ import { toggleLike } from '../data/characters';
 import { useEnterOrCreateChatRoom } from '../data/chatMessages';
 
 // 재사용 가능한 캐릭터 헤더 컴포넌트
-export const CharacterHeader = ({ character, liked, onLikeToggle, showLikeButton = true, onImageClick }) => {
+export const CharacterHeader = ({ character, isLiked, onLikeToggle, showLikeButton = true, onImageClick }) => {
   const characterId = character.id;
   const { userId } = useAuth();
   
@@ -16,7 +16,7 @@ export const CharacterHeader = ({ character, liked, onLikeToggle, showLikeButton
 
   const handleLikeToggle = () => {
     if (onLikeToggle) {
-      onLikeToggle(characterId, !liked);
+      onLikeToggle(characterId, !isLiked);
     }
   };
 
@@ -44,17 +44,13 @@ export const CharacterHeader = ({ character, liked, onLikeToggle, showLikeButton
         )}
       </div>
 
-      {/* 하트와 좋아요 숫자 제거됨 - PR #170 */}
-
-      {/* 하트와 좋아요 숫자 제거됨 */}
-
     </div>
   );
 };
 
 CharacterHeader.propTypes = {
   character: PropTypes.object.isRequired,
-  liked: PropTypes.bool,
+  isLiked: PropTypes.bool,
   onLikeToggle: PropTypes.func,
   showLikeButton: PropTypes.bool,
 };
@@ -68,8 +64,8 @@ export const CharacterStats = ({ character, isMyCharacter = false }) => (
         <div className="text-gray-400 text-sm">조회수</div>
       </div>
       <div className="text-center">
-        <div className="text-[28px] font-bold text-white mb-1">{character.likes || 0}</div>
-        <div className="text-gray-400 text-sm">좋아요</div>
+        <div className="text-[28px] font-bold text-white mb-1">{character.likesCount || 0}</div>
+        <div className="text-gray-400 text-sm">찜 한 수</div>
       </div>
       <div className="text-center">
         <div className="text-[28px] font-bold text-white mb-1">{character.friendship || 1}</div>
@@ -170,7 +166,7 @@ CharacterInfo.propTypes = {
   }).isRequired,
 };
 
-const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onEdit }) => {
+const CharacterProfile = ({ character, isLiked, origin, onClose, onLikeToggle, onEdit }) => {
   const isMyCharacter = origin === 'my';
   const [loading, setLoading] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
@@ -182,19 +178,19 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
   console.log('🔍 CharacterProfile 렌더링:', { 
     characterId: character?.id, 
     characterName: character?.name, 
-    liked, 
+    isLiked, 
     origin 
   });
 
-  // liked prop이 변경될 때마다 로그 출력
+  // isLiked prop이 변경될 때마다 로그 출력
   React.useEffect(() => {
-    console.log('🔍 CharacterProfile liked prop 변경:', { 
+    console.log('🔍 CharacterProfile isLiked prop 변경:', { 
       characterId: character?.id, 
       characterName: character?.name, 
-      liked, 
+      isLiked, 
       origin 
     });
-  }, [liked, character?.id, character?.name, origin]);
+  }, [isLiked, character?.id, character?.name, origin]);
 
   // Determine if character is created by current user
   const isCharacterCreatedByMe = character?.clerkId === userId;
@@ -223,38 +219,60 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
   const handleLikeToggle = async () => {
     console.log('🔍 CharacterProfile handleLikeToggle - 시작:', { 
       characterId: character?.id, 
-      liked, 
+      isLiked, 
       isCharacterCreatedByMe 
     });
     
     if (isCharacterCreatedByMe) return; // Cannot like own character
     
     setLoading(true);
+    
+    // 즉시 로컬 상태를 반대로 바꿈 (낙관적 업데이트)
+    const immediateNewState = !isLiked;
+    console.log('🔍 CharacterProfile handleLikeToggle - 즉시 상태 변경:', { 
+      characterId: character?.id, 
+      currentIsLiked: isLiked, 
+      immediateNewState 
+    });
+    
+    // 즉시 부모에게 새로운 상태 전달 (UI 즉시 업데이트)
+    if (onLikeToggle) {
+      onLikeToggle(character?.id, immediateNewState);
+    }
+    
     try {
       const token = await getToken();
-      // Use character.id consistently (backend returns id field)
       const characterId = character?.id;
       
       if (!characterId) {
         throw new Error('캐릭터 ID를 찾을 수 없습니다.');
       }
       
-      console.log('🔍 CharacterProfile handleLikeToggle - API 호출 전:', { characterId, token });
+      console.log('🔍 CharacterProfile handleLikeToggle - API 호출 전:', { characterId, token, immediateNewState });
       const result = await toggleLike(characterId, token);
       console.log('🔍 CharacterProfile handleLikeToggle - API 응답:', result);
       console.log('🔍 CharacterProfile handleLikeToggle - API 응답 data:', result.data);
       console.log('🔍 CharacterProfile handleLikeToggle - API 응답 isLiked:', result.data?.isLiked);
       
-      // Call parent's onLikeToggle if provided
-      if (onLikeToggle) {
-        // Pass the new state that we expect after the API call
-        const newLikedState = result.data?.isLiked;
-        console.log('🔍 CharacterProfile handleLikeToggle - 부모 onLikeToggle 호출:', { characterId, newLiked: newLikedState });
-        onLikeToggle(characterId, newLikedState);
+      // API 응답의 실제 상태와 즉시 변경한 상태가 다르면 다시 조정
+      const actualNewState = result.data?.isLiked;
+      if (actualNewState !== immediateNewState) {
+        console.log('🔍 CharacterProfile handleLikeToggle - 상태 조정 필요:', { 
+          immediateNewState, 
+          actualNewState 
+        });
+        if (onLikeToggle) {
+          onLikeToggle(characterId, actualNewState);
+        }
       }
     } catch (error) {
       console.error('❌ CharacterProfile handleLikeToggle - 오류:', error);
       alert('찜하기 처리 중 오류가 발생했습니다.');
+      
+      // 에러 발생 시 원래 상태로 되돌림
+      if (onLikeToggle) {
+        onLikeToggle(character?.id, isLiked);
+      }
     } finally {
       setLoading(false);
       console.log('🔍 CharacterProfile handleLikeToggle - 완료');
@@ -272,7 +290,7 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
   const getButtonConfig = () => {
     console.log('🔍 CharacterProfile getButtonConfig - 현재 상태:', { 
       isCharacterCreatedByMe, 
-      liked, 
+      isLiked, 
       characterId: character?.id,
       characterName: character?.name,
       origin
@@ -285,15 +303,15 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
         className: 'w-full bg-gray-600 text-gray-400 font-bold py-4 px-6 rounded-2xl cursor-not-allowed'
       };
     } else {
-      if (liked) {
-        console.log('🔍 CharacterProfile getButtonConfig - 찜 취소하기 버튼 (liked=true)');
+      if (isLiked) {
+        console.log('🔍 CharacterProfile getButtonConfig - 찜 취소하기 버튼 (isLiked=true)');
         return {
           text: '찜 취소하기',
           disabled: false,
           className: 'w-full bg-gradient-to-r from-pink-700 to-red-700 hover:from-pink-600 hover:to-red-600 text-pink-100 font-bold py-4 px-6 rounded-2xl transition-all duration-200 text-lg transform hover:scale-105 flex items-center justify-center gap-2 shadow-[0_0_8px_#f0f,0_0_16px_#f0f] animate-neonPulse'
         };
       } else {
-        console.log('🔍 CharacterProfile getButtonConfig - 찜 하기 버튼 (liked=false)');
+        console.log('🔍 CharacterProfile getButtonConfig - 찜 하기 버튼 (isLiked=false)');
         return {
           text: '찜 하기',
           disabled: false,
@@ -328,7 +346,7 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
           {/* 캐릭터 헤더 */}
           <CharacterHeader 
             character={character} 
-            liked={liked} 
+            isLiked={isLiked} 
             onLikeToggle={onLikeToggle}
             onImageClick={() => setShowImage(true)}
           />
@@ -415,7 +433,7 @@ const CharacterProfile = ({ character, liked, origin, onClose, onLikeToggle, onE
 
 CharacterProfile.propTypes = {
   character: PropTypes.object.isRequired,
-  liked: PropTypes.bool,
+  isLiked: PropTypes.bool,
   origin: PropTypes.string,
   onClose: PropTypes.func.isRequired,
   onLikeToggle: PropTypes.func,
