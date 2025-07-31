@@ -23,9 +23,11 @@ const PopularCharacters = React.memo(({ onChatRoomCreated }) => {
   );
 
   // 좋아요 수 순으로 정렬하고 상위 8개만 가져오기
-  const popularCharacters = characters
-    .sort((a, b) => (b.likes || 0) - (a.likes || 0))
-    .slice(0, 8);
+  const popularCharacters = characters && Array.isArray(characters)
+    ? characters
+        .sort((a, b) => (b.likes || 0) - (a.likes || 0))
+        .slice(0, 8)
+    : [];
 
   // 슬라이드 인덱스 상태
   const [currentIndex, setCurrentIndex] = useState(0);

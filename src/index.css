@@ -22,12 +22,12 @@
   font-family: 'Cafe24Moyamoya', sans-serif !important;
   color: rgba(255, 255, 255, 0.7);
   text-shadow: 
-    0 0 5px #1e90ff,
-    0 0 10px #1e90ff,
-    0 0 15px #4169e1,
-    0 0 20px #4169e1,
-    0 0 35px #00bfff,
-    0 0 40px #00bfff !important;
+    0 0 2px #1e90ff,
+    0 0 4px #1e90ff,
+    0 0 6px #4169e1,
+    0 0 8px #4169e1,
+    0 0 12px #00bfff,
+    0 0 16px #00bfff !important;
   animation: neonGlow 3s ease-in-out infinite alternate;
   will-change: text-shadow;
 }
@@ -37,9 +37,9 @@
   font-family: 'Cafe24Moyamoya', sans-serif !important;
   color: white !important;
   text-shadow: 
+    0 0 2px #0080ff,
     0 0 4px #0080ff,
-    0 0 8px #0080ff,
-    0 0 12px #0080ff !important;
+    0 0 6px #0080ff !important;
   font-size: 2rem !important; /* 32px - 통일된 크기 */
 }
 
@@ -64,21 +64,21 @@
 @keyframes neonGlow {
   from {
     text-shadow: 
-      0 0 5px #1e90ff,
-      0 0 10px #1e90ff,
-      0 0 15px #4169e1,
-      0 0 20px #4169e1,
-      0 0 35px #00bfff,
-      0 0 40px #00bfff;
+      0 0 2px #1e90ff,
+      0 0 4px #1e90ff,
+      0 0 6px #4169e1,
+      0 0 8px #4169e1,
+      0 0 12px #00bfff,
+      0 0 16px #00bfff;
   }
   to {
     text-shadow: 
+      0 0 1px #1e90ff,
       0 0 2px #1e90ff,
-      0 0 5px #1e90ff,
-      0 0 8px #4169e1,
-      0 0 12px #4169e1,
-      0 0 18px #00bfff,
-      0 0 25px #00bfff;
+      0 0 3px #4169e1,
+      0 0 4px #4169e1,
+      0 0 6px #00bfff,
+      0 0 8px #00bfff;
   }
 }
 
