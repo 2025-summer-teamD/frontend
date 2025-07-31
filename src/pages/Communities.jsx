@@ -119,6 +119,8 @@ export default function Communities() {
     setSortBy(newSort === '인기순' ? 'likes' : 'usesCount');
   };
 
+
+
   const handleLikeToggle = async (id, newLiked) => {
     console.log('🔍 Communities handleLikeToggle - 시작:', { id, newLiked });
     try {
@@ -402,38 +404,47 @@ export default function Communities() {
           {sortedCharacters.length === 0 ? (
             <EmptyState />
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
-              {sortedCharacters.map(character => {
-                const isLiked = character.liked || likedIds.includes(character.id);
-                const handleSelect = async () => {
-                  try {
-                    if (character.id) {
-                      const token = await getToken();
-                      await incrementViewCount(character.id, token);
-                      character.usesCount = (character.usesCount || 0) + 1;
-                      setCharacters(prev => [...prev]);
-                    }
-                  } catch (error) {
-                    console.error('조회수 증가 실패:', error);
-                  }
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
+                {sortedCharacters.map((character, index) => {
+                  const isLiked = character.liked || likedIds.includes(character.id);
                   
-                  // 모달 열기
-                  setSelectedCharacter(character);
-                };
-                return (
-                  <CharacterCard
-                    key={character.id}
-                    character={character}
-                    isMine={false}
-                    isLiked={isLiked}
-                    onLikeToggle={handleLikeToggle}
-                    onEdit={() => {}}
-                    onSelect={handleSelect}
-                    showEditButtons={false}
-                  />
-                );
-              })}
-            </div>
+                  const handleSelect = async () => {
+                    try {
+                      if (character.id) {
+                        const token = await getToken();
+                        await incrementViewCount(character.id, token);
+                        character.usesCount = (character.usesCount || 0) + 1;
+                        setCharacters(prev => [...prev]);
+                      }
+                    } catch (error) {
+                      console.error('조회수 증가 실패:', error);
+                    }
+                    
+                    // 모달 열기
+                    setSelectedCharacter(character);
+                  };
+                  
+                  return (
+                    <div
+                      key={character.id}
+                    >
+                      <CharacterCard
+                        character={character}
+                        isMine={false}
+                        isLiked={isLiked}
+                        onLikeToggle={handleLikeToggle}
+                        onEdit={() => {}}
+                        onSelect={handleSelect}
+                        showEditButtons={false}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+              
+
+            </>
           )}
         </>
       )}

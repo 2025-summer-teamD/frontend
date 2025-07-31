@@ -67,24 +67,30 @@ export function useCommunityCharacters(sortBy = 'likes') {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchCharacters = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get(`${API_BASE_URL}/communities/characters?sort=${sortBy}`);
-        setCharacters(response.data.data || []);
-      } catch (err) {
-        const errorMessage = handleApiError(err, '캐릭터 목록을 불러오는데 실패했습니다.');
-        setError(errorMessage);
-        if (err.code === 'ERR_NETWORK' || err.code === 'ERR_CONNECTION_REFUSED' || err.code === 'ERR_EMPTY_RESPONSE') {
-          setCharacters([]);
-        }
-      } finally {
-        setLoading(false);
+  const fetchCharacters = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      const response = await axios.get(`${API_BASE_URL}/communities/characters?sortBy=${sortBy}&page=1&limit=100`);
+      console.log('🔍 useCommunityCharacters - API 응답:', response.data);
+      const newCharacters = response.data.data?.data || [];
+      console.log('🔍 useCommunityCharacters - 파싱된 데이터:', { newCharacters: newCharacters.length });
+      
+      setCharacters(newCharacters);
+    } catch (err) {
+      const errorMessage = handleApiError(err, '캐릭터 목록을 불러오는데 실패했습니다.');
+      setError(errorMessage);
+      if (err.code === 'ERR_NETWORK' || err.code === 'ERR_CONNECTION_REFUSED' || err.code === 'ERR_EMPTY_RESPONSE') {
+        setCharacters([]);
       }
-    };
-    fetchCharacters();
+    } finally {
+      setLoading(false);
+    }
   }, [sortBy]);
+
+  useEffect(() => {
+    fetchCharacters();
+  }, [fetchCharacters]);
 
   return { characters, loading, error, setCharacters };
 }
