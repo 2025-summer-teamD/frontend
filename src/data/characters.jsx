@@ -75,10 +75,10 @@ const fetchCharacters = useCallback(async () => {
   try {
     setLoading(true);
     
-    const response = await axios.get(`${API_BASE_URL}/communities/characters?sortBy=${sortBy}&page=1&limit=100`);
-    console.log('🔍 useCommunityCharacters - API 응답:', response.data);
-    const newCharacters = response.data.data?.data || [];
-    console.log('🔍 useCommunityCharacters - 파싱된 데이터:', { newCharacters: newCharacters.length });
+          const response = await axios.get(`${API_BASE_URL}/communities/characters?sortBy=${sortBy}&page=1&limit=100`);
+      console.log('🔍 useCommunityCharacters - API 응답:', response.data);
+      const newCharacters = response.data.data || [];
+      console.log('🔍 useCommunityCharacters - 파싱된 데이터:', { newCharacters: newCharacters.length });
     
     setCharacters(newCharacters);
     } catch (err) {
@@ -246,20 +246,20 @@ export function useUpdateCharacter() {
         tag: updateData.tag || updateData.tags
       };
 
-      console.log('🔍 useUpdateCharacter - API call:', {
-        url: `${API_BASE_URL}/characters/${characterId}`,
-        requestData,
-        characterId
-      });
+             console.log('🔍 useUpdateCharacter - API call:', {
+         url: `${API_BASE_URL}/my/characters/${characterId}`,
+         requestData,
+         characterId
+       });
 
-      const data = await authenticatedApiCall(
-        `${API_BASE_URL}/characters/${characterId}`,
-        getToken,
-        {
-          method: 'PUT',
-          body: JSON.stringify(requestData),
-        }
-      );
+       const data = await authenticatedApiCall(
+         `${API_BASE_URL}/my/characters/${characterId}`,
+         getToken,
+         {
+           method: 'PATCH',
+           body: JSON.stringify(requestData),
+         }
+       );
 
       console.log('✅ useUpdateCharacter - API response:', data);
 
