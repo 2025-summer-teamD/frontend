@@ -6,7 +6,7 @@ const ScrollContainer = React.forwardRef(({ children, className = "", ...props }
     <>
       <div 
         ref={ref}
-        className={`flex gap-6 overflow-x-auto overflow-y-visible w-full max-w-7xl px-8 py-6 ${className}`}
+        className={`flex gap-6 overflow-x-auto overflow-y-visible w-full max-w-full px-4 md:px-8 py-6 justify-center ${className}`}
         style={{
           scrollbarWidth: 'none', 
           msOverflowStyle: 'none', 

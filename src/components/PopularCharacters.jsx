@@ -29,7 +29,31 @@ const PopularCharacters = React.memo(({ onChatRoomCreated }) => {
 
   // 슬라이드 인덱스 상태
   const [currentIndex, setCurrentIndex] = useState(0);
-  const cardsPerPage = 6;
+  const [cardsPerPage, setCardsPerPage] = useState(6);
+  
+  // 화면 크기에 따라 카드 개수 조정
+  useEffect(() => {
+    const updateCardsPerPage = () => {
+      const width = window.innerWidth;
+      if (width < 640) { // sm
+        setCardsPerPage(2);
+      } else if (width < 768) { // md
+        setCardsPerPage(3);
+      } else if (width < 1024) { // lg
+        setCardsPerPage(4);
+      } else if (width < 1280) { // xl
+        setCardsPerPage(5);
+      } else { // 2xl
+        setCardsPerPage(6);
+      }
+    };
+    
+    updateCardsPerPage();
+    window.addEventListener('resize', updateCardsPerPage);
+    
+    return () => window.removeEventListener('resize', updateCardsPerPage);
+  }, []);
+  
   const maxIndex = Math.max(0, popularCharacters.length - cardsPerPage);
   const visibleCharacters = popularCharacters.slice(currentIndex, currentIndex + cardsPerPage);
 
@@ -149,25 +173,27 @@ const PopularCharacters = React.memo(({ onChatRoomCreated }) => {
         />
         
       {/* 카드 리스트 */}
-        <ScrollContainer ref={containerRef}>
-        {visibleCharacters.map((character) => (
-            <BaseCard
-            key={character.id}
-              character={character}
-              onClick={() => handleStartChat(character)}
-            onKeyDown={(event) => handleKeyDown(event, character.id)}
-              className="w-[240px] h-[320px] flex-shrink-0 neon-card"
-            >
-              <CharacterInfo character={character} isMine={false} nameSize="text-2xl" />
-              <CharacterStats 
-                character={character} 
-                isLiked={character.liked || likedIds.includes(character.id)} 
-                onLikeToggle={handleLikeToggle} 
-                characterId={character.id} 
-              />
-            </BaseCard>
-        ))}
-        </ScrollContainer>
+        <div className="flex justify-center w-full">
+          <ScrollContainer ref={containerRef}>
+          {visibleCharacters.map((character) => (
+              <BaseCard
+              key={character.id}
+                character={character}
+                onClick={() => handleStartChat(character)}
+              onKeyDown={(event) => handleKeyDown(event, character.id)}
+                className="w-[220px] md:w-[240px] h-[320px] flex-shrink-0 neon-card"
+              >
+                <CharacterInfo character={character} isMine={false} nameSize="text-2xl" />
+                <CharacterStats 
+                  character={character} 
+                  isLiked={character.liked || likedIds.includes(character.id)} 
+                  onLikeToggle={handleLikeToggle} 
+                  characterId={character.id} 
+                />
+              </BaseCard>
+          ))}
+          </ScrollContainer>
+        </div>
         
       {/* 오른쪽 화살표 */}
         <SlideButton
