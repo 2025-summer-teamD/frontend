@@ -61,32 +61,75 @@ const handleApiError = (error, defaultMessage) => {
   return error.message || defaultMessage;
 };
 
-// 커뮤니티 캐릭터 목록을 가져오는 커스텀 훅
+// 커뮤니티 캐릭터 목록을 가져오는 커스텀 훅 (무한 스크롤 지원)
 export function useCommunityCharacters(sortBy = 'likes') {
   const [characters, setCharacters] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
 
-  useEffect(() => {
-    const fetchCharacters = async () => {
-      try {
+  const fetchCharacters = useCallback(async (pageNum = 1, append = false) => {
+    try {
+      if (pageNum === 1) {
         setLoading(true);
-        const response = await axios.get(`${API_BASE_URL}/communities/characters?sort=${sortBy}`);
-        setCharacters(response.data.data || []);
-      } catch (err) {
-        const errorMessage = handleApiError(err, '캐릭터 목록을 불러오는데 실패했습니다.');
-        setError(errorMessage);
-        if (err.code === 'ERR_NETWORK' || err.code === 'ERR_CONNECTION_REFUSED' || err.code === 'ERR_EMPTY_RESPONSE') {
+      } else {
+        setLoadingMore(true);
+      }
+      
+      const response = await axios.get(`${API_BASE_URL}/communities/characters?sortBy=${sortBy}&page=${pageNum}&limit=20`);
+      const newCharacters = response.data.data || [];
+      const totalPages = response.data.totalPages || 0;
+      
+      if (append) {
+        setCharacters(prev => [...prev, ...newCharacters]);
+      } else {
+        setCharacters(newCharacters);
+      }
+      
+      setHasMore(pageNum < totalPages);
+      setTotalPages(totalPages);
+      setPage(pageNum);
+    } catch (err) {
+      const errorMessage = handleApiError(err, '캐릭터 목록을 불러오는데 실패했습니다.');
+      setError(errorMessage);
+      if (err.code === 'ERR_NETWORK' || err.code === 'ERR_CONNECTION_REFUSED' || err.code === 'ERR_EMPTY_RESPONSE') {
+        if (!append) {
           setCharacters([]);
         }
-      } finally {
-        setLoading(false);
       }
-    };
-    fetchCharacters();
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
   }, [sortBy]);
 
-  return { characters, loading, error, setCharacters };
+  // 초기 로드
+  useEffect(() => {
+    setPage(1);
+    setHasMore(true);
+    setCharacters([]);
+    fetchCharacters(1, false);
+  }, [sortBy, fetchCharacters]);
+
+  // 더 많은 캐릭터 로드
+  const loadMore = useCallback(() => {
+    if (!loading && !loadingMore && hasMore) {
+      fetchCharacters(page + 1, true);
+    }
+  }, [loading, loadingMore, hasMore, page, fetchCharacters]);
+
+  return { 
+    characters, 
+    loading, 
+    loadingMore,
+    error, 
+    hasMore,
+    loadMore,
+    setCharacters 
+  };
 }
 
 // 내가 채팅한 캐릭터 목록을 가져오는 커스텀 훅
@@ -237,16 +280,16 @@ export function useUpdateCharacter() {
       };
 
       console.log('🔍 useUpdateCharacter - API call:', {
-        url: `${API_BASE_URL}/my/characters/${characterId}`,
+        url: `${API_BASE_URL}/characters/${characterId}`,
         requestData,
         characterId
       });
 
       const data = await authenticatedApiCall(
-        `${API_BASE_URL}/my/characters/${characterId}`,
+        `${API_BASE_URL}/characters/${characterId}`,
         getToken,
         {
-          method: 'PATCH',
+          method: 'PUT',
           body: JSON.stringify(requestData),
         }
       );
