@@ -22,7 +22,7 @@ const CharacterStats = ({ character, isLiked, onLikeToggle, characterId }) => {
           aria-label="좋아요 토글"
         >
           <div className={`font-bold text-sm transition-all ${isLiked ? 'text-pink-300' : 'text-fuchsia-200'}`} style={{fontFamily:'Share Tech Mono, monospace'}}>
-            {character.likes ?? 0}
+            {character.likesCount ?? character.likes ?? 0}
           </div>
         </button>
       </div>

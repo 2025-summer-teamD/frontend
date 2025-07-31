@@ -99,6 +99,8 @@ export default function CharacterList() {
   const [likedLoading, setLikedLoading] = useState(false);
   const [likedError, setLikedError] = useState(null);
 
+
+
   // useMyCharacters 훅은 이제 'tab' 파라미터를 받지 않고 모든 'created' 캐릭터를 가져옵니다.
   const { characters, loading, error, fetchMyCharacters, setCharacters } = useMyCharacters(tab);
 
@@ -180,13 +182,15 @@ export default function CharacterList() {
     }
   };
 
+
+
   // 탭 변경 시 데이터 새로고침
   useEffect(() => {
     if (tab === 'mychats') return; // 내 채팅방 탭에서는 캐릭터 API 호출 X
     if (tab === 'liked') {
       fetchLikedCharacters();
     } else {
-    fetchMyCharacters(tab);
+      fetchMyCharacters(tab);
     }
   }, [tab, fetchMyCharacters]);
 
@@ -219,8 +223,10 @@ export default function CharacterList() {
   const showCharacters = sortedCharacters;
 
   // 로딩 상태 결정
-  const isLoading = tab === 'liked' ? likedLoading : loading;
-  const currentError = tab === 'liked' ? likedError : error;
+  const isLoading = tab === 'liked' ? likedLoading : 
+                   loading;
+  const currentError = tab === 'liked' ? likedError : 
+                      error;
 
   // const handleSortChange = (newSort) => {
   //   setActiveSort(newSort);
@@ -230,30 +236,61 @@ export default function CharacterList() {
     try {
       console.log('🔍 handleLikeToggle - 시작:', { id, newLiked, tab });
       
+      // 즉시 로컬 상태 업데이트 (낙관적 업데이트)
+      setLikedIds(prev => {
+        const newLikedIds = newLiked 
+          ? [...prev, id] 
+          : prev.filter(x => x !== id);
+        console.log('🔍 handleLikeToggle - likedIds 즉시 업데이트:', { prev, newLikedIds, newLiked });
+        return newLikedIds;
+      });
+      
+      // editingCharacter가 현재 토글된 캐릭터라면 즉시 업데이트
+      if (editingCharacter && editingCharacter.id === id) {
+        setEditingCharacter(prev => ({
+          ...prev,
+          liked: newLiked
+        }));
+        console.log('🔍 handleLikeToggle - editingCharacter 즉시 업데이트:', { characterId: id, liked: newLiked });
+      }
+      
       const token = await getToken();
-      // Use character.id consistently (backend returns id field)
       const characterId = id;
       
       if (!characterId) {
         throw new Error('캐릭터 ID를 찾을 수 없습니다.');
       }
       
-      console.log('🔍 handleLikeToggle - API 호출 전:', { characterId, token });
+      console.log('🔍 handleLikeToggle - API 호출 전:', { characterId, token, newLiked });
       const result = await toggleLike(characterId, token);
       console.log('🔍 handleLikeToggle - API 응답:', result);
 
-      // API 응답에 따라 로컬 상태 업데이트
-      const isLiked = result.data?.isLiked;
-      console.log('🔍 handleLikeToggle - API 응답 isLiked:', isLiked);
+      // API 응답에 따라 실제 상태 확인
+      const actualIsLiked = result.data?.isLiked;
+      console.log('🔍 handleLikeToggle - API 응답 isLiked:', actualIsLiked);
       
-      // likedIds 상태 업데이트
-      setLikedIds(prev => {
-        const newLikedIds = isLiked 
-          ? [...prev, characterId] 
-          : prev.filter(x => x !== characterId);
-        console.log('🔍 handleLikeToggle - likedIds 업데이트:', { prev, newLikedIds });
-        return newLikedIds;
-      });
+      // API 응답과 즉시 변경한 상태가 다르면 조정
+      if (actualIsLiked !== newLiked) {
+        console.log('🔍 handleLikeToggle - 상태 조정 필요:', { newLiked, actualIsLiked });
+        
+        // likedIds 상태 조정
+        setLikedIds(prev => {
+          const adjustedLikedIds = actualIsLiked 
+            ? [...prev, characterId] 
+            : prev.filter(x => x !== characterId);
+          console.log('🔍 handleLikeToggle - likedIds 조정:', { prev, adjustedLikedIds, actualIsLiked });
+          return adjustedLikedIds;
+        });
+        
+        // editingCharacter 상태 조정
+        if (editingCharacter && editingCharacter.id === characterId) {
+          setEditingCharacter(prev => ({
+            ...prev,
+            liked: actualIsLiked
+          }));
+          console.log('🔍 handleLikeToggle - editingCharacter 조정:', { characterId, liked: actualIsLiked });
+        }
+      }
 
       // 목록 새로고침하여 좋아요 수 업데이트
       if (tab === 'liked') {
@@ -264,19 +301,27 @@ export default function CharacterList() {
         await fetchMyCharacters();
       }
       
-      // editingCharacter가 현재 토글된 캐릭터라면 업데이트
-      if (editingCharacter && editingCharacter.id === characterId) {
-        setEditingCharacter(prev => ({
-          ...prev,
-          liked: isLiked
-        }));
-        console.log('🔍 handleLikeToggle - editingCharacter 업데이트:', { characterId, liked: isLiked });
-      }
-      
       console.log('🔍 handleLikeToggle - 완료');
     } catch (error) {
       console.error('❌ handleLikeToggle - 오류:', error);
       alert('좋아요 처리 중 오류가 발생했습니다.');
+      
+      // 에러 발생 시 원래 상태로 되돌림
+      const currentIsLiked = likedIds.includes(id);
+      setLikedIds(prev => {
+        const revertedLikedIds = currentIsLiked 
+          ? [...prev, id] 
+          : prev.filter(x => x !== id);
+        console.log('🔍 handleLikeToggle - 에러로 인한 상태 복원:', { prev, revertedLikedIds, currentIsLiked });
+        return revertedLikedIds;
+      });
+      
+      if (editingCharacter && editingCharacter.id === id) {
+        setEditingCharacter(prev => ({
+          ...prev,
+          liked: currentIsLiked
+        }));
+      }
     }
   };
 
@@ -408,9 +453,18 @@ export default function CharacterList() {
       console.log('🔍 handleRemoveFromLiked - 완료');
     } catch (error) {
       console.error('❌ handleRemoveFromLiked - 오류:', error);
-      alert('찜 목록에서 제거 중 오류가 발생했습니다.');
+      // 성공적인 경우에는 에러 메시지를 표시하지 않음
+      if (error.message && !error.message.includes('좋아요를 취소했습니다') && !error.message.includes('페르소나 좋아요를 취소했습니다')) {
+        alert('찜 목록에서 제거 중 오류가 발생했습니다.');
+      }
+      // 성공적인 경우에도 목록을 새로고침
+      await fetchLikedCharacters();
     }
   };
+
+
+
+
 
   const handleCreateChatRoom = async (selectedCharacterIds, description = '', isPublic = true) => {
     try {
@@ -919,7 +973,7 @@ export default function CharacterList() {
       {editingModalCharacter && (
         <CharacterEditModal
           character={editingModalCharacter}
-          liked={false}
+                          isLiked={likedIds.includes(editingModalCharacter.id)}
           onClose={() => {
             setEditingModalCharacter(null);
             resetCharacter(); // 상세 정보 리셋
@@ -933,7 +987,7 @@ export default function CharacterList() {
       {editingCharacter && tab === 'created' && (
         <CharacterProfile
           character={editingCharacter}
-          liked={likedIds.includes(editingCharacter.id)}
+          isLiked={likedIds.includes(editingCharacter.id)}
           origin="my"
           isMyCharacter={editingCharacter.clerkId === userId}
           onClose={() => {
@@ -954,7 +1008,7 @@ export default function CharacterList() {
       {editingCharacter && tab === 'liked' && (
         <CharacterProfile
           character={editingCharacter}
-          liked={likedIds.includes(editingCharacter.id)}
+          isLiked={likedIds.includes(editingCharacter.id)}
           origin="my"
           isMyCharacter={editingCharacter.clerkId === userId}
           onClose={() => {
