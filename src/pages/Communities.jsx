@@ -1,5 +1,5 @@
 // src/pages/Communities.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCommunityCharacters, toggleLike, incrementViewCount } from '../data/characters';
 import { useChatRooms } from '../contexts/ChatRoomsContext';
@@ -27,7 +27,7 @@ export default function Communities() {
   const [editingCharacter, setEditingCharacter] = useState(null);
   const [sortBy, setSortBy] = useState('likes'); // 정렬 기준 추가
 
-  const { characters, loading, error, setCharacters } = useCommunityCharacters(sortBy);
+  const { characters, loading, loadingMore, error, hasMore, loadMore, setCharacters } = useCommunityCharacters(sortBy);
   const { chatRooms, loading: chatRoomsLoading, error: chatRoomsError, refetch: refetchMyChatCharacters, refetchPublicRooms } = useChatRooms();
 
   // 캐릭터 목록 새로고침 함수
@@ -118,8 +118,6 @@ export default function Communities() {
   const handleSortChange = (newSort) => {
     setSortBy(newSort === '인기순' ? 'likes' : 'usesCount');
   };
-
-
 
   const handleLikeToggle = async (id, newLiked) => {
     console.log('🔍 Communities handleLikeToggle - 시작:', { id, newLiked });
@@ -309,13 +307,13 @@ export default function Communities() {
 
 
 
-  // 채팅방 클릭 핸들러 추가
+  // 채팅방 클릭 핸들러 추가 - 다른 사람의 채팅방은 새로운 채팅방 생성
   const handleChatRoomClick = async (room) => {
     try {
       const token = await getToken();
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
       
-      // room-info API 호출하여 채팅방 정보와 대화 내용 가져오기
+      // room-info API 호출하여 채팅방의 AI 멤버 정보 가져오기
       const infoResponse = await fetch(`${API_BASE_URL}/chat/room-info?roomId=${room.id}`, {
         method: 'GET',
         headers: {
@@ -331,17 +329,70 @@ export default function Communities() {
       
       const infoResult = await infoResponse.json();
       
-      // 채팅방으로 이동하면서 정보 전달
-      navigate(`/chatMate/${room.id}`, {
+      // AI 멤버들의 ID 추출
+      const aiMemberIds = infoResult.data?.participants?.map(p => p.id) || [];
+      
+      if (aiMemberIds.length === 0) {
+        throw new Error('채팅방에 AI 멤버가 없습니다.');
+      }
+      
+      console.log('🔍 새로운 채팅방 생성 - AI 멤버들:', aiMemberIds);
+      
+      // 로딩 상태 표시 (선택사항)
+      // 여기서는 간단한 alert로 처리
+      
+      // 새로운 채팅방 생성
+      const createResponse = await fetch(`${API_BASE_URL}/chat/rooms`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          participantIds: aiMemberIds,
+          isPublic: true,
+          description: `"${room.name}" 방의 AI들과의 새로운 대화`
+        })
+      });
+      
+      if (!createResponse.ok) {
+        const errorText = await createResponse.text();
+        throw new Error(`새 채팅방 생성 실패: ${createResponse.status}`);
+      }
+      
+      const createResult = await createResponse.json();
+      console.log('🔍 채팅방 생성 응답:', createResult);
+      
+      const newRoomId = createResult.data?.roomId;
+      
+      if (!newRoomId) {
+        throw new Error('새 채팅방 ID를 받지 못했습니다.');
+      }
+      
+      console.log('✅ 새로운 채팅방 생성 완료:', newRoomId);
+      
+             // 성공 메시지 표시
+       const roomDisplayName = room.name || `${infoResult.data?.participants?.length || 0}명의 AI와 대화`;
+       alert(`"${roomDisplayName}" 방의 AI들과 새로운 채팅방을 만들었습니다!`);
+      
+      // 채팅방 목록 새로고침
+      if (refetchPublicRooms) {
+        refetchPublicRooms();
+      }
+      
+      // 새 채팅방으로 이동
+      navigate(`/chatMate/${newRoomId}`, {
         state: {
           character: infoResult.data?.character || infoResult.data?.persona || room,
-          chatHistory: infoResult.data?.chatHistory || [],
-          roomId: room.id
+          chatHistory: [], // 새로운 채팅방이므로 빈 배열
+          roomId: newRoomId,
+          isNewRoom: true
         }
       });
+      
     } catch (error) {
-      console.error('채팅방 입장 실패:', error);
-      alert('채팅방 입장에 실패했습니다: ' + error.message);
+      console.error('새 채팅방 생성 실패:', error);
+      alert('새 채팅방 생성에 실패했습니다: ' + error.message);
     }
   };
 

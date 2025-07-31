@@ -61,27 +61,31 @@ const handleApiError = (error, defaultMessage) => {
   return error.message || defaultMessage;
 };
 
-// 커뮤니티 캐릭터 목록을 가져오는 커스텀 훅
+// 커뮤니티 캐릭터 목록을 가져오는 커스텀 훅 (무한 스크롤 지원)
 export function useCommunityCharacters(sortBy = 'likes') {
   const [characters, setCharacters] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
 
-  const fetchCharacters = useCallback(async () => {
-    try {
-      setLoading(true);
-      
-      const response = await axios.get(`${API_BASE_URL}/communities/characters?sortBy=${sortBy}&page=1&limit=100`);
-      console.log('🔍 useCommunityCharacters - API 응답:', response.data);
-      const newCharacters = response.data.data?.data || [];
-      console.log('🔍 useCommunityCharacters - 파싱된 데이터:', { newCharacters: newCharacters.length });
-      
-      setCharacters(newCharacters);
+const fetchCharacters = useCallback(async () => {
+  try {
+    setLoading(true);
+    
+    const response = await axios.get(`${API_BASE_URL}/communities/characters?sortBy=${sortBy}&page=1&limit=100`);
+    console.log('🔍 useCommunityCharacters - API 응답:', response.data);
+    const newCharacters = response.data.data?.data || [];
+    console.log('🔍 useCommunityCharacters - 파싱된 데이터:', { newCharacters: newCharacters.length });
+    
+    setCharacters(newCharacters);
     } catch (err) {
       const errorMessage = handleApiError(err, '캐릭터 목록을 불러오는데 실패했습니다.');
       setError(errorMessage);
       if (err.code === 'ERR_NETWORK' || err.code === 'ERR_CONNECTION_REFUSED' || err.code === 'ERR_EMPTY_RESPONSE') {
-        setCharacters([]);
+                setCharacters([]);
       }
     } finally {
       setLoading(false);
@@ -243,16 +247,16 @@ export function useUpdateCharacter() {
       };
 
       console.log('🔍 useUpdateCharacter - API call:', {
-        url: `${API_BASE_URL}/my/characters/${characterId}`,
+        url: `${API_BASE_URL}/characters/${characterId}`,
         requestData,
         characterId
       });
 
       const data = await authenticatedApiCall(
-        `${API_BASE_URL}/my/characters/${characterId}`,
+        `${API_BASE_URL}/characters/${characterId}`,
         getToken,
         {
-          method: 'PATCH',
+          method: 'PUT',
           body: JSON.stringify(requestData),
         }
       );
