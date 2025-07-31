@@ -65,28 +65,26 @@ const handleApiError = (error, defaultMessage) => {
 export function useCommunityCharacters(sortBy = 'likes') {
   const [characters, setCharacters] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
 
-const fetchCharacters = useCallback(async () => {
-  try {
-    setLoading(true);
-    
-          const response = await axios.get(`${API_BASE_URL}/communities/characters?sortBy=${sortBy}&page=1&limit=100`);
-      console.log('🔍 useCommunityCharacters - API 응답:', response.data);
-      const newCharacters = response.data.data || [];
-      console.log('🔍 useCommunityCharacters - 파싱된 데이터:', { newCharacters: newCharacters.length });
-    
-    setCharacters(newCharacters);
+  const fetchCharacters = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      const response = await axios.get(`${API_BASE_URL}/communities/characters?sortBy=${sortBy}&page=1&limit=100`);
+      
+      // 더 안전한 데이터 파싱 - response.data.data.data가 personas 배열
+      let newCharacters = [];
+      if (response.data && response.data.data && response.data.data.data) {
+        newCharacters = Array.isArray(response.data.data.data) ? response.data.data.data : [];
+      }
+      
+      setCharacters(newCharacters);
     } catch (err) {
+      console.error('❌ useCommunityCharacters - API 오류:', err);
       const errorMessage = handleApiError(err, '캐릭터 목록을 불러오는데 실패했습니다.');
       setError(errorMessage);
-      if (err.code === 'ERR_NETWORK' || err.code === 'ERR_CONNECTION_REFUSED' || err.code === 'ERR_EMPTY_RESPONSE') {
-                setCharacters([]);
-      }
+      setCharacters([]); // 에러 시에도 빈 배열로 설정
     } finally {
       setLoading(false);
     }

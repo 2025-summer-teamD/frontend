@@ -1,5 +1,5 @@
 // src/pages/Communities.jsx
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCommunityCharacters, toggleLike, incrementViewCount } from '../data/characters';
 import { useChatRooms } from '../contexts/ChatRoomsContext';
@@ -27,7 +27,7 @@ export default function Communities() {
   const [editingCharacter, setEditingCharacter] = useState(null);
   const [sortBy, setSortBy] = useState('likes'); // 정렬 기준 추가
 
-  const { characters, loading, loadingMore, error, hasMore, loadMore, setCharacters } = useCommunityCharacters(sortBy);
+  const { characters, loading, error, setCharacters } = useCommunityCharacters(sortBy);
   const { chatRooms, loading: chatRoomsLoading, error: chatRoomsError, refetch: refetchMyChatCharacters, refetchPublicRooms } = useChatRooms();
 
   // 캐릭터 목록 새로고침 함수
@@ -280,14 +280,14 @@ export default function Communities() {
   };
 
   // 검색 필터링 (API 데이터 구조에 맞게 수정)
-  const filteredCharacters = characters.filter(char => {
+  const filteredCharacters = (characters || []).filter(char => {
     const keyword = searchQuery.toLowerCase();
     // 공개 캐릭터만 표시
     return char.isPublic && (
       char.name.toLowerCase().includes(keyword) ||
       char.introduction.toLowerCase().includes(keyword)
     );
-  });  
+  });
 
   // 정렬 (API 데이터 구조에 맞게 수정)
   const sortedCharacters = [...filteredCharacters].sort((a, b) => {
@@ -508,12 +508,12 @@ export default function Communities() {
           {filteredChatRooms.length === 0 ? (
             <EmptyState />
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
               {filteredChatRooms.map(room => (
                 <div
                   key={room.id}
-                  className="relative bg-black/80 border-4 border-cyan-400 rounded-2xl overflow-hidden shadow-[0_0_24px_#0ff,0_0_48px_#0ff] hover:shadow-[0_0_32px_#0ff,0_0_64px_#0ff] transition-all duration-300 cursor-pointer pixel-border group"
-                  style={{ fontFamily: 'Press Start 2P, monospace', minHeight: 280 }}
+                  className="relative bg-black/20 border border-cyan-400/30 rounded-lg overflow-hidden hover:border-cyan-300/50 transition-all duration-300 cursor-pointer group transform hover:scale-105"
+                  style={{ fontFamily: 'Press Start 2P, monospace', minHeight: 200 }}
                   onClick={() => handleChatRoomClick(room)}
                 >
                   {/* 참여자 사진들로 채워진 배경 */}
@@ -534,50 +534,65 @@ export default function Communities() {
                             className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-300"
                             style={{imageRendering:'pixelated'}}
                           />
-                          {/* 그라데이션 오버레이 */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+                          {/* 그라데이션 오버레이 - 더 투명하게 */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent"></div>
                         </div>
                       );
                     })}
                   </div>
 
-                  {/* 채팅방 정보 오버레이 */}
-                  <div className="relative z-10 p-6 h-full flex flex-col justify-between">
+                  {/* 기본 정보 (항상 표시) */}
+                  <div className="relative z-10 p-3 h-full flex flex-col justify-between">
                     {/* 채팅방 이름 */}
-                    <div className="text-pink-300 text-xl sm:text-2xl font-extrabold mb-2 text-center drop-shadow-[0_0_8px_#f0f] pixel-font" style={{letterSpacing:'0.04em', textShadow:'0 0 8px #0ff, 0 0 16px #f0f'}}>
+                    <div className="text-pink-300 text-xs font-bold mb-1 text-center line-clamp-2" style={{letterSpacing:'0.01em', textShadow:'0 0 2px #f0f'}}>
                       {room.name || `${room.participants?.length || 0}명의 AI와 대화`}
                     </div>
                     
-                    {/* 채팅방 설명 */}
-                    {room.description && (
-                      <div className="text-cyan-300 text-sm text-center mb-3 font-mono line-clamp-2 px-2" style={{textShadow:'0 0 4px #0ff'}}>
-                        {room.description}
-                      </div>
-                    )}
-                    
-                    {/* 참여자 이름들 */}
-                    <div className="flex flex-wrap justify-center items-center gap-2 mb-4">
-                      {room.participants?.map((participant, idx) => (
-                        <div key={participant.personaId || idx} className="text-cyan-200 text-sm sm:text-base font-bold text-center pixel-font bg-black/50 px-2 py-1 rounded border border-cyan-400/50" style={{textShadow:'0 0 4px #0ff'}}>
-                          {participant.persona?.name || 'AI'}
-                        </div>
-                      ))}
-                    </div>
-
                     {/* 참여자 수 표시 */}
                     <div className="text-center">
-                      <div className="text-cyan-300 text-lg font-bold pixel-font" style={{textShadow:'0 0 4px #0ff'}}>
-                        {room.participants?.length || 0}명 참여
+                      <div className="text-cyan-300 text-xs font-bold" style={{textShadow:'0 0 1px #0ff'}}>
+                        {room.participants?.length || 0}명
                       </div>
                     </div>
                   </div>
 
-                                     {/* 공개/비공개 표시 */}
-                   <div className="absolute top-4 right-4 flex items-center gap-2 z-20">
-                     <div className="px-3 py-1 rounded-full text-xs font-bold pixel-font border-2 border-cyan-400 bg-black/70 text-cyan-200 shadow-[0_0_4px_#0ff]">
-                       {room.isPublic ? '공개' : '비공개'}
-                     </div>
-                   </div>
+                  {/* 공개/비공개 표시 */}
+                  <div className="absolute top-1 right-1 z-20">
+                    <div className="px-1.5 py-0.5 rounded-full text-xs font-bold border border-cyan-400/30 bg-black/90 text-cyan-200">
+                      {room.isPublic ? '공개' : '비공개'}
+                    </div>
+                  </div>
+
+                  {/* 호버 시 참여자 정보 */}
+                  <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 flex items-center justify-center p-3">
+                    <div className="text-center w-full">
+                      {/* 참여자 이름들 */}
+                      <div className="flex flex-wrap justify-center items-center gap-1 mb-2">
+                        {room.participants?.slice(0, 4).map((participant, idx) => (
+                          <div key={participant.personaId || idx} className="text-cyan-200 text-xs font-bold text-center bg-black/80 px-1 py-0.5 rounded border border-cyan-400/20">
+                            {participant.persona?.name || 'AI'}
+                          </div>
+                        ))}
+                        {room.participants?.length > 4 && (
+                          <div className="text-cyan-200 text-xs font-bold text-center bg-black/80 px-1 py-0.5 rounded border border-cyan-400/20">
+                            +{room.participants.length - 4}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* 설명이 있으면 표시 */}
+                      {room.description && (
+                        <div className="text-cyan-300 text-xs mb-2 line-clamp-2">
+                          {room.description}
+                        </div>
+                      )}
+                      
+                      {/* 클릭 안내 */}
+                      <div className="text-cyan-200 text-xs">
+                        클릭하여 참여
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
