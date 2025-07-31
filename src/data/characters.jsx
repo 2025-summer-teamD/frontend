@@ -243,7 +243,8 @@ export function useUpdateCharacter() {
         introduction: updateData.introduction || updateData.description,
         personality: updateData.personality,
         tone: updateData.tone,
-        tag: updateData.tag || updateData.tags
+        tag: updateData.tag || updateData.tags,
+        isPublic: updateData.isPublic
       };
 
              console.log('🔍 useUpdateCharacter - API call:', {
