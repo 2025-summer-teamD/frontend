@@ -99,8 +99,13 @@ const ChatMate = () => {
     addAiResponseToRoom,
     getAiLoading,
     setAiLoading,
+    getAiLoadingForSpecificAi,
+    setAiLoadingForSpecificAi,
+    getAiLoadingStatesForRoom,
+    setAiLoadingStatesForRoom,
     updateStreamingAiMessage,
-    removeLoadingMessage
+    removeLoadingMessage,
+    addLoadingMessage
   } = useChatMessages();
 
   // 상태 관리
@@ -108,7 +113,9 @@ const ChatMate = () => {
   const { characters: myAIs, loading: aiLoading, fetchMyCharacters } = useMyCharacters('created');
   const [roomInfoParticipants, setRoomInfoParticipants] = useState([]);
   const [isOneOnOneChat, setIsOneOnOneChat] = useState(false);
+  // SSE 연결 상태 관리
   const [sseConnectionStatus, setSseConnectionStatus] = useState('disconnected');
+  const [isSseConnected, setIsSseConnected] = useState(false); // SSE 연결 중복 방지 플래그
   const [character, setCharacter] = useState(state?.character || null);
   const [loading, setLoading] = useState(!state?.character && !!roomId);
   const [error, setError] = useState(null);
@@ -116,6 +123,8 @@ const ChatMate = () => {
   const [showAttachModal, setShowAttachModal] = useState(false);
   const [showGameModal, setShowGameModal] = useState(false);
   const [selectedCharacter, setSelectedCharacter] = useState(null);
+  // 🆕 이미지 첨부 상태 추가
+  const [attachedImage, setAttachedImage] = useState(null);
 
   // refs
   const scrollContainerRef = useRef(null);
@@ -265,6 +274,14 @@ const ChatMate = () => {
       }
     });
 
+    // 🆕 AI 응답 완료 신호 처리
+    friendshipSocket.on('ai_response_complete', (data) => {
+      console.log('🔔 1대1 채팅 ai_response_complete 이벤트 수신:', data);
+      const aiId = data.aiId ? String(data.aiId) : undefined;
+      setAiLoadingForSpecificAi(roomId, aiId, false);
+      removeLoadingMessage(roomId, aiId);
+    });
+
     return () => {
       console.log('🔌 1대1 채팅 WebSocket 연결 해제:', { roomId, userId: user.id });
       friendshipSocket.emit('leaveRoom', { roomId, userId: user.id });
@@ -293,11 +310,31 @@ const ChatMate = () => {
 
   // 올바른 아키텍처: 메시지 전송과 AI 응답 수신 분리
   const sendMessage = async () => {
-    if (!newMessage.trim() || aiResponseLoading) return;
-    const messageText = newMessage.trim();
-    setNewMessage('');
+    if (!newMessage.trim() && !attachedImage) return;
+    
+    // 🆕 SSE 연결 상태 체크 제거 - 메시지 전송을 차단하지 않도록 수정
+    // if (isSseConnected) {
+    //   console.log('⚠️ [sendMessage] SSE 연결이 이미 활성화되어 있습니다. 중복 연결 방지.');
+    //   return;
+    // }
 
-    console.log('🔍 [sendMessage] 메시지 전송 시작:', { roomId, messageText, isOneOnOneChat });
+    const messageText = newMessage.trim();
+    const currentAttachedImage = attachedImage; // 현재 첨부된 이미지 저장
+    
+    // 입력창 초기화
+    setNewMessage('');
+    setAttachedImage(null);
+    setAiLoading(roomId, true);
+
+    // 이미지 URL 추출 (이미지 메시지인 경우)
+    let imageUrl = null;
+    if (currentAttachedImage) {
+      imageUrl = currentAttachedImage;
+    } else if (messageText.startsWith('[이미지] ')) {
+      imageUrl = messageText.replace('[이미지] ', '');
+    }
+
+    console.log('🔍 [sendMessage] 메시지 전송 시작:', { roomId, messageText, imageUrl, isOneOnOneChat });
 
     if (isOneOnOneChat) {
       // 1대1 채팅: SSE 사용
@@ -305,10 +342,11 @@ const ChatMate = () => {
       try {
         const token = await getToken();
 
-        // 사용자 메시지를 먼저 추가
+        // 사용자 메시지를 먼저 추가 (이미지가 있으면 이미지 메시지로, 없으면 텍스트 메시지로)
         const userMessage = {
           id: uuidv4(),
-          text: messageText,
+          text: messageText || '', // 텍스트가 없어도 빈 문자열로 설정
+          imageUrl: currentAttachedImage || null, // 첨부된 이미지가 있으면 추가
           sender: 'me',
           time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
           characterId: character?.id,
@@ -316,16 +354,17 @@ const ChatMate = () => {
         addMessageToRoom(roomId, userMessage);
 
         // AI 로딩 상태 시작
-        setAiLoading(roomId, true);
+        const aiId = character?.id ? String(character.id) : undefined;
+        setAiLoadingForSpecificAi(roomId, aiId, true);
         setSseConnectionStatus('connecting');
 
-        // AI 로딩 메시지 추가 (TypingIndicator용)
+        // AI 로딩 메시지 추가 (TypingIndicator용) - 기존 메시지와 분리
         const loadingMessageId = uuidv4();
         const loadingMessage = {
           id: loadingMessageId,
           text: '...',
           sender: 'ai',
-          aiId: character?.id ? String(character.id) : undefined,
+          aiId: aiId,
           aiName: character?.name || 'Unknown AI',
           imageUrl: null, // 로딩 메시지는 imageUrl을 가지지 않음
           time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
@@ -339,10 +378,11 @@ const ChatMate = () => {
 
         const requestUrl = `${API_BASE_URL}/chat/rooms/${roomId}/sse`;
         const requestBody = {
-          message: messageText,
+          message: messageText || '', // 빈 문자열이라도 전송
           sender: user.id,
           userName: userName,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          imageUrl: imageUrl // 이미지 URL 포함
         };
 
         console.log('🔍 [1대1채팅] 요청 URL:', requestUrl);
@@ -368,6 +408,7 @@ const ChatMate = () => {
         }
 
         setSseConnectionStatus('connected');
+        setIsSseConnected(true); // SSE 연결 활성화
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
@@ -386,8 +427,13 @@ const ChatMate = () => {
                 const data = line.slice(6);
                 if (data === '[DONE]') {
                   console.log('🔍 [1대1채팅] [DONE] 신호 수신');
-                  setAiLoading(roomId, false);
+                  const aiId = character?.id ? String(character.id) : undefined;
+                  setAiLoadingForSpecificAi(roomId, aiId, false);
                   setSseConnectionStatus('disconnected');
+                  setIsSseConnected(false); // SSE 연결 비활성화
+                  
+                  // 🆕 추가: 모든 AI 로딩 상태 강제 해제
+                  setAiLoading(roomId, false);
                   return;
                 } else {
                   try {
@@ -413,19 +459,42 @@ const ChatMate = () => {
                         characterId: parsedData.aiId || character?.id,
                       });
 
-                      // 로딩 메시지 제거
+                      // 로딩 메시지 제거 및 AI 타이핑 상태 해제
+                      const finalAiId = parsedData.aiId || character?.id;
                       console.log('🔍 [1대1채팅] removeLoadingMessage 호출:', {
                         roomId,
                         aiId: parsedData.aiId,
                         characterId: character?.id,
-                        finalAiId: parsedData.aiId || character?.id
+                        finalAiId: finalAiId
                       });
-                      removeLoadingMessage(roomId, parsedData.aiId || character?.id);
+                      removeLoadingMessage(roomId, finalAiId);
+                      setAiLoadingForSpecificAi(roomId, finalAiId ? String(finalAiId) : undefined, false);
+                    } else if (parsedData.type === 'ai_loading') {
+                      // 🆕 AI 로딩 상태 수신
+                      console.log('🔍 [1대1채팅] AI 로딩 상태 수신:', parsedData);
+                      const aiId = parsedData.aiId ? String(parsedData.aiId) : undefined;
+                      setAiLoadingForSpecificAi(roomId, aiId, true);
+                      // 🆕 로딩 메시지 추가
+                      addLoadingMessage(roomId, aiId, parsedData.aiName);
+                    } else if (parsedData.type === 'ai_response_complete') {
+                      // 🆕 AI 응답 완료 신호 수신
+                      console.log('🔍 [1대1채팅] AI 응답 완료 신호 수신:', parsedData);
+                      const aiId = parsedData.aiId ? String(parsedData.aiId) : undefined;
+                      setAiLoadingForSpecificAi(roomId, aiId, false);
+                      removeLoadingMessage(roomId, aiId);
+                      
+                      // 🆕 추가: 모든 AI 로딩 상태 강제 해제
+                      setAiLoading(roomId, false);
                     } else if (parsedData.type === 'complete') {
                       console.log('🔍 [1대1채팅] 완료 신호 수신');
-                      console.log('🔍 [1대1채팅] AI 로딩 상태 해제:', { roomId, currentLoadingState: getAiLoading(roomId) });
-                      setAiLoading(roomId, false);
+                      const aiId = character?.id ? String(character.id) : undefined;
+                      console.log('🔍 [1대1채팅] AI 로딩 상태 해제:', { roomId, aiId, currentLoadingState: getAiLoading(roomId) });
+                      setAiLoadingForSpecificAi(roomId, aiId, false);
                       setSseConnectionStatus('disconnected');
+                      setIsSseConnected(false); // SSE 연결 비활성화
+                      
+                      // 🆕 추가: 모든 AI 로딩 상태 강제 해제
+                      setAiLoading(roomId, false);
                       return;
                     }
                   } catch (e) {
@@ -437,15 +506,25 @@ const ChatMate = () => {
           }
         } catch (error) {
           console.error('🚨 [1대1채팅] SSE 스트리밍 오류:', error);
-          setAiLoading(roomId, false);
+          const aiId = character?.id ? String(character.id) : undefined;
+          setAiLoadingForSpecificAi(roomId, aiId, false);
           setSseConnectionStatus('error');
+          setIsSseConnected(false); // SSE 연결 비활성화
+          
+          // 🆕 추가: 모든 AI 로딩 상태 강제 해제
+          setAiLoading(roomId, false);
         } finally {
           reader.releaseLock();
         }
       } catch (error) {
         console.error('🚨 [1대1채팅] 메시지 전송 실패:', error);
-        setAiLoading(roomId, false);
+        const aiId = character?.id ? String(character.id) : undefined;
+        setAiLoadingForSpecificAi(roomId, aiId, false);
         setSseConnectionStatus('error');
+        setIsSseConnected(false); // SSE 연결 비활성화
+        
+        // 🆕 추가: 모든 AI 로딩 상태 강제 해제
+        setAiLoading(roomId, false);
       }
     } else {
       // 그룹 채팅: SSE 사용
@@ -453,55 +532,41 @@ const ChatMate = () => {
       try {
         const token = await getToken();
 
-        // 사용자 메시지를 먼저 추가
+        // 사용자 메시지를 먼저 추가 (이미지가 있으면 이미지 메시지로, 없으면 텍스트 메시지로)
         const userMessage = {
           id: uuidv4(),
-          text: messageText,
+          text: messageText || '', // 텍스트가 없어도 빈 문자열로 설정
+          imageUrl: currentAttachedImage || null, // 첨부된 이미지가 있으면 추가
           sender: 'me',
           time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
           characterId: character?.id,
         };
         addMessageToRoom(roomId, userMessage);
 
-        // AI 로딩 상태 시작
-        setAiLoading(roomId, true);
-        setSseConnectionStatus('connecting');
-
-        // 각 AI별 로딩 메시지 추가
-        const loadingMessageIds = [];
+        // 각 AI별 로딩 상태 시작
+        const aiLoadingStates = {};
         if (roomInfoParticipants && roomInfoParticipants.length > 0) {
-          roomInfoParticipants.forEach((participant, index) => {
-            const loadingMessageId = uuidv4();
-            loadingMessageIds.push(loadingMessageId);
-            console.log('🔍 [그룹채팅] 로딩 메시지 생성:', {
-              participantId: participant.id,
-              participantName: participant.name,
-              aiId: participant.id ? String(participant.id) : undefined
-            });
-            const loadingMessage = {
-              id: loadingMessageId,
-              text: '...',
-              sender: 'ai',
-              aiId: participant.id ? String(participant.id) : undefined,
-              aiName: participant.name || 'Unknown AI',
-              imageUrl: null, // 로딩 메시지는 imageUrl을 가지지 않음
-              time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
-              characterId: participant.id,
-              isStreaming: true,
-            };
-            addMessageToRoom(roomId, loadingMessage);
+          roomInfoParticipants.forEach((participant) => {
+            const aiId = participant.id ? String(participant.id) : undefined;
+            aiLoadingStates[aiId] = true;
+            setAiLoadingForSpecificAi(roomId, aiId, true);
           });
         }
+        setAiLoadingStatesForRoom(roomId, aiLoadingStates);
+        setSseConnectionStatus('connecting');
+
+        // 🆕 백엔드에서 ai_loading 신호를 보내므로 프론트엔드에서 미리 로딩 메시지를 추가하지 않음
 
         // SSE 스트리밍 요청
         const userName = user?.username || user?.firstName || user?.fullName || user?.id;
 
         const requestUrl = `${API_BASE_URL}/chat/rooms/${roomId}/sse`;
         const requestBody = {
-          message: messageText,
+          message: messageText || '', // 빈 문자열이라도 전송
           sender: user.id,
           userName: userName,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          imageUrl: imageUrl // 이미지 URL 포함
         };
 
         console.log('🔍 [그룹채팅] 요청 URL:', requestUrl);
@@ -527,6 +592,7 @@ const ChatMate = () => {
         }
 
         setSseConnectionStatus('connected');
+        setIsSseConnected(true); // SSE 연결 활성화
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
@@ -548,8 +614,27 @@ const ChatMate = () => {
 
                 if (data === '[DONE]') {
                   console.log('🔍 [그룹채팅] [DONE] 신호 수신 - 스트리밍 종료');
-                  setAiLoading(roomId, false);
+                  // 모든 AI의 타이핑 상태 해제
+                  if (roomInfoParticipants && roomInfoParticipants.length > 0) {
+                    roomInfoParticipants.forEach((participant) => {
+                      const aiId = participant.id ? String(participant.id) : undefined;
+                      setAiLoadingForSpecificAi(roomId, aiId, false);
+                    });
+                  }
                   setSseConnectionStatus('disconnected');
+                  
+                  // SSE 연결 완전 종료
+                  try {
+                    reader.releaseLock();
+                  } catch (error) {
+                    console.log('🔍 [그룹채팅] SSE 연결 해제 중 오류:', error);
+                  }
+                  
+                  console.log('✅ [그룹채팅] SSE 연결 완전 종료됨');
+                  setIsSseConnected(false); // SSE 연결 비활성화
+                  
+                  // 🆕 추가: 모든 AI 로딩 상태 강제 해제
+                  setAiLoading(roomId, false);
                   return;
                 } else {
                   try {
@@ -582,6 +667,10 @@ const ChatMate = () => {
                       });
                       removeLoadingMessage(roomId, parsedData.aiId);
 
+                      // 해당 AI의 타이핑 상태만 해제
+                      const aiId = parsedData.aiId ? String(parsedData.aiId) : undefined;
+                      setAiLoadingForSpecificAi(roomId, aiId, false);
+
                       const remainingLoadingMessages = getMessages(roomId).filter(msg =>
                         msg.isStreaming && msg.sender === 'ai'
                       );
@@ -595,18 +684,57 @@ const ChatMate = () => {
                           isStreaming: msg.isStreaming
                         }))
                       });
-                      if (remainingLoadingMessages.length === 0) {
+                      
+                      // 모든 AI의 응답이 완료되었는지 확인
+                      const currentAiLoadingStates = getAiLoadingStatesForRoom(roomId);
+                      const hasAnyAiLoading = Object.values(currentAiLoadingStates).some(loading => loading);
+                      
+                      if (!hasAnyAiLoading) {
                         console.log('🔍 [그룹채팅] 모든 AI 응답 완료 - 로딩 상태 해제');
-                        setAiLoading(roomId, false);
                         setSseConnectionStatus('disconnected');
                       }
+                    } else if (parsedData.type === 'ai_loading') {
+                      // 🆕 AI 로딩 상태 수신
+                      console.log('🔍 [그룹채팅] AI 로딩 상태 수신:', parsedData);
+                      const aiId = parsedData.aiId ? String(parsedData.aiId) : undefined;
+                      setAiLoadingForSpecificAi(roomId, aiId, true);
+                      // 🆕 로딩 메시지 추가
+                      addLoadingMessage(roomId, aiId, parsedData.aiName);
+                    } else if (parsedData.type === 'ai_response_complete') {
+                      // 🆕 AI 응답 완료 신호 수신
+                      console.log('🔍 [그룹채팅] AI 응답 완료 신호 수신:', parsedData);
+                      const aiId = parsedData.aiId ? String(parsedData.aiId) : undefined;
+                      setAiLoadingForSpecificAi(roomId, aiId, false);
+                      removeLoadingMessage(roomId, aiId);
+                      
+                      // 🆕 추가: 모든 AI 로딩 상태 강제 해제
+                      setAiLoading(roomId, false);
                     } else if (parsedData.type === 'exp_updated') {
                       console.log('🔍 [그룹채팅] 친밀도 업데이트:', parsedData);
                     } else if (parsedData.type === 'complete') {
                       console.log('🔍 [그룹채팅] 완료 신호 수신');
                       console.log('🔍 [그룹채팅] AI 로딩 상태 해제:', { roomId, currentLoadingState: getAiLoading(roomId) });
-                      setAiLoading(roomId, false);
+                      // 모든 AI의 타이핑 상태 해제
+                      if (roomInfoParticipants && roomInfoParticipants.length > 0) {
+                        roomInfoParticipants.forEach((participant) => {
+                          const aiId = participant.id ? String(participant.id) : undefined;
+                          setAiLoadingForSpecificAi(roomId, aiId, false);
+                        });
+                      }
                       setSseConnectionStatus('disconnected');
+                      
+                      // SSE 연결 완전 종료
+                      try {
+                        reader.releaseLock();
+                      } catch (error) {
+                        console.log('🔍 [그룹채팅] SSE 연결 해제 중 오류:', error);
+                      }
+                      
+                      console.log('✅ [그룹채팅] SSE 연결 완전 종료됨');
+                      setIsSseConnected(false); // SSE 연결 비활성화
+                      
+                      // 🆕 추가: 모든 AI 로딩 상태 강제 해제
+                      setAiLoading(roomId, false);
                       return;
                     } else if (parsedData.type === 'user_message') {
                       console.log('🔍 [그룹채팅] 사용자 메시지 echo 수신 (무시):', parsedData);
@@ -625,13 +753,26 @@ const ChatMate = () => {
           }
         } catch (error) {
           console.error('🚨 [그룹채팅] SSE 스트리밍 오류:', error);
-          setAiLoading(roomId, false);
+          // 모든 AI의 타이핑 상태 해제
+          if (roomInfoParticipants && roomInfoParticipants.length > 0) {
+            roomInfoParticipants.forEach((participant) => {
+              const aiId = participant.id ? String(participant.id) : undefined;
+              setAiLoadingForSpecificAi(roomId, aiId, false);
+            });
+          }
           setSseConnectionStatus('error');
+          setIsSseConnected(false); // SSE 연결 비활성화
+          
+          // 🆕 추가: 모든 AI 로딩 상태 강제 해제
+          setAiLoading(roomId, false);
         } finally {
           reader.releaseLock();
         }
       } catch (error) {
         console.error('🚨 [sendMessage] 실패:', error);
+        
+        // 🆕 추가: 모든 AI 로딩 상태 강제 해제
+        setAiLoading(roomId, false);
 
         addMessageToRoom(roomId, {
           id: uuidv4(),
@@ -641,8 +782,15 @@ const ChatMate = () => {
           isError: true
         });
 
-        setAiLoading(roomId, false);
+        // 모든 AI의 타이핑 상태 해제
+        if (roomInfoParticipants && roomInfoParticipants.length > 0) {
+          roomInfoParticipants.forEach((participant) => {
+            const aiId = participant.id ? String(participant.id) : undefined;
+            setAiLoadingForSpecificAi(roomId, aiId, false);
+          });
+        }
         setSseConnectionStatus('error');
+        setIsSseConnected(false); // SSE 연결 비활성화
       }
     }
   };
@@ -651,126 +799,34 @@ const ChatMate = () => {
     if (e.key === 'Enter' && !aiResponseLoading) sendMessage();
   };
 
-  // 이미지 업로드 함수
+  // 🆕 이미지 업로드 함수 개선
   const handleImageUpload = async (file) => {
     if (!file) return;
     const formData = new FormData();
     formData.append('image', file);
 
-    const res = await fetch(`${API_BASE_URL}/chat/upload-image`, {
-      method: 'POST',
-      body: formData,
-    });
-    const data = await res.json();
-    if (data.success && data.imageUrl) {
-      const imageMessage = `[이미지] ${data.imageUrl}`;
-
-      addMessageToRoom(roomId, {
-        id: uuidv4(),
-        text: imageMessage,
-        imageUrl: data.imageUrl,
-        sender: 'me',
-        time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
-        characterId: character?.id,
+    try {
+      const res = await fetch(`${API_BASE_URL}/chat/upload-image`, {
+        method: 'POST',
+        body: formData,
       });
-
-      if (isOneOnOneChat) {
-        try {
-          const token = await getToken();
-          setAiLoading(roomId, true);
-          setSseConnectionStatus('connecting');
-
-          const loadingMessageId = uuidv4();
-          const loadingMessage = {
-            id: loadingMessageId,
-            text: '...',
-            sender: 'ai',
-            aiId: character?.id ? String(character.id) : undefined,
-            aiName: character?.name || 'Unknown AI',
-            imageUrl: character?.imageUrl || null,
-            time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
-            characterId: character?.id,
-            isStreaming: true,
-          };
-          addMessageToRoom(roomId, loadingMessage);
-
-          console.log('🔍 [handleImageUpload] 통합 SSE API 호출...');
-          setAiLoading(roomId, true);
-          setSseConnectionStatus('connecting');
-
-          const userName = user?.username || user?.firstName || user?.fullName || user?.id;
-          const sseResponse = await fetch(`${API_BASE_URL}/chat/rooms/${roomId}/send`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              message: imageMessage,
-              sender: user.id,
-              userName: userName,
-              timestamp: new Date().toISOString()
-            })
-          });
-
-          if (!sseResponse.ok) {
-            throw new Error(`이미지 통합 SSE API 실패: ${sseResponse.status}`);
-          }
-
-          setSseConnectionStatus('connected');
-          console.log('✅ [handleImageUpload] 통합 SSE API 연결 성공');
-
-          const reader = sseResponse.body.getReader();
-          const decoder = new TextDecoder();
-          let aiResponse = '';
-
-          try {
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-
-              const chunk = decoder.decode(value);
-              const lines = chunk.split('\n');
-
-              for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                  const data = line.slice(6);
-                  console.log('🔍 [이미지업로드] 추출된 data:', JSON.stringify(data));
-
-                  if (data === '[DONE]') {
-                    if (aiResponse.trim()) {
-                      addAiResponseToRoom(roomId, uuidv4(), aiResponse.trim(), character?.id);
-                      removeLoadingMessage(roomId, character?.id);
-                    }
-                    setAiLoading(roomId, false);
-                    setSseConnectionStatus('disconnected');
-                    return;
-                  } else {
-                    try {
-                      const parsedData = JSON.parse(data);
-                      if (parsedData.type === 'text_chunk') {
-                        aiResponse += parsedData.content;
-                        updateStreamingAiMessage(roomId, loadingMessageId, aiResponse, false);
-                      }
-                    } catch (e) {
-                      // JSON 파싱 실패 시 무시
-                    }
-                  }
-                }
-              }
-            }
-          } finally {
-            reader.releaseLock();
-          }
-        } catch (error) {
-          console.error('🚨 [handleImageUpload] 이미지 메시지 처리 실패:', error);
-          setAiLoading(roomId, false);
-          setSseConnectionStatus('error');
-        }
+      const data = await res.json();
+      if (data.success && data.imageUrl) {
+        // 이미지를 첨부 상태로 설정 (입력창에 URL 표시하지 않음)
+        setAttachedImage(data.imageUrl);
+        console.log('🖼️ 이미지 첨부 완료:', data.imageUrl);
+      } else {
+        alert('이미지 업로드 실패');
       }
-    } else {
-      alert('이미지 업로드 실패');
+    } catch (error) {
+      console.error('이미지 업로드 오류:', error);
+      alert('이미지 업로드 중 오류가 발생했습니다.');
     }
+  };
+
+  // 🆕 첨부된 이미지 제거 함수
+  const removeAttachedImage = () => {
+    setAttachedImage(null);
   };
 
   // 조건부 렌더링은 모든 Hook 선언 이후에 위치해야 함
@@ -1129,13 +1185,31 @@ const ChatMate = () => {
             )}
           </div>
 
+          {/* 🆕 첨부된 이미지 미리보기 */}
+          {attachedImage && (
+            <div className="flex items-center space-x-2 bg-cyan-100/20 border border-cyan-300 rounded-lg px-3 py-2">
+              <img
+                src={attachedImage}
+                alt="첨부된 이미지"
+                className="w-8 h-8 object-cover rounded"
+              />
+              <span className="text-cyan-300 text-sm">이미지 첨부됨</span>
+              <button
+                onClick={removeAttachedImage}
+                className="text-red-400 hover:text-red-300 text-sm"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
           <div className="flex-1 flex items-center space-x-2 bg-cyan-100/60 glass border-2 border-cyan-200 rounded-full px-4 py-2.5 font-cyberpunk focus-within:bg-cyan-100/80 focus-within:border-fuchsia-200 transition-all shadow-[0_0_4px_#0ff]">
             <input
               type="text"
               value={newMessage}
               onChange={e => setNewMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="메시지를 입력하세요..."
+              placeholder={attachedImage ? "메시지를 입력하세요..." : "메시지를 입력하세요..."}
               className="w-full bg-transparent border-none outline-none text-white placeholder-cyan-400 font-cyberpunk tracking-widest"
               disabled={aiResponseLoading}
             />
@@ -1144,7 +1218,7 @@ const ChatMate = () => {
           <button
             onClick={sendMessage}
             className="bg-cyan-200 hover:bg-fuchsia-200 text-[#1a1a2e] w-10 h-10 flex items-center justify-center rounded-full transition-colors text-xl shadow-[0_0_3px_#0ff] font-cyberpunk"
-            disabled={aiResponseLoading || !newMessage.trim()}
+            disabled={aiResponseLoading || (!newMessage.trim() && !attachedImage)}
           >
             ➤
           </button>
