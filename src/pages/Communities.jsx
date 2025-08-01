@@ -548,10 +548,19 @@ export default function Communities() {
                       {room.name || `${room.participants?.length || 0}명의 AI와 대화`}
                     </div>
                     
-                    {/* 참여자 수 표시 */}
+                    {/* AI 명단 표시 */}
                     <div className="text-center">
-                      <div className="text-cyan-300 text-xs font-bold" style={{textShadow:'0 0 1px #0ff'}}>
-                        {room.participants?.length || 0}명
+                      <div className="flex flex-wrap justify-center items-center gap-1">
+                        {room.participants?.slice(0, 3).map((participant, idx) => (
+                          <div key={participant.personaId || idx} className="text-cyan-200 text-xs font-bold text-center bg-black/80 px-1 py-0.5 rounded border border-cyan-400/20">
+                            {participant.persona?.name || 'AI'}
+                          </div>
+                        ))}
+                        {room.participants?.length > 3 && (
+                          <div className="text-cyan-200 text-xs font-bold text-center bg-black/80 px-1 py-0.5 rounded border border-cyan-400/20">
+                            +{room.participants.length - 3}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -563,26 +572,12 @@ export default function Communities() {
                     </div>
                   </div>
 
-                  {/* 호버 시 참여자 정보 */}
+                  {/* 호버 시 설명만 표시 */}
                   <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 flex items-center justify-center p-3">
                     <div className="text-center w-full">
-                      {/* 참여자 이름들 */}
-                      <div className="flex flex-wrap justify-center items-center gap-1 mb-2">
-                        {room.participants?.slice(0, 4).map((participant, idx) => (
-                          <div key={participant.personaId || idx} className="text-cyan-200 text-xs font-bold text-center bg-black/80 px-1 py-0.5 rounded border border-cyan-400/20">
-                            {participant.persona?.name || 'AI'}
-                          </div>
-                        ))}
-                        {room.participants?.length > 4 && (
-                          <div className="text-cyan-200 text-xs font-bold text-center bg-black/80 px-1 py-0.5 rounded border border-cyan-400/20">
-                            +{room.participants.length - 4}
-                          </div>
-                        )}
-                      </div>
-                      
                       {/* 설명이 있으면 표시 */}
                       {room.description && (
-                        <div className="text-cyan-300 text-xs mb-2 line-clamp-2">
+                        <div className="text-cyan-300 text-xs mb-2 line-clamp-3">
                           {room.description}
                         </div>
                       )}
