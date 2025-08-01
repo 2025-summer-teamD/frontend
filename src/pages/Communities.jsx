@@ -572,9 +572,17 @@ export default function Communities() {
                     </div>
                   </div>
 
-                  {/* 호버 시 설명만 표시 */}
-                  <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 flex items-center justify-center p-3">
-                    <div className="text-center w-full">
+                  {/* 호버 시 설명과 만든사람 정보 표시 */}
+                  <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30 flex flex-col justify-between p-3">
+                    {/* 만든사람 정보 - 위쪽에 배치 */}
+                    {room.creatorName && (
+                      <div className="text-pink-300 text-xs font-bold bg-black/80 px-2 py-1 rounded border-2 border-pink-400/80 self-center shadow-lg">
+                        👤 만든사람: {room.creatorName}
+                      </div>
+                    )}
+                    
+                    {/* 중앙 내용 */}
+                    <div className="text-center flex-1 flex flex-col justify-center">
                       {/* 설명이 있으면 표시 */}
                       {room.description && (
                         <div className="text-cyan-300 text-xs mb-2 line-clamp-3">
