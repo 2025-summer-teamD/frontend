@@ -388,6 +388,25 @@ const ChatMate = () => {
                   console.log('🔍 [1대1채팅] [DONE] 신호 수신');
                   setAiLoading(roomId, false);
                   setSseConnectionStatus('disconnected');
+                  
+                  // text_chunk로 누적된 응답이 있다면 타이핑 효과로 표시
+                  if (aiResponse.trim()) {
+                    addMessageToRoom(roomId, {
+                      id: uuidv4(),
+                      text: aiResponse.trim(),
+                      sender: 'ai',
+                      aiId: character?.id ? String(character.id) : undefined,
+                      aiName: character?.name || 'AI',
+                      imageUrl: null,
+                      time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
+                      characterId: character?.id,
+                      isNewMessage: true, // 타이핑 효과 적용
+                    });
+                    
+                    // 로딩 메시지 제거
+                    removeLoadingMessage(roomId, character?.id);
+                  }
+                  
                   return;
                 } else {
                   try {
@@ -401,7 +420,7 @@ const ChatMate = () => {
                         characterIdType: typeof character?.id
                       });
 
-                      // AI 응답 메시지 추가
+                      // AI 응답 메시지 추가 (타이핑 효과 적용)
                       addMessageToRoom(roomId, {
                         id: parsedData.id,
                         text: aiResponse,
@@ -411,6 +430,7 @@ const ChatMate = () => {
                         imageUrl: null, // 프로필 이미지는 imageUrl에 저장하지 않음
                         time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
                         characterId: parsedData.aiId || character?.id,
+                        isNewMessage: true, // 타이핑 효과 적용
                       });
 
                       // 로딩 메시지 제거
@@ -421,6 +441,10 @@ const ChatMate = () => {
                         finalAiId: parsedData.aiId || character?.id
                       });
                       removeLoadingMessage(roomId, parsedData.aiId || character?.id);
+                    } else if (parsedData.type === 'text_chunk') {
+                      // chunk 단위로 텍스트 누적 (실시간 업데이트 하지 않음)
+                      aiResponse += parsedData.content;
+                      console.log('🔍 [1대1채팅] 텍스트 chunk 수신:', parsedData.content);
                     } else if (parsedData.type === 'complete') {
                       console.log('🔍 [1대1채팅] 완료 신호 수신');
                       console.log('🔍 [1대1채팅] AI 로딩 상태 해제:', { roomId, currentLoadingState: getAiLoading(roomId) });
@@ -530,6 +554,7 @@ const ChatMate = () => {
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
+        const groupChatResponses = {}; // AI별 응답 누적용
 
         try {
           while (true) {
@@ -550,6 +575,27 @@ const ChatMate = () => {
                   console.log('🔍 [그룹채팅] [DONE] 신호 수신 - 스트리밍 종료');
                   setAiLoading(roomId, false);
                   setSseConnectionStatus('disconnected');
+                  
+                  // text_chunk로 누적된 응답들을 타이핑 효과로 표시
+                  Object.entries(groupChatResponses).forEach(([aiId, responseText]) => {
+                    if (responseText.trim()) {
+                      const participant = roomInfoParticipants.find(p => String(p.id) === String(aiId));
+                      addMessageToRoom(roomId, {
+                        id: uuidv4(),
+                        text: responseText.trim(),
+                        sender: 'ai',
+                        aiId: String(aiId),
+                        aiName: participant?.name || 'AI',
+                        imageUrl: null,
+                        time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
+                        characterId: aiId,
+                        isNewMessage: true, // 타이핑 효과 적용
+                      });
+                      // 해당 AI의 로딩 메시지 제거
+                      removeLoadingMessage(roomId, aiId);
+                    }
+                  });
+                  
                   return;
                 } else {
                   try {
@@ -575,6 +621,7 @@ const ChatMate = () => {
                         imageUrl: null, // 프로필 이미지는 imageUrl에 저장하지 않음
                         time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
                         characterId: parsedData.aiId,
+                        isNewMessage: true, // 타이핑 효과 적용
                       });
                       console.log('🔍 [그룹채팅] removeLoadingMessage 호출:', {
                         roomId,
@@ -612,6 +659,11 @@ const ChatMate = () => {
                       console.log('🔍 [그룹채팅] 사용자 메시지 echo 수신 (무시):', parsedData);
                     } else if (parsedData.type === 'text_chunk') {
                       console.log('🔍 [그룹채팅] 텍스트 chunk 수신:', parsedData);
+                      // AI별 응답 누적 (실시간 업데이트는 하지 않음)
+                      if (!groupChatResponses[parsedData.aiId]) {
+                        groupChatResponses[parsedData.aiId] = '';
+                      }
+                      groupChatResponses[parsedData.aiId] += parsedData.content;
                     } else {
                       console.log('🔍 [그룹채팅] 알 수 없는 메시지 타입:', parsedData.type, parsedData);
                     }
@@ -739,7 +791,18 @@ const ChatMate = () => {
 
                   if (data === '[DONE]') {
                     if (aiResponse.trim()) {
-                      addAiResponseToRoom(roomId, uuidv4(), aiResponse.trim(), character?.id);
+                      // 타이핑 효과를 위해 addMessageToRoom 사용
+                      addMessageToRoom(roomId, {
+                        id: uuidv4(),
+                        text: aiResponse.trim(),
+                        sender: 'ai',
+                        aiId: character?.id ? String(character.id) : undefined,
+                        aiName: character?.name || 'AI',
+                        imageUrl: null,
+                        time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
+                        characterId: character?.id,
+                        isNewMessage: true, // 타이핑 효과 적용
+                      });
                       removeLoadingMessage(roomId, character?.id);
                     }
                     setAiLoading(roomId, false);
@@ -750,7 +813,8 @@ const ChatMate = () => {
                       const parsedData = JSON.parse(data);
                       if (parsedData.type === 'text_chunk') {
                         aiResponse += parsedData.content;
-                        updateStreamingAiMessage(roomId, loadingMessageId, aiResponse, false);
+                        console.log('🔍 [이미지업로드] 텍스트 chunk 수신:', parsedData.content);
+                        // 실시간 업데이트 하지 않고 누적만 함
                       }
                     } catch (e) {
                       // JSON 파싱 실패 시 무시

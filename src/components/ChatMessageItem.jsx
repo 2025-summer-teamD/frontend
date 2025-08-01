@@ -8,31 +8,52 @@ const ChatMessageItem = ({ msg, showProfile, showTime, profileImg, displayName, 
   // TTS 재생 상태 관리를 위한 state
   const [isPlaying, setIsPlaying] = useState(false);
   const [audio, setAudio] = useState(null); // Audio 객체를 저장할 state
+  const [typingCompleted, setTypingCompleted] = useState(false); // 타이핑 완료 상태
+  
+  // 메시지가 변경되면 타이핑 완료 상태 초기화
+  useEffect(() => {
+    setTypingCompleted(false);
+  }, [msg.id, msg.text]);
+  
   console.log('messageId:' + msg.id);
   console.log(msg);
   // TTS 오디오 캐싱을 위한 유틸리티 함수들
   const getTTSCacheKey = (roomId, msgId) => `tts_${roomId}_${msgId}`;
 
-  const TypingEffectText = ({ text, speed = 50 }) => {
+  const TypingEffectText = ({ text, speed = 50, onComplete }) => {
     const [displayedText, setDisplayedText] = useState('');
     const [index, setIndex] = useState(0);
+    const [isComplete, setIsComplete] = useState(false);
+    const [currentText, setCurrentText] = useState(text);
+
+    // text가 변경되었을 때만 초기화
+    useEffect(() => {
+      if (text !== currentText) {
+        setCurrentText(text);
+        setDisplayedText('');
+        setIndex(0);
+        setIsComplete(false);
+      }
+    }, [text, currentText]);
 
     useEffect(() => {
+      if (isComplete) return; // 이미 완료된 경우 실행하지 않음
+      
       if (index < text.length) {
         const timeoutId = setTimeout(() => {
           setDisplayedText((prev) => prev + text.charAt(index));
           setIndex((prev) => prev + 1);
-        }, speed); // `speed` 밀리초마다 한 글자씩 추가
+        }, speed);
 
-        return () => clearTimeout(timeoutId); // 클린업 함수
+        return () => clearTimeout(timeoutId);
+      } else if (index === text.length && !isComplete) {
+        setIsComplete(true);
+        // 타이핑 완료 시 콜백 호출
+        if (onComplete) {
+          setTimeout(() => onComplete(), 100);
+        }
       }
-    }, [index, text, speed]);
-
-    // text가 변경되었을 때 displayedText와 index를 초기화
-    useEffect(() => {
-      setDisplayedText('');
-      setIndex(0);
-    }, [text]);
+    }, [index, text, speed, isComplete, onComplete]);
 
     return <p className="font-cyberpunk">{displayedText}</p>;
   }
@@ -232,10 +253,16 @@ const ChatMessageItem = ({ msg, showProfile, showTime, profileImg, displayName, 
               alt="전송된 이미지"
               className="max-w-xs rounded-lg border-2 border-cyan-200 shadow-[0_0_4px_#0ff] font-cyberpunk"
               />
+            : msg.sender === 'ai' && msg.isNewMessage && !typingCompleted
+              ? <TypingEffectText 
+                  text={msg.text} 
+                  speed={50} 
+                  onComplete={() => {
+                    // 타이핑 완료 후 일반 텍스트로 전환
+                    setTypingCompleted(true);
+                  }}
+                />
               : <p className="font-cyberpunk">{msg.text}</p>
-            // :  isLast // 현재 메시지가 마지막 요소인지 확인
-            // ? <TypingEffectText text={msg.text} speed={30} />
-            // : <p className="font-cyberpunk">{msg.text}</p>
           }
         </div>
       )}
