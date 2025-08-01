@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import TypingIndicator from './TypingIndicator.jsx';
+import { useChatMessages } from '../contexts/ChatMessagesContext.jsx';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // ChatMessageItem 컴포넌트라고 가정하고 작성합니다.
@@ -10,6 +11,27 @@ const ChatMessageItem = ({ msg, showProfile, showTime, profileImg, displayName, 
   const [audio, setAudio] = useState(null); // Audio 객체를 저장할 state
   console.log('messageId:' + msg.id);
   console.log(msg);
+  
+  // AI별 타이핑 상태 확인
+  const { getAiLoadingForSpecificAi } = useChatMessages();
+  const isAiTyping = isAI && msg.aiId ? getAiLoadingForSpecificAi(roomId, msg.aiId) : false;
+  
+  // 🆕 로딩 메시지인지 확인 (점 세개 애니메이션 표시용)
+  const isLoadingMessage = msg.isStreaming && msg.text === '...';
+  
+  // 디버깅을 위한 로그 추가
+  console.log('🔍 ChatMessageItem 디버깅:', {
+    messageId: msg.id,
+    sender: msg.sender,
+    isAI: isAI,
+    aiId: msg.aiId,
+    isAiTyping: isAiTyping,
+    isStreaming: msg.isStreaming,
+    isLoadingMessage: isLoadingMessage,
+    text: msg.text,
+    roomId: roomId
+  });
+  
   // TTS 오디오 캐싱을 위한 유틸리티 함수들
   const getTTSCacheKey = (roomId, msgId) => `tts_${roomId}_${msgId}`;
 
@@ -209,8 +231,8 @@ const ChatMessageItem = ({ msg, showProfile, showTime, profileImg, displayName, 
           </span>
         </div>
       )}
-      {/* 로딩 메시지인 경우 TypingIndicator 렌더링 (프로필은 TypingIndicator 내부에서 처리) */}
-      {msg.sender === 'ai' && msg.isStreaming && msg.text === '...' ? (
+      {/* AI가 타이핑 중이거나 로딩 메시지인 경우 TypingIndicator 렌더링 */}
+      {msg.sender === 'ai' && isLoadingMessage ? (
         <TypingIndicator 
           aiColor={aiColor}
           aiName={msg.aiName || displayName}
@@ -226,17 +248,17 @@ const ChatMessageItem = ({ msg, showProfile, showTime, profileImg, displayName, 
             }`}
           style={isAI ? { boxShadow: aiColor.shadow.replace('shadow-', '').replace('[', '').replace(']', '') } : {}}
         >
-          {msg.imageUrl
-            ? <img
+          {/* 🆕 이미지와 텍스트를 함께 표시하도록 수정 */}
+          {msg.imageUrl && (
+            <img
               src={msg.imageUrl.startsWith('http') ? msg.imageUrl : API_BASE_URL + msg.imageUrl}
               alt="전송된 이미지"
-              className="max-w-xs rounded-lg border-2 border-cyan-200 shadow-[0_0_4px_#0ff] font-cyberpunk"
-              />
-              : <p className="font-cyberpunk">{msg.text}</p>
-            // :  isLast // 현재 메시지가 마지막 요소인지 확인
-            // ? <TypingEffectText text={msg.text} speed={30} />
-            // : <p className="font-cyberpunk">{msg.text}</p>
-          }
+              className="max-w-xs rounded-lg border-2 border-cyan-200 shadow-[0_0_4px_#0ff] font-cyberpunk mb-2"
+            />
+          )}
+          {msg.text && (
+            <p className="font-cyberpunk">{msg.text}</p>
+          )}
         </div>
       )}
       {showTime && (

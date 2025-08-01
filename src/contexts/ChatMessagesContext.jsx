@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 
 const ChatMessagesContext = createContext();
 
@@ -6,8 +6,27 @@ export const ChatMessagesProvider = ({ children }) => {
   // roomId별 메시지를 저장: { [roomId]: messages[] }
   const [allMessages, setAllMessages] = useState({});
 
-  // roomId별 AI 로딩 상태: { [roomId]: boolean }
+  // roomId별 AI별 로딩 상태: { [roomId]: { [aiId]: boolean } }
   const [aiLoadingStates, setAiLoadingStates] = useState({});
+
+  // 로컬 스토리지에서 타이핑 상태 복원
+  useEffect(() => {
+    const savedLoadingStates = localStorage.getItem('aiLoadingStates');
+    if (savedLoadingStates) {
+      try {
+        const parsedStates = JSON.parse(savedLoadingStates);
+        setAiLoadingStates(parsedStates);
+        console.log('🔄 로컬 스토리지에서 AI 로딩 상태 복원:', parsedStates);
+      } catch (error) {
+        console.error('❌ 로컬 스토리지에서 AI 로딩 상태 복원 실패:', error);
+      }
+    }
+  }, []);
+
+  // 타이핑 상태가 변경될 때마다 로컬 스토리지에 저장
+  useEffect(() => {
+    localStorage.setItem('aiLoadingStates', JSON.stringify(aiLoadingStates));
+  }, [aiLoadingStates]);
 
   // --- Getter Functions ---
 
@@ -16,9 +35,28 @@ export const ChatMessagesProvider = ({ children }) => {
     return allMessages[roomId] || [];
   }, [allMessages]);
 
-  // 특정 roomId의 AI 로딩 상태 가져오기
+  // 특정 roomId의 AI 로딩 상태 가져오기 (기존 호환성을 위해 boolean 반환)
   const getAiLoading = useCallback((roomId) => {
-    return aiLoadingStates[roomId] || false;
+    const roomStates = aiLoadingStates[roomId] || {};
+    return Object.values(roomStates).some(loading => loading);
+  }, [aiLoadingStates]);
+
+  // 특정 roomId의 특정 AI 로딩 상태 가져오기
+  const getAiLoadingForSpecificAi = useCallback((roomId, aiId) => {
+    const roomStates = aiLoadingStates[roomId] || {};
+    const result = roomStates[aiId] || false;
+    console.log(`🔍 getAiLoadingForSpecificAi 호출:`, {
+      roomId,
+      aiId,
+      roomStates,
+      result
+    });
+    return result;
+  }, [aiLoadingStates]);
+
+  // 특정 roomId의 모든 AI 로딩 상태 가져오기
+  const getAiLoadingStatesForRoom = useCallback((roomId) => {
+    return aiLoadingStates[roomId] || {};
   }, [aiLoadingStates]);
 
   const getMessage = useCallback((roomId, messageId) => {
@@ -28,12 +66,52 @@ export const ChatMessagesProvider = ({ children }) => {
 
   // --- Setter/Modifier Functions ---
 
-  // 특정 roomId의 AI 로딩 상태 설정
+  // 특정 roomId의 AI 로딩 상태 설정 (기존 호환성을 위해 boolean 받음)
   const setAiLoading = useCallback((roomId, loading) => {
     console.log(`🔄 AI 로딩 상태 변경 - roomId: ${roomId}, loading: ${loading}`);
     setAiLoadingStates(prev => ({
       ...prev,
-      [roomId]: loading
+      [roomId]: loading ? { '*': true } : {} // 기존 호환성을 위해 '*' 키 사용
+    }));
+  }, []);
+
+  // 특정 roomId의 특정 AI 로딩 상태 설정
+  const setAiLoadingForSpecificAi = useCallback((roomId, aiId, loading) => {
+    console.log(`🔄 특정 AI 로딩 상태 변경 - roomId: ${roomId}, aiId: ${aiId}, loading: ${loading}`);
+    setAiLoadingStates(prev => {
+      const roomStates = prev[roomId] || {};
+      const newRoomStates = loading 
+        ? { ...roomStates, [aiId]: true }
+        : { ...roomStates };
+      
+      if (!loading) {
+        delete newRoomStates[aiId];
+      }
+
+      const result = {
+        ...prev,
+        [roomId]: newRoomStates
+      };
+      
+      console.log(`🔄 AI 로딩 상태 변경 결과:`, {
+        roomId,
+        aiId,
+        loading,
+        beforeRoomStates: roomStates,
+        afterRoomStates: newRoomStates,
+        finalResult: result
+      });
+      
+      return result;
+    });
+  }, []);
+
+  // 특정 roomId의 모든 AI 로딩 상태 설정
+  const setAiLoadingStatesForRoom = useCallback((roomId, aiStates) => {
+    console.log(`🔄 방 전체 AI 로딩 상태 설정 - roomId: ${roomId}, states:`, aiStates);
+    setAiLoadingStates(prev => ({
+      ...prev,
+      [roomId]: aiStates
     }));
   }, []);
 
@@ -128,19 +206,70 @@ export const ChatMessagesProvider = ({ children }) => {
     
     setAllMessages(prev => {
       const currentMessages = prev[roomId] || [];
+      // 🆕 로딩 메시지만 제거하고 기존 메시지는 그대로 유지
       const filteredMessages = currentMessages.filter(msg => 
-        !(msg.sender === 'ai' && msg.aiId === aiIdString && msg.text === '...' && msg.isStreaming)
+        !(msg.sender === 'ai' && 
+          msg.aiId === aiIdString && 
+          msg.text === '...' && 
+          msg.isStreaming === true)
       );
       
       console.log('🔍 removeLoadingMessage 결과:', {
         beforeCount: currentMessages.length,
         afterCount: filteredMessages.length,
-        removedCount: currentMessages.length - filteredMessages.length
+        removedCount: currentMessages.length - filteredMessages.length,
+        removedMessages: currentMessages.filter(msg => 
+          msg.sender === 'ai' && 
+          msg.aiId === aiIdString && 
+          msg.text === '...' && 
+          msg.isStreaming === true
+        )
       });
       
       return {
         ...prev,
         [roomId]: filteredMessages,
+      };
+    });
+  }, []);
+
+  // 🆕 특정 AI의 로딩 메시지를 추가하는 함수
+  const addLoadingMessage = useCallback((roomId, aiId, aiName) => {
+    const aiIdString = aiId ? String(aiId) : undefined;
+    console.log('🔍 addLoadingMessage 호출:', { roomId, aiId, aiName });
+    
+    const loadingMessage = {
+      id: `loading-${roomId}-${aiIdString}-${Date.now()}`,
+      text: '...',
+      sender: 'ai',
+      aiId: aiIdString,
+      aiName: aiName || 'Unknown AI',
+      imageUrl: null,
+      time: new Date().toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true }),
+      characterId: aiId,
+      isStreaming: true,
+    };
+    
+    addMessageToRoom(roomId, loadingMessage);
+    return loadingMessage.id;
+  }, [addMessageToRoom]);
+
+  // 🆕 특정 AI의 로딩 메시지를 업데이트하는 함수
+  const updateLoadingMessage = useCallback((roomId, aiId, newText) => {
+    const aiIdString = aiId ? String(aiId) : undefined;
+    console.log('🔍 updateLoadingMessage 호출:', { roomId, aiId, newText });
+    
+    setAllMessages(prev => {
+      const currentMessages = prev[roomId] || [];
+      return {
+        ...prev,
+        [roomId]: currentMessages.map(msg =>
+          msg.sender === 'ai' && 
+          msg.aiId === aiIdString && 
+          msg.isStreaming === true
+            ? { ...msg, text: newText }
+            : msg
+        ),
       };
     });
   }, []);
@@ -174,11 +303,17 @@ export const ChatMessagesProvider = ({ children }) => {
     setMessagesForRoom,   // 특정 방 메시지 초기 설정
     addMessageToRoom,     // 일반 메시지 추가
     addAiResponseToRoom,  // AI 응답 메시지 추가 (1대1 채팅용)
-    getAiLoading,         // AI 로딩 상태 가져오기
-    setAiLoading,         // AI 로딩 상태 설정
+    getAiLoading,         // AI 로딩 상태 가져오기 (기존 호환성)
+    setAiLoading,         // AI 로딩 상태 설정 (기존 호환성)
+    getAiLoadingForSpecificAi, // 특정 AI 로딩 상태 가져오기
+    setAiLoadingForSpecificAi, // 특정 AI 로딩 상태 설정
+    getAiLoadingStatesForRoom, // 방의 모든 AI 로딩 상태 가져오기
+    setAiLoadingStatesForRoom, // 방의 모든 AI 로딩 상태 설정
     updateStreamingAiMessage, // ⭐ 스트리밍 AI 메시지 업데이트
     finishStreamingAiMessage, // ⭐ 스트리밍 AI 메시지 완료 처리
     removeLoadingMessage, // ⭐ 로딩 메시지 제거
+    addLoadingMessage,    // 🆕 로딩 메시지 추가
+    updateLoadingMessage, // 🆕 로딩 메시지 업데이트
     addVideoMessageToRoom,    // ⭐ 비디오 메시지 추가
   };
 
