@@ -16,22 +16,25 @@ export function useMyChatRooms() {
       const token = await getToken();
       const url = `${import.meta.env.VITE_API_BASE_URL}/my/chat-characters`;
       
-      console.log('🔍 useMyChatRooms - API call:', { url });
-      
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      console.log('🔍 useMyChatRooms - Response status:', res.status);
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('❌ useMyChatRooms - API 오류:', { status: res.status, error: errorText });
+        return;
+      }
       
       const data = await res.json();
-      console.log('✅ useMyChatRooms - Response data:', data);
       
       // Backend returns { success: true, message: "...", data: chatList }
       // So we need to access data.data, not data.data?.chatList
-      setRooms(data.data || []);
+      const chatList = data.data || [];
+      
+      setRooms(chatList);
     } catch (error) {
-      console.error('❌ useMyChatRooms - Error:', error);
+      console.error('❌ useMyChatRooms - 오류:', error);
     } finally {
       setLoading(false);
     }
